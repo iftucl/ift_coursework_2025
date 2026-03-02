@@ -81,9 +81,9 @@ def calculate_adx(data: pd.DataFrame, days: int=14):
         dx = 100 * (plus_di - minus_di).abs() / (plus_di + minus_di)
         adx = dx.ewm(alpha=1/days, adjust=False).mean()
         
-        return adx
+        return pd.Series(adx, index=group.index)
 
-    return data.groupby('symbol', group_keys=False).apply(_compute_adx_per_symbol).round(2)
+    return data.groupby('symbol', group_keys=False).apply(_compute_adx_per_symbol, include_groups=False).round(2)
 
 def calculate_donchian_high(data: pd.DataFrame, days: int):
     return data.groupby('symbol')['high_price'].transform(lambda x: x.rolling(window=days).max()).round(4)
@@ -125,8 +125,8 @@ def calculate_positive_return_percent(data: pd.DataFrame, days: int):
 
 def calculate_maximum_drawdown(data: pd.DataFrame, days: int):
     rolling_peak = data.groupby('symbol')['close_price'].transform(lambda x: x.rolling(window=days, min_periods=1).max())
-    drawdown = (data['close_price'] - rolling_peak) / rolling_peak
-    return data.groupby('symbol').transform(lambda x: drawdown.rolling(window=days, min_periods=1).min()).round(6)
+    data['raw_drawdown'] = (data['close_price'] - rolling_peak) / rolling_peak
+    return data.groupby('symbol')['raw_drawdown'].transform(lambda x: x.rolling(window=days, min_periods=1).min()).round(6)
 
 def calculate_historical_var(data: pd.DataFrame, capital: int=10000, confidence_level: float=0.95, days: int=1, rolling_window: int=252):
     data[f'return_{days}d'] = calculate_return(data, days)
@@ -175,7 +175,7 @@ def calculate_rsi(data: pd.DataFrame, days: int):
     
     return rsi.fillna(100).round(2)
 
-def calcualte_bollingner(data: pd.DataFrame, days: int = 20, num_std: int = 2):
+def calculate_bollingner(data: pd.DataFrame, days: int = 20, num_std: int = 2):
     mid_band = data.groupby('symbol')['close_price'].transform(lambda x: x.rolling(window=days).mean())
     
     std_dev = data.groupby('symbol')['close_price'].transform(lambda x: x.rolling(window=days).std())

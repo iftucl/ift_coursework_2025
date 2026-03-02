@@ -28,8 +28,8 @@ COPY pyproject.toml poetry.lock README.md* ./
 RUN curl -L https://ollama.com/download/ollama-linux-amd64 -o /usr/local/bin/ollama && \
     chmod +x /usr/local/bin/ollama
 
-# Install the "Must-Haves" via PIP first.
-# RUN pip install pandas sqlalchemy numpy psycopg2-binary "psycopg[binary]"
+# Install Dolt CLI
+RUN curl -L https://github.com/dolthub/dolt/releases/latest/download/install.sh | bash
 
 # Install Python dependencies using Poetry
 RUN poetry install --only main --no-root

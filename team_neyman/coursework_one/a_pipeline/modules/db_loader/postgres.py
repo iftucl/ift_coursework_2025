@@ -4,6 +4,77 @@ from sqlalchemy import text
 
 engine = create_engine("postgresql+psycopg://postgres:postgres@postgres_db_cw:5432/fift")
 
+def get_table(name: str, columns: list = None, schema: str = 'systematic_equity'):
+    if columns is None or len(columns) == 0:
+        col_str = "*"
+    else:
+        col_str = ", ".join([f'"{col}"' for col in columns])
+        
+    query = f'SELECT {col_str} FROM "{schema}"."{name}"'
+    
+    try:
+        with engine.connect() as conn:
+            df = pd.read_sql(text(query), conn)
+        return df    
+    except Exception as e:
+        print(f"Database Error: {e}")
+        return None
+    
+def get_latest_data(table_name: str, schema: str = 'systematic_equity'):
+    query = f"""
+        SELECT *
+        FROM "{schema}"."{table_name}"
+        WHERE price_date = (
+            SELECT MAX(price_date) 
+            FROM "{schema}"."{table_name}"
+        );
+    """
+    
+    try:
+        with engine.connect() as conn:
+            df = pd.read_sql(text(query), conn)
+        if df.empty:
+            print(f"Warning: The table '{table_name}' is empty.")
+            return pd.DataFrame()  
+        df['price_date'] = pd.to_datetime(df['price_date'])
+        return df
+    except Exception as e:
+        print(f"Database Error: {e}")
+        return None
+    
+def get_symbol_data(symbol_name: str, table_name: str, schema: str = 'systematic_equity'):
+    query = f"""
+        SELECT *
+        FROM "{schema}"."{table_name}"
+        WHERE symbol = :symbol
+        ORDER BY price_date ASC;
+    """
+    
+    try:
+        with engine.connect() as conn:
+            df = pd.read_sql(text(query), conn, params={"symbol": symbol_name})
+        if df.empty:
+            print(f"Warning: The table '{table_name}' is empty.")
+            return pd.DataFrame()  
+        df['price_date'] = pd.to_datetime(df['price_date'])
+        return df
+    except Exception as e:
+        print(f"Database Error: {e}")
+        return None
+    
+def get_latest_date(table_name: str, schema: str = 'systematic_equity'):
+    query = f"""
+    SELECT MAX(price_date)
+    FROM "{schema}"."{table_name}";
+    """
+    try:
+        with engine.connect() as conn:
+            result = conn.execute(text(query)).scalar()
+            return result
+    except Exception as e:
+        print(f"Database Error: {e}")
+        return None
+    
 # Table: company_static
 def get_company_static():
     query = """
@@ -103,7 +174,7 @@ def update_ohlcv_data(data: pd.DataFrame):
     query = """
     INSERT INTO systematic_equity.daily_ohlcv (symbol, price_date, open_price, high_price, low_price, close_price, volume)
     SELECT symbol, price_date, open_price, high_price, low_price, close_price, volume 
-    FROM temp_ohlcv
+    FROM systematic_equity.temp_ohlcv
     ON CONFLICT (symbol, price_date) 
     DO UPDATE SET 
         open_price = EXCLUDED.open_price,
@@ -120,15 +191,26 @@ def update_ohlcv_data(data: pd.DataFrame):
     except Exception as e:
         print(f"Database Error: {e}")
 
-def get_ohlcv_data(company_list: list):
+def get_ohlcv_data(company_list: list, start_date=None):
+    if not company_list:
+        print("Warning: Empty company_list provided.")
+        return pd.DataFrame()
+    
     query = """
     SELECT *
     FROM systematic_equity.daily_ohlcv
-    WHERE symbol IN :companies
-    ORDER BY symbol, price_date ASC;
+    WHERE symbol = ANY(:companies)
     """
+
+    params = {"companies": company_list}
+
+    if start_date is not None:
+        query += " AND price_date >= :start_date"
+        params["start_date"] = start_date
+
+    query += "\nORDER BY symbol, price_date ASC;"
+    
     try:
-        params = {"companies": tuple(company_list)}
         df = pd.read_sql(text(query), engine, params = params)
         df['price_date'] = pd.to_datetime(df['price_date'])
         return df
@@ -150,21 +232,7 @@ def get_close_price(symbol: str):
         return df
     except Exception as e:
         print(f"Database Error: {e}")
-        return None
-    
-def get_latest_date():
-    query = """
-    SELECT MAX(price_date)
-    FROM systematic_equity.daily_ohlcv;
-    """
-    try:
-        with engine.connect() as conn:
-            result = conn.execute(text(query)).scalar()
-            return result
-    except Exception as e:
-        print(f"Database Error: {e}")
-        return None
-    
+        return None 
     
 # Table: Liquidity Factors
 def create_liquidity_table():
@@ -207,7 +275,7 @@ def update_liquidity_data(data: pd.DataFrame):
     addv_20d, addv_60d, mddv_20d, mddv_60d, amihud_illiquidity_20d, amihud_illiquidity_60d)
     SELECT symbol, price_date, volume, dollar_volume, adv_20d, adv_60d, mdv_20d, mdv_60d,
     addv_20d, addv_60d, mddv_20d, mddv_60d, amihud_illiquidity_20d, amihud_illiquidity_60d 
-    FROM temp_liquidity
+    FROM systematic_equity.temp_liquidity
     ON CONFLICT (symbol, price_date) 
     DO UPDATE SET 
         volume = EXCLUDED.volume,
@@ -266,7 +334,7 @@ def update_trend_data(data: pd.DataFrame):
     INSERT INTO systematic_equity.trend_factors (symbol, price_date, ma200, ma150, ma100, adx14, donchian_high_55, donchian_high_120,
     price_to_52w_high)
     SELECT symbol, price_date, ma200, ma150, ma100, adx14, donchian_high_55, donchian_high_120, price_to_52w_high 
-    FROM temp_trend
+    FROM systematic_equity.temp_trend
     ON CONFLICT (symbol, price_date) 
     DO UPDATE SET 
         ma200 = EXCLUDED.ma200,
@@ -325,7 +393,7 @@ def update_momentum_data(data: pd.DataFrame):
     risk_adj_mom_12m, risk_adj_ret_6m, positive_ret_pct_60d, positive_ret_prc_120d)
     SELECT symbol, price_date, mom_12m, mom_6m, mom_3m, ret_1m, ret_3m, ret_6m, ret_12m, risk_adj_mom_12m, risk_adj_ret_6m,
     positive_ret_pct_60d, positive_ret_prc_120d 
-    FROM temp_momentum
+    FROM systematic_equity.temp_momentum
     ON CONFLICT (symbol, price_date) 
     DO UPDATE SET 
         mom_12m = EXCLUDED.mom_12m,
@@ -337,7 +405,7 @@ def update_momentum_data(data: pd.DataFrame):
         ret_12m = EXCLUDED.ret_12m,
         risk_adj_mom_12m = EXCLUDED.risk_adj_mom_12m,
         risk_adj_ret_6m = EXCLUDED.risk_adj_ret_6m,
-        positive_ret_pct_60d = EXCLUDED.positive_ret_pct_60d
+        positive_ret_pct_60d = EXCLUDED.positive_ret_pct_60d,
         positive_ret_prc_120d = EXCLUDED.positive_ret_prc_120d;
     """
     try:
@@ -387,7 +455,7 @@ def update_risk_data(data: pd.DataFrame):
     max_drawdown_1y, historical_var_95_1d, historical_cvar_95_1d, worst_day_ret_1y, worst_week_ret_1y)
     SELECT symbol, price_date, vol_20d, vol_60d, vol_120d, downside_vol_60d, max_drawdown_6m,
     max_drawdown_1y, historical_var_95_1d, historical_cvar_95_1d, worst_day_ret_1y, worst_week_ret_1y
-    FROM temp_risk
+    FROM systematic_equity.temp_risk
     ON CONFLICT (symbol, price_date) 
     DO UPDATE SET 
         vol_20d = EXCLUDED.vol_20d,
@@ -442,7 +510,7 @@ def update_mean_reversion_data(data: pd.DataFrame):
     query = """
     INSERT INTO systematic_equity.mean_reversion_factors (symbol, price_date, rsi_2d, rsi_5d, rsi_14d, bollinger_pct_20d, ret_5d, ret_10d)
     SELECT symbol, price_date, rsi_2d, rsi_5d, rsi_14d, bollinger_pct_20d, ret_5d, ret_10d
-    FROM temp_mean_reversion
+    FROM systematic_equity.temp_mean_reversion
     ON CONFLICT (symbol, price_date) 
     DO UPDATE SET 
         rsi_2d = EXCLUDED.rsi_2d,
@@ -457,5 +525,47 @@ def update_mean_reversion_data(data: pd.DataFrame):
             conn.execute(text(query))
             conn.execute(text(f"DROP TABLE systematic_equity.{temp_table};"))
         print("Mean reversion table updated successfully.")
+    except Exception as e:
+        print(f"Database Error: {e}")
+
+def create_eps_history_table():
+    query = """
+    CREATE TABLE IF NOT EXISTS systematic_equity.eps_history (
+        id SERIAL PRIMARY KEY, 
+        symbol VARCHAR(10) NOT NULL,
+        period_end_date DATE NOT NULL,
+        reported_eps NUMERIC(16, 2),
+        estimate_eps NUMERIC(16, 2),
+        UNIQUE (symbol, period_end_date)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_eps_history_symbol_date 
+    ON systematic_equity.eps_history (symbol, period_end_date DESC);
+    """
+    try:
+        with engine.connect() as conn:
+            conn.execute(text(query))
+            conn.commit()
+            print("EPS history table and Index created successfully.")
+    except Exception as e:
+        print(f"Database Error: {e}")
+
+def update_eps_history(data: pd.DataFrame):
+    temp_table = 'temp_eps_history'
+    data.to_sql(temp_table, engine, schema='systematic_equity', if_exists='replace', index=False)
+    query = """
+    INSERT INTO systematic_equity.eps_history (symbol, period_end_date, reported_eps, estimate_eps)
+    SELECT symbol, period_end_date, reported_eps, estimate_eps
+    FROM systematic_equity.temp_eps_history
+    ON CONFLICT (symbol, period_end_date) 
+    DO UPDATE SET 
+        reported_eps = EXCLUDED.reported_eps,
+        estimate_eps = EXCLUDED.estimate_eps;
+    """
+    try:
+        with engine.begin() as conn:
+            conn.execute(text(query))
+            conn.execute(text(f"DROP TABLE systematic_equity.{temp_table};"))
+        print("EPS history table updated successfully.")
     except Exception as e:
         print(f"Database Error: {e}")
