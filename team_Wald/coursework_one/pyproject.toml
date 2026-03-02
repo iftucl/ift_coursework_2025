@@ -63,7 +63,7 @@ profile = "black"
 line_length = 88
 
 [tool.pytest.ini_options]
-testpaths = ["test"]
+testpaths = ["a_pipeline/test", "b_pipeline/test", "c_pipeline/test"]
 pythonpath = ["."]
 addopts = "--cov=. --cov-report=term-missing --cov-fail-under=80"
 

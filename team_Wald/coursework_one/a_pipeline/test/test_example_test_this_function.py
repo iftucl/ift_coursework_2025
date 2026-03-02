@@ -2,7 +2,7 @@
 Integration tests for database connection module.
 
 Tests verify live connectivity to PostgreSQL, MongoDB, and MinIO.
-Run with: poetry run pytest test/test_db_connection.py -v
+Run with: poetry run pytest a_pipeline/test/test_db_connection.py -v
 """
 
 import pytest
@@ -10,7 +10,7 @@ import psycopg2
 from pymongo.errors import ConnectionFailure
 from minio import Minio
 
-from modules.db.db_connection import (
+from modules.db_loader.db_connection import (
     get_postgres_conn,
     get_mongo_client,
     get_mongo_db,
