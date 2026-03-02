@@ -7,6 +7,7 @@ from modules.db_loader import postgres
 from modules.factors import calculate_factors
 
 def fetch_ohlcv_data(ticker_list: list, start_date=None, end_date=None):
+    # Fetch past 5 years data
     if end_date is None:
         end_date = datetime.now().strftime('%Y-%m-%d')
     if start_date is None:
@@ -14,6 +15,7 @@ def fetch_ohlcv_data(ticker_list: list, start_date=None, end_date=None):
         start_date = five_years_ago.strftime('%Y-%m-%d')
     print(f"Starting pipeline: Fetching from {start_date} to {end_date}")
 
+    # Fetching data with batches
     batch_size = 50 
 
     for i in range(0, len(ticker_list), batch_size):
@@ -30,6 +32,7 @@ def fetch_ohlcv_data(ticker_list: list, start_date=None, end_date=None):
                 continue
 
             df_stacked = clean_data.stack(level=1, future_stack=True).reset_index()
+            # Rename to align with database
             df_stacked = df_stacked.rename(columns={
                 'Date': 'price_date',
                 'Ticker': 'symbol',
@@ -39,6 +42,7 @@ def fetch_ohlcv_data(ticker_list: list, start_date=None, end_date=None):
                 'Close': 'close_price',
                 'Volume': 'volume'
             })
+            # Cleanse data
             df_stacked['symbol'] = df_stacked['symbol'].str.strip()
             df_stacked['price_date'] = pd.to_datetime(df_stacked['price_date']).dt.date
             price_cols = ['open_price', 'high_price', 'low_price', 'close_price']
@@ -56,7 +60,7 @@ def fetch_ohlcv_data(ticker_list: list, start_date=None, end_date=None):
         except Exception as e:
             print(f"Error downloading batch starting with {batch[0]}: {e}")
 
-#Converts total seconds into a readable string (e.g., 5m 30s).
+# Converts total seconds into a readable string (e.g., 5m 30s).
 def format_duration(seconds):
     minutes, sec = divmod(int(seconds), 60)
     if minutes > 0:
@@ -66,11 +70,13 @@ def format_duration(seconds):
 def update_ohlcv_batch():
     start_time = time.time()
 
+    # Create OHLCV table if there's no one
     postgres.create_ohlcv_table()
 
     df_companies = postgres.get_company_static()
     ticker_list = [symbol.strip() for symbol in df_companies['symbol'].tolist()]
     
+    # Fetch data from the latest data date minus 20 days to update missing or changing value
     last_update = postgres.get_latest_date(table_name='daily_ohlcv')
 
     if last_update:
@@ -126,6 +132,7 @@ def calculate_trend_data(ticker_list: list, start_date=None):
     data['donchian_high_55'] = calculate_factors.calculate_donchian_high(data, days=55)
     data['donchian_high_120'] = calculate_factors.calculate_donchian_high(data, days=120)
     data['price_to_52w_high'] = calculate_factors.calculate_price_to_weeks_high(data, days=252)
+    data['ma200_20d_slope'] = calculate_factors.calculate_ma_slope(data, ma_days=200, window_days=20)
 
     if start_date is not None:
         start_date = pd.to_datetime(start_date)
@@ -203,6 +210,7 @@ def calculate_mean_reversion_data(ticker_list: list, start_date=None):
     postgres.update_mean_reversion_data(data)
 
 def update_factors():
+    # Creates tables if the tables don't exist 
     postgres.create_liquidity_table()
     postgres.create_trend_table()
     postgres.create_momentum_table()
@@ -215,8 +223,10 @@ def update_factors():
         return
     
     ticker_list = [symbol.strip() for symbol in df_companies['symbol'].tolist()]
+    # Calculate each factors for companies in batches
     batch_size = 50 
 
+    # Get the latest data date for each table
     date_liquidity = postgres.get_latest_date(table_name='liquidity_factors')
     date_trend = postgres.get_latest_date(table_name='trend_factors')
     date_momentum = postgres.get_latest_date(table_name='momentum_factors')

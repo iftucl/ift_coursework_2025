@@ -4,6 +4,7 @@ from sqlalchemy import text
 
 engine = create_engine("postgresql+psycopg://postgres:postgres@postgres_db_cw:5432/fift")
 
+# Get data with specific table name and columns
 def get_table(name: str, columns: list = None, schema: str = 'systematic_equity'):
     if columns is None or len(columns) == 0:
         col_str = "*"
@@ -19,15 +20,20 @@ def get_table(name: str, columns: list = None, schema: str = 'systematic_equity'
     except Exception as e:
         print(f"Database Error: {e}")
         return None
-    
-def get_latest_data(table_name: str, schema: str = 'systematic_equity'):
+
+# Get the dataset with the latest date for each company in a specific table
+def get_latest_data(table_name: str, columns: list = None, date_col: str = 'price_date', schema: str = 'systematic_equity'):
+    if columns is None or len(columns) == 0:
+        col_str = "*"
+    else:
+        safe_cols = set(columns)
+        safe_cols.update(["symbol", date_col])
+        col_str = ", ".join([f'"{col}"' for col in safe_cols])
+
     query = f"""
-        SELECT *
+        SELECT DISTINCT ON (symbol) {col_str}
         FROM "{schema}"."{table_name}"
-        WHERE price_date = (
-            SELECT MAX(price_date) 
-            FROM "{schema}"."{table_name}"
-        );
+        ORDER BY symbol ASC, {date_col} DESC;
     """
     
     try:
@@ -36,12 +42,12 @@ def get_latest_data(table_name: str, schema: str = 'systematic_equity'):
         if df.empty:
             print(f"Warning: The table '{table_name}' is empty.")
             return pd.DataFrame()  
-        df['price_date'] = pd.to_datetime(df['price_date'])
         return df
     except Exception as e:
         print(f"Database Error: {e}")
         return None
-    
+
+# Get the dataset for specific symbol within a table    
 def get_symbol_data(symbol_name: str, table_name: str, schema: str = 'systematic_equity'):
     query = f"""
         SELECT *
@@ -61,7 +67,8 @@ def get_symbol_data(symbol_name: str, table_name: str, schema: str = 'systematic
     except Exception as e:
         print(f"Database Error: {e}")
         return None
-    
+
+# Get the latest data date for a specific table
 def get_latest_date(table_name: str, schema: str = 'systematic_equity'):
     query = f"""
     SELECT MAX(price_date)
@@ -74,8 +81,22 @@ def get_latest_date(table_name: str, schema: str = 'systematic_equity'):
     except Exception as e:
         print(f"Database Error: {e}")
         return None
+
+# Adding a new column to existing table 
+def add_new_column(column_name: str, column_type: str, table_name: str, schema: str = 'systematic_equity'):
+    query = f"""
+    ALTER TABLE "{schema}"."{table_name}" 
+    ADD COLUMN IF NOT EXIST "{column_name}" {column_type};
+    """
     
-# Table: company_static
+    try:
+        with engine.begin() as conn:
+            conn.execute(text(query))
+        print("Successfully added new column!")
+    except Exception as e:
+        print(f"Database Error: {e}")
+    
+# Get the whole company_static table
 def get_company_static():
     query = """
     SELECT * 
@@ -88,6 +109,7 @@ def get_company_static():
         print(f"Database Error: {e}")
         return None
 
+# Get companies within a specific sector
 def get_companies_by_sector(sector_list: list):
     query = """
     SELECT * 
@@ -101,7 +123,8 @@ def get_companies_by_sector(sector_list: list):
     except Exception as e:
         print(f"Database Error: {e}")
         return None
-    
+
+# Get companies within a specific industry    
 def get_companies_by_industry(industry_list: list):
     query = """
     SELECT * 
@@ -115,7 +138,8 @@ def get_companies_by_industry(industry_list: list):
     except Exception as e:
         print(f"Database Error: {e}")
         return None
-    
+
+# Check the sectors included in company_static table    
 def get_all_sectors():
     query = """
     SELECT DISTINCT gics_sector
@@ -128,7 +152,8 @@ def get_all_sectors():
     except Exception as e:
         print(f"Database Error: {e}")
         return []
-    
+
+# Check the industries included in company_static table    
 def get_all_industries():
     query = """
     SELECT DISTINCT gics_industry
@@ -142,7 +167,7 @@ def get_all_industries():
         print(f"Database Error: {e}")
         return []
 
-# Table: daily_ohlcv
+# Creat daily_ohlcv table if there isn't one
 def create_ohlcv_table():
     query = """
     CREATE TABLE IF NOT EXISTS systematic_equity.daily_ohlcv (
@@ -168,6 +193,8 @@ def create_ohlcv_table():
     except Exception as e:
         print(f"Database Error: {e}")
 
+# Update data to daily_ohlcv table
+# If there's data with same symbol and price_date it will update to the new data
 def update_ohlcv_data(data: pd.DataFrame):
     temp_table = 'temp_ohlcv'
     data.to_sql(temp_table, engine, schema='systematic_equity', if_exists='replace', index=False)
@@ -191,6 +218,7 @@ def update_ohlcv_data(data: pd.DataFrame):
     except Exception as e:
         print(f"Database Error: {e}")
 
+# Get OHLCV data for a specific companies list from a target date
 def get_ohlcv_data(company_list: list, start_date=None):
     if not company_list:
         print("Warning: Empty company_list provided.")
@@ -218,6 +246,7 @@ def get_ohlcv_data(company_list: list, start_date=None):
         print(f"Database Error: {e}")
         return None
 
+# Get price_date and close_price for a specific company
 def get_close_price(symbol: str):
     query = """
     SELECT price_date, close_price
@@ -234,7 +263,7 @@ def get_close_price(symbol: str):
         print(f"Database Error: {e}")
         return None 
     
-# Table: Liquidity Factors
+# Create liquidity_factors table if there isn't one
 def create_liquidity_table():
     query = """
     CREATE TABLE IF NOT EXISTS systematic_equity.liquidity_factors (
@@ -267,6 +296,7 @@ def create_liquidity_table():
     except Exception as e:
         print(f"Database Error: {e}")
 
+# Update new data to liquidity_factors table
 def update_liquidity_data(data: pd.DataFrame):
     temp_table = 'temp_liquidity'
     data.to_sql(temp_table, engine, schema='systematic_equity', if_exists='replace', index=False)
@@ -299,7 +329,7 @@ def update_liquidity_data(data: pd.DataFrame):
     except Exception as e:
         print(f"Database Error: {e}")
 
-# Table: Trend Factors
+# Create trend_factors table if there isn't one
 def create_trend_table():
     query = """
     CREATE TABLE IF NOT EXISTS systematic_equity.trend_factors (
@@ -313,6 +343,7 @@ def create_trend_table():
         donchian_high_55 NUMERIC(14, 4),
         donchian_high_120 NUMERIC(14, 4),
         price_to_52w_high NUMERIC(6, 4),
+        ma200_20d_slope NUMERIC(10, 6),
         UNIQUE (symbol, price_date)
     );
 
@@ -327,13 +358,14 @@ def create_trend_table():
     except Exception as e:
         print(f"Database Error: {e}")
 
+# Update new data to trend_factors table
 def update_trend_data(data: pd.DataFrame):
     temp_table = 'temp_trend'
     data.to_sql(temp_table, engine, schema='systematic_equity', if_exists='replace', index=False)
     query = """
     INSERT INTO systematic_equity.trend_factors (symbol, price_date, ma200, ma150, ma100, adx14, donchian_high_55, donchian_high_120,
-    price_to_52w_high)
-    SELECT symbol, price_date, ma200, ma150, ma100, adx14, donchian_high_55, donchian_high_120, price_to_52w_high 
+    price_to_52w_high, ma200_20d_slope)
+    SELECT symbol, price_date, ma200, ma150, ma100, adx14, donchian_high_55, donchian_high_120, price_to_52w_high, ma200_20d_slope 
     FROM systematic_equity.temp_trend
     ON CONFLICT (symbol, price_date) 
     DO UPDATE SET 
@@ -343,7 +375,8 @@ def update_trend_data(data: pd.DataFrame):
         adx14 = EXCLUDED.adx14,
         donchian_high_55 = EXCLUDED.donchian_high_55,
         donchian_high_120 = EXCLUDED.donchian_high_120,
-        price_to_52w_high = EXCLUDED.price_to_52w_high;
+        price_to_52w_high = EXCLUDED.price_to_52w_high,
+        ma200_20d_slope = EXCLUDED.ma200_20d_slope;
     """
     try:
         with engine.begin() as conn:
@@ -353,7 +386,7 @@ def update_trend_data(data: pd.DataFrame):
     except Exception as e:
         print(f"Database Error: {e}")
 
-#Table Momentum
+# Create momentum_factors table if there isn't one
 def create_momentum_table():
     query = """
     CREATE TABLE IF NOT EXISTS systematic_equity.momentum_factors (
@@ -385,6 +418,7 @@ def create_momentum_table():
     except Exception as e:
         print(f"Database Error: {e}")
 
+# Update new data to momentum_factors table
 def update_momentum_data(data: pd.DataFrame):
     temp_table = 'temp_momentum'
     data.to_sql(temp_table, engine, schema='systematic_equity', if_exists='replace', index=False)
@@ -416,7 +450,7 @@ def update_momentum_data(data: pd.DataFrame):
     except Exception as e:
         print(f"Database Error: {e}")
 
-# Table: Risk Factor
+# Create risk_factors table if there isn't one
 def create_risk_table():
     query = """
     CREATE TABLE IF NOT EXISTS systematic_equity.risk_factors (
@@ -447,6 +481,7 @@ def create_risk_table():
     except Exception as e:
         print(f"Database Error: {e}")
 
+# Update new data to risk_factors table
 def update_risk_data(data: pd.DataFrame):
     temp_table = 'temp_risk'
     data.to_sql(temp_table, engine, schema='systematic_equity', if_exists='replace', index=False)
@@ -477,7 +512,7 @@ def update_risk_data(data: pd.DataFrame):
     except Exception as e:
         print(f"Database Error: {e}")
 
-#Table: Mean Reversion
+# Create mean_reversion_factors table if there isn't one
 def create_mean_reversion_table():
     query = """
     CREATE TABLE IF NOT EXISTS systematic_equity.mean_reversion_factors (
@@ -504,6 +539,7 @@ def create_mean_reversion_table():
     except Exception as e:
         print(f"Database Error: {e}")
 
+# Update new data to mean_reversion_factors table
 def update_mean_reversion_data(data: pd.DataFrame):
     temp_table = 'temp_mean_reversion'
     data.to_sql(temp_table, engine, schema='systematic_equity', if_exists='replace', index=False)
@@ -528,6 +564,7 @@ def update_mean_reversion_data(data: pd.DataFrame):
     except Exception as e:
         print(f"Database Error: {e}")
 
+# Create eps_history table if there isn't one
 def create_eps_history_table():
     query = """
     CREATE TABLE IF NOT EXISTS systematic_equity.eps_history (
@@ -550,6 +587,7 @@ def create_eps_history_table():
     except Exception as e:
         print(f"Database Error: {e}")
 
+# Update new data to eps_history table
 def update_eps_history(data: pd.DataFrame):
     temp_table = 'temp_eps_history'
     data.to_sql(temp_table, engine, schema='systematic_equity', if_exists='replace', index=False)
@@ -569,3 +607,4 @@ def update_eps_history(data: pd.DataFrame):
         print("EPS history table updated successfully.")
     except Exception as e:
         print(f"Database Error: {e}")
+

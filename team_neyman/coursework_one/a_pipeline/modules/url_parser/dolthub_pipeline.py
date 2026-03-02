@@ -5,7 +5,9 @@ import os
 from pathlib import Path
 from modules.db_loader import postgres
 
+# Get eps_history data from dolthub and update to postgreSQL
 def update_earnings_data(repo_path):
+    # Get new data from dolthub
     subprocess.run(["dolt", "pull"], cwd=repo_path)
     
     query = """
@@ -27,8 +29,9 @@ def update_earnings_data(repo_path):
     
     new_data = pd.read_csv(io.StringIO(result.stdout))
 
+    # Update data to postgreSQL
     rename_map = {
-        'act_symbol': 'symbol',          #
+        'act_symbol': 'symbol',
         'period_end_date': 'period_end_date',       
         'reported': 'reported_eps',    
         'estimate': 'estimate_eps'
@@ -38,7 +41,9 @@ def update_earnings_data(repo_path):
     
     postgres.update_eps_history(new_data)
 
+# Initiate dolthub
 def setup_dolt_database():
+    # Providing identity to dolthub for fetching data
     print("Configuring Dolt identity for automated pipeline...")
     subprocess.run(["dolt", "config", "--global", "--add", "user.email", "quant_pipeline@example.com"])
     subprocess.run(["dolt", "config", "--global", "--add", "user.name", "Quant Worker"])

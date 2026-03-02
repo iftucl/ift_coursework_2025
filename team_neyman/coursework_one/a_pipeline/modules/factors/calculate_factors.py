@@ -1,5 +1,7 @@
 import numpy as np
 import pandas as pd
+from functools import reduce
+from modules.db_loader import postgres
 
 def calculate_return(data: pd.DataFrame, days: int=1):
     return data.groupby('symbol')['close_price'].transform(lambda x: np.log(x / x.shift(days))).round(6)
@@ -100,6 +102,14 @@ def calculate_price_to_weeks_high(data: pd.DataFrame, days: int=252):
     rolling_52w_high = data.groupby('symbol')['high_price'].transform(lambda x: x.rolling(window=days).max())
     return (data['close_price'] / rolling_52w_high).round(4)
 
+def calculate_ma_slope(data: pd.DataFrame, ma_days: int, window_days: int):
+    if f'ma{ma_days}' not in data.columns:
+        data[f'ma{ma_days}'] = calculate_sma(data, days=ma_days)
+    lookback_ma = data.groupby('symbol')[f'ma{ma_days}'].shift(window_days)
+    ma_slope = (data[f'ma{ma_days}'] / lookback_ma) - 1
+    return ma_slope.round(6)
+
+
 def calculate_lagged_momentum(data: pd.DataFrame, total_months: int, lag_months: int=1):
     price_start = data.groupby('symbol')['close_price'].shift(total_months*21)
     price_end = data.groupby('symbol')['close_price'].shift(lag_months*21)
@@ -186,3 +196,40 @@ def calculate_bollingner(data: pd.DataFrame, days: int = 20, num_std: int = 2):
     percent_b = (data['close_price'] - lower_band) / (upper_band - lower_band)
     
     return percent_b.round(6)
+
+def get_latest_indicators():
+    latest_ohlcv = postgres.get_latest_data("daily_ohlcv", columns=["close_price"])
+    latest_liquidity = postgres.get_latest_data("liquidity_factors", columns=["adv_20d", "addv_20d"])
+    latest_trend = postgres.get_latest_data("trend_factors", columns=["ma200", "ma200_20d_slope"])
+    latest_momentum = postgres.get_latest_data("momentum_factors", columns=["risk_adj_ret_6m"])
+    latest_risk = postgres.get_latest_data("risk_factors", columns=["vol_60d", "max_drawdown_1y", "historical_var_95_1d"])
+    latest_eps = postgres.get_latest_data("eps_history", date_col="period_end_date")
+
+    # Put the factor tables in a list so we can loop through them
+    factor_dfs = [latest_liquidity, latest_trend, latest_momentum, latest_risk]
+    
+    # Drop the redundant 'price_date' columns from the factor tables
+    for df in factor_dfs:
+        if df is not None and not df.empty and 'price_date' in df.columns:
+            df.drop(columns=['price_date'], inplace=True)
+
+    # Compile the final list of DataFrames to merge
+    all_dfs = [latest_ohlcv] + factor_dfs + [latest_eps]
+    
+    # Filter out any None or empty DataFrames just in case a database table is completely empty
+    valid_dfs = [df for df in all_dfs if df is not None and not df.empty]
+    if not valid_dfs:
+        print("Error: No data retrieved from any tables.")
+        return pd.DataFrame()
+
+    # Merge everything on 'symbol' using a LEFT JOIN
+    # This keeps every symbol in OHLCV, and attaches factors if they exist.
+    final_merged_df = reduce(
+        lambda left, right: pd.merge(left, right, on='symbol', how='left'), 
+        valid_dfs
+    )
+    print(f"Successfully merged indicators for {len(final_merged_df)} symbols.")
+
+    final_merged_df['price_above_ma200'] = final_merged_df['close_price'] > final_merged_df['ma200']
+
+    return final_merged_df
