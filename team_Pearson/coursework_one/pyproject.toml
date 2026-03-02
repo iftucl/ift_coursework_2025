@@ -22,6 +22,7 @@ minio = "^7.2.10"
 pymongo = "^4.10.1"
 requests = "^2.32.3"
 pysentiment2 = "^0.1.1"
+langid = "^1.1.6"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.3"

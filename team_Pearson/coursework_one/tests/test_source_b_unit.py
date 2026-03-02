@@ -36,6 +36,9 @@ def test_minio_config_normalizes_endpoint(monkeypatch):
 
 def test_month_helpers():
     months = source_b._month_end_dates("2026-02-14", 1)
+    assert len(months) == 12
+    assert months[0] == date(2025, 2, 28)
+    assert months[-1] == date(2026, 1, 31)
     assert months[-1] <= date(2026, 2, 14)
     months_inc = source_b._month_end_dates("2026-02-14", 0)
     assert months_inc == [date(2026, 2, 14)]

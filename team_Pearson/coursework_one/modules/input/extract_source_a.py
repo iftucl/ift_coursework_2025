@@ -12,7 +12,7 @@ import math
 import os
 import re
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from io import BytesIO
 from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
@@ -86,7 +86,7 @@ def _download_price_history(symbol: str, years_back: int, max_retries: int = 3):
 def _apply_history_window(
     history: pd.DataFrame, run_date: str, backfill_years: int
 ) -> pd.DataFrame:
-    """Trim history to [run_date - backfill_window, run_date]. backfill_years=0 => run_date only."""
+    """Trim history to rolling-month window ending at run_date."""
     if history is None or history.empty:
         return history
 
@@ -96,8 +96,7 @@ def _apply_history_window(
         idx = idx.tz_convert(None)
 
     end_ts = pd.Timestamp(run_date)
-    lookback_days = max(0, int(round(365.25 * max(int(backfill_years), 0))))
-    start_ts = end_ts - pd.Timedelta(days=lookback_days)
+    start_ts = pd.Timestamp(_rolling_window_start_date(run_date, backfill_years))
     mask = (idx >= start_ts) & (idx <= end_ts)
     return frame.loc[mask]
 
@@ -249,13 +248,37 @@ def _parse_iso_date(value: Any) -> Optional[datetime]:
         return None
 
 
+def _shift_months(d: datetime, months: int) -> datetime:
+    """Shift by calendar months with day clamped to month-end."""
+    total = d.year * 12 + (d.month - 1) + months
+    year = total // 12
+    month = (total % 12) + 1
+    first_of_target = datetime(year, month, 1)
+    if month == 12:
+        next_month = datetime(year + 1, 1, 1)
+    else:
+        next_month = datetime(year, month + 1, 1)
+    month_end_day = (next_month - timedelta(days=1)).day
+    day = min(d.day, month_end_day)
+    return first_of_target.replace(day=day)
+
+
+def _rolling_window_start_date(run_date: str, backfill_years: int) -> str:
+    run_dt = _parse_iso_date(run_date)
+    if run_dt is None:
+        return run_date
+    months = 12 * max(int(backfill_years), 0)
+    return _shift_months(run_dt, -months).strftime("%Y-%m-%d")
+
+
 def _in_backfill_window(report_date: Any, run_date: str, backfill_years: int) -> bool:
     report_dt = _parse_iso_date(report_date)
     run_dt = _parse_iso_date(run_date)
     if report_dt is None or run_dt is None:
         return False
-    lookback_days = max(0, int(round(365.25 * max(int(backfill_years), 0))))
-    start_dt = run_dt - pd.Timedelta(days=lookback_days)
+    start_dt = _parse_iso_date(_rolling_window_start_date(run_date, backfill_years))
+    if start_dt is None:
+        return False
     return start_dt <= report_dt <= run_dt
 
 

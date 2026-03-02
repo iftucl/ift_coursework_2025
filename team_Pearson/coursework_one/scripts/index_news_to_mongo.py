@@ -17,11 +17,23 @@ from minio import Minio
 from pymongo import MongoClient, UpdateOne
 from pymongo.collection import Collection
 
+from modules.utils.env import load_dotenv_if_exists
+
+try:
+    import langid  # type: ignore
+
+    _LANGID_AVAILABLE = True
+except Exception:  # pragma: no cover - optional runtime dependency fallback
+    langid = None
+    _LANGID_AVAILABLE = False
+
 DEFAULT_COLLECTION = "news_articles"
 DEFAULT_MINIO_PREFIX = "raw/source_b/news/"
 SYMBOL_IN_OBJECT_RE = re.compile(r"/symbol=([^/]+)(?:/|\.jsonl$)")
+RUN_DATE_IN_OBJECT_RE = re.compile(r"/run_date=(\d{4}-\d{2}-\d{2})/")
 MAX_TITLE_LEN = 1024
 MAX_SUMMARY_LEN = 8192
+MIN_LANG_TEXT_LEN = 20
 
 logger = logging.getLogger(__name__)
 
@@ -186,8 +198,12 @@ def _ensure_indexes(coll: Collection) -> None:
         name="idx_text_title_summary",
     )
     coll.create_index([("time_published", 1)], name="idx_time_published")
-    coll.create_index([("tickers", 1)], name="idx_tickers")
     coll.create_index([("url", 1)], name="idx_url_unique", unique=True, sparse=True)
+    coll.create_index([("last_seen_run_date", 1)], name="idx_last_seen_run_date")
+    coll.create_index(
+        [("last_seen_run_date", 1), ("time_published", -1)],
+        name="idx_last_seen_run_date_time_published_desc",
+    )
     logger.info("mongo_indexes ensure_done collection=%s", coll.name)
 
 
@@ -226,6 +242,13 @@ def _parse_symbol_from_object_name(object_name: str) -> str:
     return str(match.group(1)).strip().upper()
 
 
+def _parse_run_date_from_object_name(object_name: str) -> str:
+    match = RUN_DATE_IN_OBJECT_RE.search(object_name)
+    if not match:
+        return ""
+    return str(match.group(1)).strip()
+
+
 def _parse_optional_dt(value: str) -> datetime | None:
     raw = str(value or "").strip()
     if not raw:
@@ -244,6 +267,20 @@ def _truncate_text(value: str, max_len: int) -> str:
     if len(text) <= max_len:
         return text
     return text[:max_len]
+
+
+def _infer_language(text: str) -> tuple[str | None, float | None]:
+    """Infer language via langid; return (lang, confidence) or (None, None)."""
+    if not _LANGID_AVAILABLE:
+        return None, None
+    compact = " ".join(str(text or "").split())
+    if len(compact) < MIN_LANG_TEXT_LEN:
+        return None, None
+    try:
+        lang, score = langid.classify(compact)  # type: ignore[attr-defined]
+        return str(lang).strip().lower() or None, float(score)
+    except Exception:
+        return None, None
 
 
 def _build_query_prefix(base_prefix: str, run_date: str | None) -> str:
@@ -265,6 +302,7 @@ def index_news(
     since_dt: datetime | None,
     until_dt: datetime | None,
     dry_run: bool,
+    run_date: str | None,
 ) -> dict[str, int]:
     stats = {
         "objects_scanned": 0,
@@ -305,7 +343,7 @@ def index_news(
                 source = str(row.get("source") or "").strip()
                 title = _truncate_text(row.get("title") or "", MAX_TITLE_LEN)
                 summary = _truncate_text(row.get("summary") or "", MAX_SUMMARY_LEN)
-                lang = str(row.get("lang") or "unknown").strip().lower() or "unknown"
+                lang_raw = str(row.get("lang") or "").strip().lower()
                 time_raw = str(
                     row.get("time_published") or row.get("time_published_utc") or ""
                 ).strip()
@@ -324,6 +362,21 @@ def index_news(
                         stats["articles_filtered_by_time"] += 1
                         continue
                 tickers = _extract_tickers(row, object_symbol=object_symbol)
+                effective_run_date = str(run_date or "").strip()
+                if not effective_run_date:
+                    effective_run_date = _parse_run_date_from_object_name(object_name)
+                infer_text = (title + "\n" + summary).strip()
+                inferred_lang, inferred_score = _infer_language(infer_text)
+
+                if lang_raw:
+                    lang = lang_raw
+                    lang_source = "raw"
+                elif inferred_lang:
+                    lang = inferred_lang
+                    lang_source = "inferred"
+                else:
+                    lang = "unknown"
+                    lang_source = "unknown"
 
                 doc: dict[str, Any] = {
                     "_id": doc_id,
@@ -334,12 +387,24 @@ def index_news(
                     "summary": summary,
                     "topics": _extract_topics(row.get("topics")),
                     "lang": lang,
+                    "lang_raw": lang_raw or None,
+                    "lang_inferred": inferred_lang,
+                    "lang_infer_confidence": inferred_score,
+                    "lang_source": lang_source,
                     "ingested_at": datetime.now(UTC),
+                    "last_seen_run_date": effective_run_date or None,
                 }
                 ops.append(
                     UpdateOne(
                         {"_id": doc_id},
-                        {"$set": doc, "$addToSet": {"tickers": {"$each": tickers}}},
+                        {
+                            "$set": doc,
+                            "$setOnInsert": {"first_seen_run_date": effective_run_date or None},
+                            "$addToSet": {
+                                "tickers": {"$each": tickers},
+                                "minio_object_keys": object_name,
+                            },
+                        },
                         upsert=True,
                     )
                 )
@@ -418,7 +483,11 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> int:
     args = build_parser().parse_args()
+    project_root = Path(__file__).resolve().parents[1]
+    load_dotenv_if_exists(project_root / ".env")
     _configure_logging(args.log_level)
+    if not _LANGID_AVAILABLE:
+        logger.warning("langid_unavailable language_inference_disabled fallback=unknown")
     try:
         minio_cfg, mongo_cfg = _resolve_config(args.config)
         minio_client, bucket = _build_minio_client(minio_cfg)
@@ -442,6 +511,7 @@ def main() -> int:
             since_dt=since_dt,
             until_dt=until_dt,
             dry_run=bool(args.dry_run),
+            run_date=args.run_date,
         )
         print(
             json.dumps(

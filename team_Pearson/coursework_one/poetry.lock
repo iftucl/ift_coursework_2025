@@ -1115,6 +1115,20 @@ files = [
 ]
 
 [[package]]
+name = "langid"
+version = "1.1.6"
+description = "langid.py is a standalone Language Identification (LangID) tool."
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "langid-1.1.6.tar.gz", hash = "sha256:044bcae1912dab85c33d8e98f2811b8f4ff1213e5e9a9e9510137b84da2cb293"},
+]
+
+[package.dependencies]
+numpy = "*"
+
+[[package]]
 name = "markdown-it-py"
 version = "3.0.0"
 description = "Python port of markdown-it. Markdown parsing, done right!"
@@ -3063,4 +3077,4 @@ repair = ["scipy (>=1.6.3)"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "f325eda89b122b03f60610327004edcda8c267c40884cc93dbd723c417057929"
+content-hash = "f5a926bfedcfc8b759e97cd889b885305c91c324229cd62494d6ce85f6b0dfe8"

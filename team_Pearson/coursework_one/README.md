@@ -233,13 +233,16 @@ mc anonymous set public minio/csreport"
 ```
 
 Configuration precedence:
-- `Main.py` auto-loads local `.env` before reading config.
-- Unified precedence for pipeline behavior parameters (`frequency`, `backfill_years`, `company_limit`, `enabled_extractors`):
+- Pipeline behavior parameters (`frequency`, `backfill_years`, `company_limit`, `enabled_extractors`) use:
   1. CLI arguments
-  2. ENV (for example `PIPELINE_FREQUENCY`)
-  3. `config/conf.yaml`
+  2. OS env (including values loaded from `.env`)
+  3. `config/conf.yaml` defaults
   4. built-in defaults
-- Runtime connection/secrets should come from ENV (`.env` / deployment env vars).
+- Connection/secrets (for example `POSTGRES_*`, `MONGO_*`, `MINIO_*`, API keys) use:
+  1. OS env
+  2. `.env`
+  3. `config/conf.yaml` defaults
+- `.env` is loaded by entry scripts via `modules/utils/env.py` with non-override semantics for existing OS env.
 - Alpha Vantage key resolver order:
   1. `ALPHA_VANTAGE_API_KEY`
   2. `ALPHA_VANTAGE_KEY`
@@ -264,7 +267,7 @@ cp .env.example .env
 ## CLI parameters
 - `--run-date` (required): decision date in `YYYY-MM-DD`
 - `--frequency` (required): schedule/output mode `daily|weekly|monthly|quarterly|annual`
-- `--backfill-years` (optional): history length, default from config
+- `--backfill-years` (optional): rolling lookback window in years (for example `1` = previous 12 months from `run_date`)
 - `--company-limit` (optional): universe size cap, default from config
 - `--dry-run` (optional): run pipeline without final load
 - `--enabled-extractors` (optional): comma-separated extractor list, e.g. `source_a` or `source_a,source_b`
@@ -338,6 +341,23 @@ cd team_Pearson/coursework_one
 poetry run python scripts/run_scheduled_pipeline.py
 ```
 
+Pipeline orchestration command (manual or scheduler target):
+
+```bash
+cd team_Pearson/coursework_one
+poetry run python scripts/run_pipeline_and_index.py --run-date 2026-02-14 --frequency daily
+```
+
+Optional Mongo index build (best-effort):
+- enable with `--index-mongo`
+- if Mongo indexing fails, pipeline still returns success
+- default remains disabled to avoid turning Mongo into a hard dependency
+
+```bash
+cd team_Pearson/coursework_one
+poetry run python scripts/run_pipeline_and_index.py --run-date 2026-02-14 --frequency daily --index-mongo
+```
+
 Trigger rules:
 - every day: run `daily` only
 - `monthly` / `quarterly`: manual replay only via `--only`
@@ -346,6 +366,12 @@ Dry-run plan check:
 ```bash
 cd team_Pearson/coursework_one
 poetry run python scripts/run_scheduled_pipeline.py --plan-only
+```
+
+Plan check with optional Mongo indexing flag:
+```bash
+cd team_Pearson/coursework_one
+poetry run python scripts/run_scheduled_pipeline.py --plan-only --index-mongo
 ```
 
 Force specific frequencies for manual replay (not part of cron default):
@@ -429,18 +455,34 @@ From `team_Pearson/coursework_one`:
 poetry run python scripts/index_news_to_mongo.py --run-date 2026-02-14 --since 2026-01-01 --until 2026-03-01
 ```
 
+Or run in one orchestrated command (pipeline first, then optional index):
+
+```bash
+poetry run python scripts/run_pipeline_and_index.py --run-date 2026-02-14 --frequency daily --index-mongo
+```
+
 Key behavior:
 - Dedup `_id` strategy:
-  - Primary: `sha1(url)`
-  - Fallback when URL is missing: `sha1(source|time_published|normalized_title)`
+  - Primary: `sha256(url)`
+  - Fallback when URL is missing: `sha256(source|time_published|normalized_title)`
 - Upsert merge strategy:
   - `UpdateOne(..., upsert=True)` + `$addToSet: {tickers: {$each: [...]}}`
   - Ensures global uniqueness and ticker mapping without duplicates
+- Run-level traceability fields in Mongo documents:
+  - `first_seen_run_date`: first run date where this article was indexed
+  - `last_seen_run_date`: latest run date where this article was seen
+  - `minio_object_keys`: deduplicated raw object key list for source traceability
+- Language fields in Mongo documents:
+  - `lang`: effective language used by queries
+  - `lang_raw`: raw provider language tag when available
+  - `lang_inferred`: inferred by `langid` when raw language is missing
+  - `lang_source`: `raw|inferred|unknown`
 - Required indexes are created automatically:
   - text index: `title + summary`
   - time index: `time_published`
-  - array index: `tickers`
   - sparse unique index: `url`
+  - run index: `last_seen_run_date`
+  - run+time index: `last_seen_run_date + time_published(desc)`
 
 ### Search API via CLI
 From `team_Pearson/coursework_one`:
@@ -493,16 +535,17 @@ Quick checks for Source B raw objects (`symbol x month` JSONL):
 ```bash
 cd team_Pearson/coursework_one
 
-# 1) List monthly raw objects for a run date/year/month
-docker exec -it minio_client_cw sh -lc '
-mc alias set cw http://miniocw:9000 ift_bigdata minio_password >/dev/null &&
-mc ls --recursive cw/csreport/raw/source_b/news/run_date=2026-02-14/year=2026/month=02/
-'
+# Recommended one-command verifier (auto-detects mc binary path in container)
+./scripts/verify_minio.sh 2026-02-14 AAPL
+```
 
-# 2) View first 5 lines from one object (JSONL, one article per line)
+Equivalent ad-hoc command (auto-detect `mc` path):
+
+```bash
 docker exec -it minio_client_cw sh -lc '
-mc alias set cw http://miniocw:9000 ift_bigdata minio_password >/dev/null &&
-mc cat cw/csreport/raw/source_b/news/run_date=2026-02-14/year=2026/month=02/symbol=AAPL.jsonl | head -n 5
+MC_BIN="$(command -v mc || echo /usr/bin/mc)";
+$MC_BIN alias set cw http://miniocw:9000 ift_bigdata minio_password >/dev/null &&
+$MC_BIN ls --recursive cw/csreport/raw/source_b/news/run_date=2026-02-14/year=2026/month=02/
 '
 ```
 

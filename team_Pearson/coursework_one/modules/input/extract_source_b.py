@@ -13,6 +13,7 @@ import os
 import re
 import time
 from datetime import date, datetime
+from datetime import timedelta
 from io import BytesIO
 from typing import Any, Dict, Iterable, List, Optional
 from urllib.parse import urlparse
@@ -152,20 +153,33 @@ def _month_end_dates(run_date: str, backfill_years: int) -> List[date]:
     years = int(backfill_years)
     if years <= 0:
         return [end]
-    start_year = end.year - years + 1
+    start = _shift_months_date(end, -(12 * years))
     months: List[date] = []
-
-    cur = date(start_year, 1, 1)
+    cur = date(start.year, start.month, 1)
     while cur <= end:
         if cur.month == 12:
             next_month = date(cur.year + 1, 1, 1)
         else:
             next_month = date(cur.year, cur.month + 1, 1)
         month_end = next_month.fromordinal(next_month.toordinal() - 1)
-        if month_end <= end:
+        if start <= month_end <= end:
             months.append(month_end)
         cur = next_month
     return months
+
+
+def _shift_months_date(d: date, months: int) -> date:
+    """Shift date by calendar months, clamping day to month-end."""
+    total = d.year * 12 + (d.month - 1) + months
+    year = total // 12
+    month = (total % 12) + 1
+    first_of_target = date(year, month, 1)
+    if month == 12:
+        next_month = date(year + 1, 1, 1)
+    else:
+        next_month = date(year, month + 1, 1)
+    month_end_day = (next_month - timedelta(days=1)).day
+    return first_of_target.replace(day=min(d.day, month_end_day))
 
 
 def _month_time_range(month_end: date) -> tuple[str, str]:

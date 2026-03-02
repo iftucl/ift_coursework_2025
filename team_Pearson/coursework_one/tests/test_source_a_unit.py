@@ -38,6 +38,17 @@ def test_extract_total_debt_missing_returns_none():
     assert source_a._extract_total_debt(_FakeTickerNoDebt()) is None
 
 
+def test_rolling_window_start_date_is_12_months():
+    assert source_a._rolling_window_start_date("2026-03-02", 1) == "2025-03-02"
+    assert source_a._rolling_window_start_date("2026-03-31", 1) == "2025-03-31"
+    assert source_a._rolling_window_start_date("2026-02-14", 0) == "2026-02-14"
+
+
+def test_in_backfill_window_uses_rolling_month_window():
+    assert source_a._in_backfill_window("2025-03-31", "2026-03-02", 1)
+    assert not source_a._in_backfill_window("2025-02-28", "2026-03-02", 1)
+
+
 def test_extract_fundamentals_from_yfinance_ticker():
     class _T:
         def __init__(self):

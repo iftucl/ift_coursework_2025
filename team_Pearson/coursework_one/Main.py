@@ -6,9 +6,11 @@ import traceback
 import uuid
 from dataclasses import asdict, dataclass
 from datetime import date, datetime, timedelta, timezone
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from modules.utils.args_parser import ALLOWED_FREQUENCIES, build_parser
+from modules.utils.env import load_dotenv_if_exists
 
 try:
     import yaml
@@ -94,27 +96,8 @@ def load_yaml(path: str) -> Dict[str, Any]:
 
 
 def _load_dotenv(path: str) -> None:
-    """Load .env key/value pairs without overriding existing process env."""
-    if not path or not os.path.exists(path):
-        return
-    with open(path, "r", encoding="utf-8") as f:
-        for raw_line in f:
-            line = raw_line.strip()
-            if not line or line.startswith("#"):
-                continue
-            if line.startswith("export "):
-                line = line[len("export ") :].strip()
-            if "=" not in line:
-                continue
-            key, value = line.split("=", 1)
-            key = key.strip()
-            if not key:
-                continue
-            value = value.strip()
-            if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
-                value = value[1:-1]
-            if os.getenv(key) in (None, ""):
-                os.environ[key] = value
+    """Backward-compatible wrapper for tests; delegates to shared env loader."""
+    load_dotenv_if_exists(path)
 
 
 def _sanitize_alpha_key(value: Any) -> str:
@@ -439,7 +422,8 @@ def resolve_paths(base_dir: str, config_path: str) -> str:
 
 
 def resolve_runtime(base_dir: str, args: Any) -> Optional[RunContext]:
-    _load_dotenv(os.path.join(base_dir, ".env"))
+    project_root = Path(__file__).resolve().parent
+    load_dotenv_if_exists(project_root / ".env")
     cfg_path = resolve_paths(base_dir, args.config)
     cfg = load_yaml(cfg_path)
     env_defaults_status = apply_env_defaults_from_config(cfg)
