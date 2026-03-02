@@ -7,7 +7,7 @@ readme = "README.md"
 package-mode = false
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.11"
 
 # Database connectors
 psycopg2-binary = "^2.9"
@@ -18,8 +18,8 @@ sqlalchemy = "^2.0"
 minio = "^7.2"
 
 # Data processing
-pandas = "^2.1"
-numpy = "^1.26"
+pandas = "^2.2"
+numpy = "^2.1"
 
 # HTTP / data ingestion
 requests = "^2.31"
@@ -64,6 +64,7 @@ line_length = 88
 
 [tool.pytest.ini_options]
 testpaths = ["test"]
+pythonpath = ["."]
 addopts = "--cov=. --cov-report=term-missing --cov-fail-under=80"
 
 [tool.bandit]
