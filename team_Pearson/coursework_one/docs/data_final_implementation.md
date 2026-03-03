@@ -68,29 +68,30 @@ Cadence definitions:
 - `run cadence`: how often pipeline is triggered (default daily, configurable)
 
 Run cadence note:
-- all metrics in this table are produced when the pipeline runs; run cadence is controlled globally by runtime args/config (default daily).
+- atomic collection currently runs with daily cadence in the main pipeline (`collect_raw_records` runtime path).
+- this does not force all atomics to daily semantics (financial atomics remain filing-period based), and `output_frequency` only controls final-factor sampling.
 
 | Metric | Source cadence | Output cadence | Meaning / Formula | Key rules |
 | --- | --- | --- | --- | --- |
-| `adjusted_close_price` | daily market trading | daily | adjusted close | raw market atomic |
-| `daily_return` | daily market trading | daily | `ln(P_t/P_{t-1})` | null when invalid/missing `P_t` or `P_{t-1}` |
-| `dividend_per_share` | daily market series (mostly 0; non-zero on dividend dates) | daily stream | provider dividend amount from daily price history row | raw market atomic |
-| `total_debt` | quarterly filings | stored in financial atomics | provider-reported debt | financial atomic |
-| `total_shareholder_equity` | quarterly filings | stored in financial atomics | provider-reported equity | financial atomic |
-| `book_value` | quarterly filings | stored in financial atomics | provider/derived book value | stored as `NUMERIC(18,6)` |
-| `shares_outstanding` | quarterly filings | stored in financial atomics | provider-reported shares | financial atomic |
-| `enterprise_ebitda` | quarterly filings | stored in financial atomics | provider EBITDA field | financial atomic |
-| `enterprise_revenue` | quarterly filings | stored in financial atomics | provider revenue field | financial atomic |
-| `momentum_1m` | from daily prices | daily | `close/close.shift(20)-1` | 20-trading-day lag |
-| `volatility_20d` | from daily prices | daily | rolling 20-day std of returns | requires enough history |
-| `dividend_yield` | dividends + price | daily as-of | trailing 365-day DPS sum / price | price lookback <= 3 trading days |
-| `pb_ratio` | filings + price | daily as-of | `(price*shares_outstanding)/total_shareholder_equity` | per-symbol 252-bday rolling winsor, staleness 270/365 |
-| `debt_to_equity` | filings | daily as-of | `total_debt/total_shareholder_equity` | staleness 270/365, equity > 0 |
-| `ebitda_margin` | filings | daily as-of | `enterprise_ebitda/enterprise_revenue` | staleness 270/365, revenue > 0 |
-| `news_sentiment_daily` | daily news flow | daily | article sentiment daily mean | score clipped to `[-1,1]` |
-| `news_article_count_daily` | daily news flow | daily | daily article count | non-negative count |
-| `sentiment_30d_avg` | from news atomics | daily | rolling `30D` mean of daily sentiment | no-news days zero-filled |
-| `article_count_30d` | from news atomics | daily | rolling `30D` sum of daily counts | no-news days zero-filled |
+| `adjusted_close_price` | daily market trading | daily | adjusted close price | `atomic_market`; provider-aligned daily row |
+| `daily_return` | daily market trading | daily | `ln(P_t/P_{t-1})` | `atomic_market`; null when invalid/missing `P_t` or `P_{t-1}` |
+| `dividend_per_share` | daily market series (mostly 0; non-zero on dividend dates) | daily | provider dividend amount from daily price history row | `atomic_market`; provider-aligned daily row |
+| `total_debt` | quarterly filings | quarterly snapshot in `financial_observations` | provider-reported debt | `atomic_financial`; keyed by `symbol+report_date+metric_name` |
+| `total_shareholder_equity` | quarterly filings | quarterly snapshot in `financial_observations` | provider-reported equity | `atomic_financial`; keyed by `symbol+report_date+metric_name` |
+| `book_value` | quarterly filings | quarterly snapshot in `financial_observations` | provider/derived book value | `atomic_financial`; stored as `NUMERIC(18,6)` |
+| `shares_outstanding` | quarterly filings | quarterly snapshot in `financial_observations` | provider-reported shares | `atomic_financial`; keyed by `symbol+report_date+metric_name` |
+| `enterprise_ebitda` | quarterly filings | quarterly snapshot in `financial_observations` | provider EBITDA field | `atomic_financial`; keyed by `symbol+report_date+metric_name` |
+| `enterprise_revenue` | quarterly filings | quarterly snapshot in `financial_observations` | provider revenue field | `atomic_financial`; keyed by `symbol+report_date+metric_name` |
+| `momentum_1m` | derived from daily prices | daily | `close/close.shift(20)-1` | `final_factor`; requires enough price history |
+| `volatility_20d` | derived from daily prices | daily | rolling 20-day std of returns | `final_factor`; requires enough price history |
+| `dividend_yield` | derived from dividends + prices | daily as-of | trailing 365-day DPS sum / price | `final_factor`; price lookback <= 3 trading days |
+| `pb_ratio` | derived from filings + prices | daily as-of | `(price*shares_outstanding)/total_shareholder_equity` | `final_factor`; per-symbol 252-bday rolling winsor + staleness 270/365 |
+| `debt_to_equity` | derived from filings | daily as-of | `total_debt/total_shareholder_equity` | `final_factor`; staleness 270/365, equity > 0 |
+| `ebitda_margin` | derived from filings | daily as-of | `enterprise_ebitda/enterprise_revenue` | `final_factor`; staleness 270/365, revenue > 0 |
+| `news_sentiment_daily` | daily news flow | daily | daily mean sentiment score from article text | `atomic_news`; score clipped to `[-1,1]` |
+| `news_article_count_daily` | daily news flow | daily | daily article count | `atomic_news`; non-negative count |
+| `sentiment_30d_avg` | derived from `atomic_news` | daily | rolling `30D` mean of daily sentiment | `final_factor`; no-news calendar days zero-filled |
+| `article_count_30d` | derived from `atomic_news` | daily | rolling `30D` sum of daily counts | `final_factor`; no-news calendar days zero-filled; not used as a direct trading signal in the current strategy |
 
 ---
 
@@ -121,16 +122,30 @@ PB winsorization (exact current logic):
 - else: fallback cap `100.0`
 
 Sentiment-specific (implemented):
+- Source B extraction scheduling is month-window based, but not full historical re-fetch on every run:
+  - runs iterate month windows in the backfill horizon
+  - open months use incremental `fetch_start/fetch_end`
+  - closed months (`is_closed=true`) are skipped
 - default timestamp policy may fallback missing article time to a default date
 - strict mode (`source_b.strict_time=true`) drops missing-time rows
 - rolling `30D` signals are built after calendar-day zero-fill
 - Source B ingestion uses incremental fetch with lookback buffer (`SOURCE_B_INCREMENTAL_BUFFER_DAYS`, default `3`)
 - cursor key is per `symbol + year-month`, stored as `raw/source_b/news_cursor/.../symbol=...json`
-- cursor field: `last_ingested_date` (ISO date)
+- cursor fields: `last_ingested_date` (ISO date) and `is_closed` (bool)
 - fetch window each run:
   - `fetch_start = month_start` when cursor missing
+  - for the first backfill month with no cursor, `fetch_start = max(month_start, backfill_start_date)`
   - otherwise `fetch_start = max(month_start, last_ingested_date - buffer_days)`
   - `fetch_end = min(month_end, run_date)`
+- month-close freeze:
+  - when `last_ingested_date >= month_end`, cursor is saved with `is_closed=true`
+  - subsequent daily runs skip closed months (no repeated buffer re-fetch)
+- merged month-current view:
+  - current-month merged view is stored under `raw/source_b/news_current/...`
+  - each run merges newly fetched records with existing month records using dedupe+overwrite
+  - run snapshots under `raw/source_b/news/run_date=...` are still preserved for replay/audit
+- missing-time fallback uses `fetch_start` (then `month_start`, then legacy `month_end`) instead of `fetch_end`
+- transformed atomic outputs remain daily (`news_sentiment_daily`, `news_article_count_daily`)
 - raw snapshots remain partitioned by `run_date` under `raw/source_b/news/...` for replay/audit traceability
 
 ### 4.1 Missing-Value and Validity Handling (Code-Aligned)

@@ -203,6 +203,15 @@ def _date_time_range(start_date: date, end_date: date) -> tuple[str, str]:
     )
 
 
+def _natural_month_end(month_start: date) -> date:
+    """Return the natural month-end for a given month-start date."""
+    if month_start.month == 12:
+        next_month = date(month_start.year + 1, 1, 1)
+    else:
+        next_month = date(month_start.year, month_start.month + 1, 1)
+    return next_month - timedelta(days=1)
+
+
 def _month_windows(run_date: str, backfill_years: int) -> List[tuple[date, date]]:
     """Return month windows as (month_start, fetch_end<=run_date) covering backfill horizon."""
     end = datetime.strptime(run_date, "%Y-%m-%d").date()
@@ -234,6 +243,14 @@ def _raw_object_path(symbol: str, run_date: str, month_end: date) -> str:
     year = month_end.strftime("%Y")
     return (
         "raw/source_b/news/" f"run_date={run_date}/year={year}/month={month}/symbol={symbol}.jsonl"
+    )
+
+
+def _monthly_current_object_path(symbol: str, month_start: date) -> str:
+    """Build stable object key for merged current-month Source B JSONL."""
+    return (
+        "raw/source_b/news_current/"
+        f"year={month_start.strftime('%Y')}/month={month_start.strftime('%m')}/symbol={symbol}.jsonl"
     )
 
 
@@ -285,6 +302,88 @@ def _save_raw_to_minio(
         logger.warning("source_b raw archive skipped for %s %s: %r", symbol, month_end, exc)
 
 
+def _load_current_month_articles(
+    config: Optional[Dict[str, Any]],
+    symbol: str,
+    month_start: date,
+) -> List[Dict[str, Any]]:
+    """Load merged current-month Source B records from MinIO JSONL."""
+    minio_cfg = _minio_config(config)
+    required = ["endpoint", "access_key", "secret_key", "bucket"]
+    if not all(minio_cfg.get(k) for k in required):
+        return []
+
+    try:
+        from minio import Minio
+
+        client = Minio(
+            endpoint=minio_cfg["endpoint"],
+            access_key=minio_cfg["access_key"],
+            secret_key=minio_cfg["secret_key"],
+            secure=minio_cfg.get("secure", False),
+        )
+        obj = client.get_object(minio_cfg["bucket"], _monthly_current_object_path(symbol, month_start))
+        try:
+            data = obj.read().decode("utf-8")
+        finally:
+            obj.close()
+            obj.release_conn()
+    except Exception:
+        return []
+
+    records: List[Dict[str, Any]] = []
+    for line in data.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            parsed = json.loads(line)
+        except Exception:
+            continue
+        if isinstance(parsed, dict):
+            records.append(_normalize_article(parsed))
+    return records
+
+
+def _save_current_month_articles(
+    config: Optional[Dict[str, Any]],
+    symbol: str,
+    month_start: date,
+    articles: List[Dict[str, Any]],
+) -> None:
+    """Persist merged current-month Source B records as stable JSONL."""
+    minio_cfg = _minio_config(config)
+    required = ["endpoint", "access_key", "secret_key", "bucket"]
+    if not all(minio_cfg.get(k) for k in required):
+        return
+
+    try:
+        from minio import Minio
+
+        client = Minio(
+            endpoint=minio_cfg["endpoint"],
+            access_key=minio_cfg["access_key"],
+            secret_key=minio_cfg["secret_key"],
+            secure=minio_cfg.get("secure", False),
+        )
+        bucket = minio_cfg["bucket"]
+        if not client.bucket_exists(bucket):
+            client.make_bucket(bucket)
+
+        key = _monthly_current_object_path(symbol, month_start)
+        jsonl = "\n".join(json.dumps(a, ensure_ascii=False) for a in articles)
+        data = jsonl.encode("utf-8")
+        client.put_object(
+            bucket,
+            key,
+            data=BytesIO(data),
+            length=len(data),
+            content_type="application/json",
+        )
+    except Exception as exc:  # pragma: no cover - external service dependent
+        logger.warning("source_b current-month save skipped for %s %s: %r", symbol, month_start, exc)
+
+
 def _load_month_cursor(config: Optional[Dict[str, Any]], symbol: str, month_start: date) -> Optional[date]:
     """Load last_ingested_date for one symbol-month cursor from MinIO."""
     minio_cfg = _minio_config(config)
@@ -319,11 +418,48 @@ def _load_month_cursor(config: Optional[Dict[str, Any]], symbol: str, month_star
         return None
 
 
+def _load_month_cursor_closed(
+    config: Optional[Dict[str, Any]], symbol: str, month_start: date
+) -> bool:
+    """Load optional is_closed flag for one symbol-month cursor from MinIO."""
+    minio_cfg = _minio_config(config)
+    required = ["endpoint", "access_key", "secret_key", "bucket"]
+    if not all(minio_cfg.get(k) for k in required):
+        return False
+
+    try:
+        from minio import Minio
+
+        client = Minio(
+            endpoint=minio_cfg["endpoint"],
+            access_key=minio_cfg["access_key"],
+            secret_key=minio_cfg["secret_key"],
+            secure=minio_cfg.get("secure", False),
+        )
+        obj = client.get_object(minio_cfg["bucket"], _cursor_object_path(symbol, month_start))
+        try:
+            payload = json.loads(obj.read().decode("utf-8"))
+        finally:
+            obj.close()
+            obj.release_conn()
+    except Exception:
+        return False
+
+    raw = (payload or {}).get("is_closed", False)
+    if isinstance(raw, bool):
+        return raw
+    if isinstance(raw, str):
+        return raw.strip().lower() in {"1", "true", "yes", "on"}
+    return bool(raw)
+
+
 def _save_month_cursor(
     config: Optional[Dict[str, Any]],
     symbol: str,
     month_start: date,
     last_ingested_date: date,
+    *,
+    is_closed: bool = False,
 ) -> None:
     """Persist/update last_ingested_date cursor for one symbol-month."""
     minio_cfg = _minio_config(config)
@@ -335,6 +471,7 @@ def _save_month_cursor(
         "symbol": symbol,
         "month_start": month_start.isoformat(),
         "last_ingested_date": last_ingested_date.isoformat(),
+        "is_closed": bool(is_closed),
         "updated_at": datetime.utcnow().isoformat(),
     }
 
@@ -366,6 +503,7 @@ def _save_month_cursor(
 def _normalize_article(article: Dict[str, Any]) -> Dict[str, Any]:
     """Keep only required raw fields for lightweight monthly JSONL objects."""
     return {
+        "article_id": str(article.get("article_id") or article.get("id") or ""),
         "time_published": str(article.get("time_published") or ""),
         "title": str(article.get("title") or ""),
         "summary": str(article.get("summary") or ""),
@@ -377,13 +515,20 @@ def _normalize_article(article: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _article_dedupe_key(article: Dict[str, Any]) -> str:
-    """Build article dedupe key: URL first, fallback to title+timestamp."""
+    """Build article dedupe key: article_id -> url -> source+title+date."""
+    article_id = str(article.get("article_id") or article.get("id") or "").strip()
+    if article_id:
+        return f"article_id:{article_id.lower()}"
+
     url = str(article.get("url") or "").strip().lower()
     if url:
         return f"url:{url}"
+
     ts = str(article.get("time_published") or "").strip()
+    pub_date = ts[:8] if len(ts) >= 8 and ts[:8].isdigit() else ""
+    source = str(article.get("source") or article.get("source_name") or "").strip().lower()
     title = str(article.get("title") or "").strip().lower()
-    return f"title_ts:{title}|{ts}"
+    return f"src_title_date:{source}|{title}|{pub_date}"
 
 
 def _dedupe_articles(feed: Iterable[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -398,6 +543,21 @@ def _dedupe_articles(feed: Iterable[Dict[str, Any]]) -> List[Dict[str, Any]]:
         seen.add(key)
         out.append(article)
     return out
+
+
+def _merge_month_articles(
+    existing_articles: Iterable[Dict[str, Any]],
+    incoming_articles: Iterable[Dict[str, Any]],
+) -> List[Dict[str, Any]]:
+    """Merge existing+incoming month records with incoming overwrite on dedupe-key match."""
+    merged: Dict[str, Dict[str, Any]] = {}
+    for article in existing_articles:
+        normalized = _normalize_article(article)
+        merged[_article_dedupe_key(normalized)] = normalized
+    for article in incoming_articles:
+        normalized = _normalize_article(article)
+        merged[_article_dedupe_key(normalized)] = normalized
+    return list(merged.values())
 
 
 def _fetch_news_for_month(symbol: str, month_end: date, api_key: str) -> Dict[str, Any]:
@@ -525,6 +685,9 @@ def ingest_source_b_raw(
 
     windows = _month_windows(run_date, backfill_years)
     run_dt = datetime.strptime(run_date, "%Y-%m-%d").date()
+    years = int(backfill_years)
+    backfill_start_date = run_dt if years <= 0 else _shift_months_date(run_dt, -(12 * years))
+    first_month_start = windows[0][0] if windows else None
     buffer_days = max(0, int(SOURCE_B_INCREMENTAL_BUFFER_DAYS))
     target_symbols = _filter_symbols_for_source_b(symbols, config)
     if not target_symbols:
@@ -536,9 +699,14 @@ def ingest_source_b_raw(
     for symbol in target_symbols:
         for month_start, fetch_end in windows:
             try:
+                if _load_month_cursor_closed(config, symbol, month_start):
+                    continue
+
                 last_ingested = _load_month_cursor(config, symbol, month_start)
                 if last_ingested is None:
                     fetch_start = month_start
+                    if first_month_start is not None and month_start == first_month_start:
+                        fetch_start = max(fetch_start, backfill_start_date)
                 else:
                     fetch_start = max(month_start, last_ingested - timedelta(days=buffer_days))
 
@@ -549,14 +717,28 @@ def ingest_source_b_raw(
                 payload = _fetch_news_for_range(
                     symbol, api_key, time_from=time_from, time_to=time_to
                 )
-                articles = _dedupe_articles(payload.get("feed") or [])
-                _save_raw_to_minio(config, symbol, run_date, month_start, articles)
-                _save_month_cursor(config, symbol, month_start, min(fetch_end, run_dt))
+                fetched_articles = _dedupe_articles(payload.get("feed") or [])
+                existing_articles = _load_current_month_articles(config, symbol, month_start)
+                merged_month_articles = _merge_month_articles(existing_articles, fetched_articles)
+                _save_raw_to_minio(config, symbol, run_date, month_start, fetched_articles)
+                _save_current_month_articles(config, symbol, month_start, merged_month_articles)
+                natural_month_end = _natural_month_end(month_start)
+                new_last_ingested = min(fetch_end, run_dt)
+                _save_month_cursor(
+                    config,
+                    symbol,
+                    month_start,
+                    new_last_ingested,
+                    is_closed=(new_last_ingested >= natural_month_end),
+                )
                 raw_payloads.append(
                     {
                         "symbol": symbol,
-                        "month_end": fetch_end.isoformat(),
-                        "feed": articles,
+                        "month_start": month_start.isoformat(),
+                        "month_end": natural_month_end.isoformat(),
+                        "fetch_start": fetch_start.isoformat(),
+                        "fetch_end": fetch_end.isoformat(),
+                        "feed": fetched_articles,
                     }
                 )
                 time.sleep(ALPHA_VANTAGE_THROTTLE_SECONDS)
@@ -610,13 +792,17 @@ def transform_source_b_features(
     time_drop_count = 0
     for payload in raw_payloads:
         symbol = str(payload.get("symbol") or "").strip()
-        month_end = str(payload.get("month_end") or "").strip()
+        # New schema uses fetch_start as fallback anchor; keep backward compatibility
+        # with older payloads that only carried month_end.
+        default_obs_date = str(
+            payload.get("fetch_start") or payload.get("month_start") or payload.get("month_end") or ""
+        ).strip()
         feed = payload.get("feed") or []
-        if not symbol or not month_end:
+        if not symbol or not default_obs_date:
             continue
         for article in feed:
             obs_date, inferred = _article_observation_date(
-                article, month_end, strict_time=strict_time
+                article, default_obs_date, strict_time=strict_time
             )
             if not obs_date:
                 time_drop_count += 1
@@ -668,7 +854,7 @@ def transform_source_b_features(
 
     if time_fallback_count or time_drop_count:
         logger.warning(
-            "source_b_time_quality strict_time=%s fallback_to_month_end=%s dropped_missing_time=%s",
+            "source_b_time_quality strict_time=%s fallback_to_default_obs_date=%s dropped_missing_time=%s",
             strict_time,
             time_fallback_count,
             time_drop_count,
