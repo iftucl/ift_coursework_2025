@@ -15,4 +15,5 @@ This site documents the runnable CW1 pipeline framework for:
    installation
    usage
    architecture
+   compliance
    api

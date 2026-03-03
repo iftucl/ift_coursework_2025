@@ -48,7 +48,7 @@ def _resolve_mongo_db(cli_mongo_db: str, mongo_cfg: dict[str, Any]) -> str:
 
 def _build_collection(mongo_cfg: dict[str, Any], collection_name: str, mongo_db: str):
     host = _read_env_or_cfg("MONGO_HOST", mongo_cfg, "host", "localhost")
-    port = int(_read_env_or_cfg("MONGO_PORT", mongo_cfg, "port", "27017"))
+    port = int(_read_env_or_cfg("MONGO_PORT", mongo_cfg, "port", "27019"))
     uri = os.getenv("MONGO_URI", "").strip()
     if uri:
         client = MongoClient(uri, serverSelectionTimeoutMS=5000)

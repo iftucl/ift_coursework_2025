@@ -8,7 +8,7 @@ Upstream universe table used by the pipeline (`modules/db/universe.py`).
 
 | Column Name | Type | Description | Notes |
 | --- | --- | --- | --- |
-| `symbol` | TEXT / VARCHAR | Company ticker | Universe key used by extractors |
+| `symbol` | TEXT / VARCHAR | Company symbol code | Universe key used by extractors |
 | `company_name` | TEXT | Company name | Optional in pipeline logic |
 | `country` | TEXT | Country code/name | Used by country allowlist filter |
 | `sector` | TEXT | Sector name | Optional metadata |
@@ -20,7 +20,7 @@ Curated long-table factor store.
 | Column Name | Type | Description | Notes |
 | --- | --- | --- | --- |
 | `id` | SERIAL | Surrogate primary key | Auto-increment |
-| `symbol` | VARCHAR(50) | Company ticker | Required |
+| `symbol` | VARCHAR(50) | Company symbol code | Required |
 | `observation_date` | DATE | Factor date | Required |
 | `factor_name` | VARCHAR(50) | Factor identifier | Required |
 | `factor_value` | NUMERIC(18,6) | Factor numeric value | Nullable |
@@ -58,7 +58,7 @@ Atomic fundamentals store with financial-report semantics.
 | Column Name | Type | Description | Notes |
 | --- | --- | --- | --- |
 | `id` | SERIAL | Surrogate primary key | Auto-increment |
-| `symbol` | VARCHAR(50) | Company ticker | Required |
+| `symbol` | VARCHAR(50) | Company symbol code | Required |
 | `report_date` | DATE | Financial report period-end | Required |
 | `metric_name` | VARCHAR(100) | Financial metric identifier | Required |
 | `metric_value` | NUMERIC(18,6) | Metric numeric value | Nullable |
@@ -114,3 +114,26 @@ Secondary debug mirror:
 - `logs/pipeline_runs.jsonl`
 
 This mirror is for local troubleshooting only; PostgreSQL `systematic_equity.pipeline_runs` is the authoritative audit source.
+
+## 6. Mongo Collection: `ift_cw.news_articles`
+
+News search/index document model built by `scripts/index_news_to_mongo.py`.
+
+| Field Name | Type | Description | Notes |
+| --- | --- | --- | --- |
+| `_id` | STRING | Global article identifier | URL hash primary; fallback hash of source+time+title |
+| `title` | STRING | Article title | Text-indexed |
+| `summary` | STRING | Article summary | Text-indexed |
+| `url` | STRING | Article URL | Sparse unique index |
+| `time_published` | DATETIME | Canonical publish time | Indexed |
+| `published_at` | DATETIME | Compatibility alias of `time_published` | Same value as canonical field |
+| `tickers` | ARRAY\<STRING\> | Canonical mapped symbols for this article | Array because one article can map to multiple symbols |
+| `symbols` | ARRAY\<STRING\> | Compatibility alias of `tickers` | Same array values |
+| `source` | STRING | News provider/source | Optional |
+| `first_seen_run_date` | STRING | First run date this article was indexed | Traceability |
+| `last_seen_run_date` | STRING | Latest run date this article was seen | Traceability |
+| `minio_object_keys` | ARRAY\<STRING\> | Raw object lineage pointers | Traceability |
+
+Field naming rule:
+- Mongo news docs intentionally use array fields `tickers`/`symbols` instead of singular `symbol`.
+- Reason: one news article may reference multiple companies; singular `symbol` would lose this cardinality.

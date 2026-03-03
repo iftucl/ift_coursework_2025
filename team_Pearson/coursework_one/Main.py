@@ -83,10 +83,12 @@ ALLOWED_EXTRACTORS = {"source_a", "source_b"}
 
 
 def utc_now_iso() -> str:
+    """Return current UTC timestamp in ISO-8601 format."""
     return datetime.now(timezone.utc).isoformat()
 
 
 def load_yaml(path: str) -> Dict[str, Any]:
+    """Load YAML config file and return parsed mapping."""
     if not path:
         return {}
     if yaml is None:
@@ -101,6 +103,7 @@ def _load_dotenv(path: str) -> None:
 
 
 def _sanitize_alpha_key(value: Any) -> str:
+    """Normalize provider key text and reject known placeholder values."""
     cleaned = str(value or "").strip()
     if cleaned.upper() in _ALPHA_KEY_PLACEHOLDERS:
         return ""
@@ -108,10 +111,12 @@ def _sanitize_alpha_key(value: Any) -> str:
 
 
 def ensure_dir(path: str) -> None:
+    """Create directory path if missing."""
     os.makedirs(path, exist_ok=True)
 
 
 def write_jsonl(path: str, record: Dict[str, Any]) -> None:
+    """Append one JSON object line to a JSONL file."""
     ensure_dir(os.path.dirname(path) or ".")
     with open(path, "a", encoding="utf-8") as f:
         f.write(json.dumps(record, ensure_ascii=False) + "\n")
@@ -159,6 +164,7 @@ def apply_env_defaults_from_config(cfg: Dict[str, Any]) -> Dict[str, str]:
 
 
 def _configure_logging(log_cfg: Dict[str, Any]) -> None:
+    """Initialize root logging with configured level and format."""
     level = str(
         os.getenv("CW1_LOG_LEVEL") or log_cfg.get("level") or log_cfg.get("log_level") or "INFO"
     ).upper()
@@ -175,6 +181,7 @@ def _configure_logging(log_cfg: Dict[str, Any]) -> None:
 
 
 def _append_note(notes: str, item: str) -> str:
+    """Append one semicolon-delimited note item."""
     item = str(item).strip()
     if not item:
         return notes
@@ -190,6 +197,7 @@ def _log_stage_event(
     rows_out: Optional[int] = None,
     elapsed_ms: Optional[int] = None,
 ) -> None:
+    """Emit normalized stage telemetry for pipeline observability."""
     logger.info(
         "stage_event run_id=%s stage=%s status=%s rows_in=%s rows_out=%s elapsed_ms=%s",
         run_id,
@@ -202,6 +210,7 @@ def _log_stage_event(
 
 
 def _resolve_backfill_years(cli_value: Optional[int], pipeline_cfg: Dict[str, Any]) -> int:
+    """Resolve backfill window from CLI/env/config with validation."""
     env_value = os.getenv("PIPELINE_BACKFILL_YEARS")
     raw = (
         cli_value
@@ -218,6 +227,7 @@ def _resolve_backfill_years(cli_value: Optional[int], pipeline_cfg: Dict[str, An
 
 
 def _resolve_company_limit(cli_value: Optional[int], pipeline_cfg: Dict[str, Any]) -> Optional[int]:
+    """Resolve company limit from CLI/env/config with validation."""
     env_value = os.getenv("PIPELINE_COMPANY_LIMIT")
     raw = (
         cli_value
@@ -238,6 +248,7 @@ def _resolve_company_limit(cli_value: Optional[int], pipeline_cfg: Dict[str, Any
 def _resolve_enabled_extractors(
     cli_value: Optional[List[str]], pipeline_cfg: Dict[str, Any]
 ) -> List[str]:
+    """Resolve active extractor list and enforce allowed names."""
     configured = pipeline_cfg.get("enabled_extractors", ["source_a", "source_b"])
     env_value = os.getenv("PIPELINE_ENABLED_EXTRACTORS")
     if cli_value is not None:
@@ -270,6 +281,7 @@ def _resolve_enabled_extractors(
 
 
 def _resolve_frequency(cli_value: Optional[str], pipeline_cfg: Dict[str, Any]) -> str:
+    """Resolve run frequency from CLI/env/config with validation."""
     env_value = os.getenv("PIPELINE_FREQUENCY")
     raw = (
         cli_value
@@ -405,23 +417,26 @@ def split_atomic_financial_records(
 
 
 def scheduling_stub(frequency: str) -> str:
+    """Validate scheduling frequency and return stage note text."""
     if frequency not in ALLOWED_FREQUENCIES:
         raise ValueError(f"Unsupported frequency: {frequency}")
     return f"Scheduling stub configured for: {frequency}"
 
 
 def parse_args():
-    """Parse command-line arguments."""
+    """Parse CLI arguments for the main pipeline entrypoint."""
     return build_parser().parse_args()
 
 
 def resolve_paths(base_dir: str, config_path: str) -> str:
+    """Resolve config path against project base directory."""
     if os.path.isabs(config_path):
         return config_path
     return os.path.join(base_dir, config_path)
 
 
 def resolve_runtime(base_dir: str, args: Any) -> Optional[RunContext]:
+    """Build validated runtime context from CLI, env, and config."""
     project_root = Path(__file__).resolve().parent
     load_dotenv_if_exists(project_root / ".env")
     cfg_path = resolve_paths(base_dir, args.config)
@@ -480,6 +495,7 @@ def resolve_runtime(base_dir: str, args: Any) -> Optional[RunContext]:
 
 
 def run_scheduling_stage(ctx: RunContext, state: PipelineState) -> None:
+    """Execute scheduling/window stage and update pipeline state."""
     t0 = time.monotonic()
     try:
         state.notes = scheduling_stub(ctx.frequency)
@@ -513,6 +529,7 @@ def run_scheduling_stage(ctx: RunContext, state: PipelineState) -> None:
 
 
 def write_audit_start_stage(ctx: RunContext, state: PipelineState) -> None:
+    """Persist run-start audit and bootstrap metadata catalog."""
     # Primary audit sink: PostgreSQL systematic_equity.pipeline_runs
     # Secondary audit sink: local JSONL (kept for developer convenience).
     try:
@@ -535,9 +552,21 @@ def write_audit_start_stage(ctx: RunContext, state: PipelineState) -> None:
             audit_exc,
             exc_info=True,
         )
+    try:
+        from modules.output.metadata import bootstrap_metadata_catalog
+
+        bootstrap_metadata_catalog()
+    except Exception as metadata_exc:
+        logger.warning(
+            "metadata_bootstrap_warning run_id=%s warning=%r",
+            ctx.run_id,
+            metadata_exc,
+            exc_info=True,
+        )
 
 
 def run_pipeline_stage(ctx: RunContext, state: PipelineState) -> None:
+    """Run extract/normalize/quality/load/transform stages."""
     if state.status != "success":
         return
     try:
@@ -782,6 +811,7 @@ def run_pipeline_stage(ctx: RunContext, state: PipelineState) -> None:
 
 
 def finalize_audit_and_runlog(ctx: RunContext, state: PipelineState) -> int:
+    """Persist run-finish audit artifacts and return process exit code."""
     end = utc_now_iso()
 
     run_log_path = ctx.log_cfg.get("run_log_path", "logs/pipeline_runs.jsonl")
@@ -829,6 +859,23 @@ def finalize_audit_and_runlog(ctx: RunContext, state: PipelineState) -> int:
             exc_info=True,
         )
 
+    try:
+        from modules.output.metadata import write_quality_snapshot
+
+        write_quality_snapshot(
+            run_id=ctx.run_id,
+            run_date=ctx.args.run_date,
+            dataset_name="factor_observations",
+            quality_report=state.quality_report or {},
+        )
+    except Exception as metadata_exc:
+        logger.warning(
+            "quality_snapshot_warning run_id=%s warning=%r",
+            ctx.run_id,
+            metadata_exc,
+            exc_info=True,
+        )
+
     logger.info("run_log_written run_id=%s path=%s", ctx.run_id, run_log_path)
     print(f"[run_id={ctx.run_id}] run_log_written_to={run_log_path}")
 
@@ -836,6 +883,7 @@ def finalize_audit_and_runlog(ctx: RunContext, state: PipelineState) -> int:
 
 
 def main() -> int:
+    """Program entrypoint for one end-to-end pipeline run."""
     base_dir = os.path.dirname(os.path.abspath(__file__))
     args = parse_args()
     ctx = resolve_runtime(base_dir, args)

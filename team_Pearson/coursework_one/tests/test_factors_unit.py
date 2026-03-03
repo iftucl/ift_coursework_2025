@@ -3,7 +3,7 @@ from __future__ import annotations
 from modules.transform import factors
 
 
-def test_compute_final_factor_records_dividend_yield_monthly():
+def test_compute_final_factor_records_dividend_yield_daily_asof():
     atomic = [
         {
             "symbol": "AAPL",
@@ -26,9 +26,11 @@ def test_compute_final_factor_records_dividend_yield_monthly():
     ]
     out = factors.compute_final_factor_records(atomic, run_date="2026-01-31", backfill_years=1)
     dy = [r for r in out if r["factor_name"] == "dividend_yield"]
-    assert len(dy) == 1
-    assert dy[0]["observation_date"] == "2026-01-31"
-    assert abs(dy[0]["factor_value"] - 0.02) < 1e-9
+    assert len(dy) >= 1
+    by_date = {r["observation_date"]: r for r in dy}
+    assert "2026-01-31" in by_date
+    assert abs(by_date["2026-01-31"]["factor_value"] - 0.02) < 1e-9
+    assert by_date["2026-01-31"]["metric_frequency"] == "daily"
 
 
 def test_compute_final_factor_records_pb_de_ebitda():
@@ -285,86 +287,98 @@ def test_build_and_load_final_factors_calls_loader(monkeypatch):
     assert any(r["factor_name"] == "dividend_yield" for r in captured["rows"])
 
 
-def test_compute_final_factor_records_pb_ratio_uses_dynamic_q99_for_large_monthly_cross_section():
+def test_compute_final_factor_records_pb_ratio_uses_per_symbol_rolling_q99_with_enough_history():
+    from datetime import date, timedelta
+
     atomic = []
-    obs_date = "2026-03-31"
-    for i in range(50):
-        symbol = f"S{i:03d}"
-        price = 1.0 if i < 49 else 1000.0
+    symbol = "S000"
+    start = date(2026, 1, 1)
+    dates = [start + timedelta(days=i) for i in range(90) if (start + timedelta(days=i)).weekday() < 5]
+    obs_date = dates[-1].isoformat()
+    for d in dates:
+        price = 1000.0 if d.isoformat() == obs_date else 1.0
         atomic.extend(
             [
                 {
                     "symbol": symbol,
-                    "observation_date": obs_date,
+                    "observation_date": d.isoformat(),
                     "factor_name": "adjusted_close_price",
                     "factor_value": price,
                 },
                 {
                     "symbol": symbol,
-                    "observation_date": obs_date,
+                    "observation_date": d.isoformat(),
                     "factor_name": "shares_outstanding",
                     "factor_value": 100.0,
-                    "source_report_date": obs_date,
+                    "source_report_date": d.isoformat(),
                 },
                 {
                     "symbol": symbol,
-                    "observation_date": obs_date,
+                    "observation_date": d.isoformat(),
                     "factor_name": "total_shareholder_equity",
                     "factor_value": 100.0,
-                    "source_report_date": obs_date,
+                    "source_report_date": d.isoformat(),
                 },
             ]
         )
 
     out = factors.compute_final_factor_records(atomic, run_date=obs_date, backfill_years=1)
     pb_rows = [
-        r for r in out if r["factor_name"] == "pb_ratio" and r["observation_date"] == obs_date
+        r
+        for r in out
+        if r["factor_name"] == "pb_ratio"
+        and r["observation_date"] == obs_date
+        and r["symbol"] == symbol
     ]
-    assert len(pb_rows) == 50
-    outlier = [r for r in pb_rows if r["symbol"] == "S049"][0]
-    # Dynamic q99 should cap the outlier below its raw value (1000),
-    # and not use the small-sample fallback cap(=100).
+    assert len(pb_rows) == 1
+    outlier = pb_rows[0]
+    # With enough per-symbol history, rolling q99 caps the outlier below raw 1000.
     assert outlier["factor_value"] < 1000.0
     assert outlier["factor_value"] > 100.0
 
 
-def test_compute_final_factor_records_pb_ratio_falls_back_to_100_cap_for_small_cross_section():
+def test_compute_final_factor_records_pb_ratio_falls_back_to_100_cap_for_small_per_symbol_sample():
     atomic = []
     obs_date = "2026-03-31"
-    for i in range(10):
-        symbol = f"T{i:03d}"
-        price = 1.0 if i < 9 else 1000.0
+    symbol = "T000"
+    sample_dates = [f"2026-03-{d:02d}" for d in (22, 23, 24, 25, 26, 27, 28, 29, 30, 31)]
+    for d in sample_dates:
+        price = 1000.0 if d == obs_date else 1.0
         atomic.extend(
             [
                 {
                     "symbol": symbol,
-                    "observation_date": obs_date,
+                    "observation_date": d,
                     "factor_name": "adjusted_close_price",
                     "factor_value": price,
                 },
                 {
                     "symbol": symbol,
-                    "observation_date": obs_date,
+                    "observation_date": d,
                     "factor_name": "shares_outstanding",
                     "factor_value": 100.0,
-                    "source_report_date": obs_date,
+                    "source_report_date": d,
                 },
                 {
                     "symbol": symbol,
-                    "observation_date": obs_date,
+                    "observation_date": d,
                     "factor_name": "total_shareholder_equity",
                     "factor_value": 100.0,
-                    "source_report_date": obs_date,
+                    "source_report_date": d,
                 },
             ]
         )
 
     out = factors.compute_final_factor_records(atomic, run_date=obs_date, backfill_years=1)
     pb_rows = [
-        r for r in out if r["factor_name"] == "pb_ratio" and r["observation_date"] == obs_date
+        r
+        for r in out
+        if r["factor_name"] == "pb_ratio"
+        and r["observation_date"] == obs_date
+        and r["symbol"] == symbol
     ]
-    assert len(pb_rows) == 10
-    outlier = [r for r in pb_rows if r["symbol"] == "T009"][0]
+    assert len(pb_rows) == 1
+    outlier = pb_rows[0]
     assert outlier["factor_value"] == 100.0
 
 

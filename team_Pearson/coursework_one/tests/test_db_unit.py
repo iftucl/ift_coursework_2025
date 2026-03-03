@@ -23,12 +23,23 @@ def test_universe_unlimited_limit_in_test_mode(monkeypatch):
 
 
 def test_db_engine_success(monkeypatch):
+    monkeypatch.setenv("POSTGRES_HOST", "localhost")
+    monkeypatch.setenv("POSTGRES_PORT", "5439")
+    monkeypatch.setenv("POSTGRES_DB", "postgres")
+    monkeypatch.setenv("POSTGRES_USER", "postgres")
+    monkeypatch.setenv("POSTGRES_PASSWORD", "postgres")
     sentinel = object()
     monkeypatch.setattr(db_connection, "create_engine", lambda url: sentinel)
     assert db_connection.get_db_engine() is sentinel
 
 
 def test_db_engine_failure_wrapped(monkeypatch):
+    monkeypatch.setenv("POSTGRES_HOST", "localhost")
+    monkeypatch.setenv("POSTGRES_PORT", "5439")
+    monkeypatch.setenv("POSTGRES_DB", "postgres")
+    monkeypatch.setenv("POSTGRES_USER", "postgres")
+    monkeypatch.setenv("POSTGRES_PASSWORD", "postgres")
+
     def _boom(url):
         raise RuntimeError("boom")
 

@@ -24,6 +24,12 @@ logging:
 
 # Alpha Vantage key is environment-only (.env / ALPHA_VANTAGE_API_KEY).
 
+# Mongo defaults (match docker-compose host mapping: 27019 -> container 27017)
+mongo:
+  host: localhost
+  port: 27019
+  database: ift_cw
+
 # Source A provider strategy
 source_a:
   primary_source: alpha_vantage

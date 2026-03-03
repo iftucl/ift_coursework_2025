@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 def _find_unique_constraint_name(table, expected_cols: set[str], fallback: str) -> str:
+    """Resolve unique constraint name by column set with fallback value."""
     for constraint in table.constraints:
         cols = getattr(constraint, "columns", None)
         name = getattr(constraint, "name", None)

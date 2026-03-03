@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-"""Unstructured extractor (Source B): Alpha Vantage news text -> monthly sentiment factors.
+"""Unstructured extractor (Source B): Alpha Vantage news text -> daily sentiment atomics.
 
 Pipeline contract:
-1) ingest_source_b_raw: fetch raw news JSON and persist immutable raw payloads to MinIO
-2) transform_source_b_features: compute sentiment from title/summary and emit monthly records
+1) ingest_source_b_raw: fetch raw news JSON and persist run snapshots to MinIO
+2) transform_source_b_features: compute sentiment from title/summary and emit daily records
 """
 
 import json
@@ -12,8 +12,7 @@ import logging
 import os
 import re
 import time
-from datetime import date, datetime
-from datetime import timedelta
+from datetime import date, datetime, timedelta
 from io import BytesIO
 from typing import Any, Dict, Iterable, List, Optional
 from urllib.parse import urlparse
@@ -37,6 +36,7 @@ ALPHA_VANTAGE_THROTTLE_SECONDS = float(os.getenv("ALPHA_VANTAGE_THROTTLE_SECONDS
 # Retry policy for transient/rate-limit responses.
 ALPHA_VANTAGE_MAX_RETRIES = int(os.getenv("ALPHA_VANTAGE_MAX_RETRIES", "3"))
 ALPHA_VANTAGE_RETRY_BACKOFF_SECONDS = float(os.getenv("ALPHA_VANTAGE_RETRY_BACKOFF_SECONDS", "5.0"))
+SOURCE_B_INCREMENTAL_BUFFER_DAYS = int(os.getenv("SOURCE_B_INCREMENTAL_BUFFER_DAYS", "3"))
 
 _TOKEN_SPLIT_RE = re.compile(r"[^a-z0-9]+")
 
@@ -105,6 +105,8 @@ def _filter_symbols_for_source_b(symbols: List[str], config: Optional[Dict[str, 
 
 
 def _resolve_alpha_key(config: Optional[Dict[str, Any]]) -> str:
+    """Resolve Alpha Vantage API key from env/config with placeholder filtering."""
+
     def _sanitize(value: Any) -> str:
         cleaned = str(value or "").strip()
         if cleaned.upper() in _ALPHA_KEY_PLACEHOLDERS:
@@ -132,6 +134,7 @@ def _resolve_source_b_strict_time(config: Optional[Dict[str, Any]]) -> bool:
 
 
 def _minio_config(config: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    """Resolve MinIO connection config using env-over-config precedence."""
     cfg = dict((config or {}).get("minio") or {})
     cfg["endpoint"] = os.getenv("MINIO_ENDPOINT", cfg.get("endpoint"))
     cfg["access_key"] = os.getenv("MINIO_ACCESS_KEY", cfg.get("access_key"))
@@ -149,6 +152,7 @@ def _minio_config(config: Optional[Dict[str, Any]]) -> Dict[str, Any]:
 
 
 def _month_end_dates(run_date: str, backfill_years: int) -> List[date]:
+    """Return inclusive month-end dates for the requested backfill window."""
     end = datetime.strptime(run_date, "%Y-%m-%d").date()
     years = int(backfill_years)
     if years <= 0:
@@ -183,6 +187,7 @@ def _shift_months_date(d: date, months: int) -> date:
 
 
 def _month_time_range(month_end: date) -> tuple[str, str]:
+    """Build Alpha Vantage NEWS_SENTIMENT time_from/time_to range for one month."""
     month_start = month_end.replace(day=1)
     return (
         month_start.strftime("%Y%m%dT0000"),
@@ -190,11 +195,53 @@ def _month_time_range(month_end: date) -> tuple[str, str]:
     )
 
 
+def _date_time_range(start_date: date, end_date: date) -> tuple[str, str]:
+    """Build Alpha Vantage NEWS_SENTIMENT time_from/time_to range for any date span."""
+    return (
+        start_date.strftime("%Y%m%dT0000"),
+        end_date.strftime("%Y%m%dT2359"),
+    )
+
+
+def _month_windows(run_date: str, backfill_years: int) -> List[tuple[date, date]]:
+    """Return month windows as (month_start, fetch_end<=run_date) covering backfill horizon."""
+    end = datetime.strptime(run_date, "%Y-%m-%d").date()
+    years = int(backfill_years)
+    if years <= 0:
+        return [(end.replace(day=1), end)]
+
+    start_anchor = _shift_months_date(end, -(12 * years))
+    start_date = start_anchor
+
+    out: List[tuple[date, date]] = []
+    cur = date(start_date.year, start_date.month, 1)
+    while cur <= end:
+        if cur.month == 12:
+            next_month = date(cur.year + 1, 1, 1)
+        else:
+            next_month = date(cur.year, cur.month + 1, 1)
+        month_end = next_month - timedelta(days=1)
+        fetch_end = month_end if month_end <= end else end
+        if fetch_end >= start_date:
+            out.append((cur, fetch_end))
+        cur = next_month
+    return out
+
+
 def _raw_object_path(symbol: str, run_date: str, month_end: date) -> str:
+    """Build deterministic MinIO object key for monthly Source B JSONL."""
     month = month_end.strftime("%m")
     year = month_end.strftime("%Y")
     return (
         "raw/source_b/news/" f"run_date={run_date}/year={year}/month={month}/symbol={symbol}.jsonl"
+    )
+
+
+def _cursor_object_path(symbol: str, month_start: date) -> str:
+    """Build stable per-symbol per-month cursor path for incremental ingestion."""
+    return (
+        "raw/source_b/news_cursor/"
+        f"year={month_start.strftime('%Y')}/month={month_start.strftime('%m')}/symbol={symbol}.json"
     )
 
 
@@ -205,6 +252,7 @@ def _save_raw_to_minio(
     month_end: date,
     articles: List[Dict[str, Any]],
 ) -> None:
+    """Persist monthly deduplicated Source B articles as JSONL in MinIO."""
     minio_cfg = _minio_config(config)
     required = ["endpoint", "access_key", "secret_key", "bucket"]
     if not all(minio_cfg.get(k) for k in required):
@@ -237,6 +285,84 @@ def _save_raw_to_minio(
         logger.warning("source_b raw archive skipped for %s %s: %r", symbol, month_end, exc)
 
 
+def _load_month_cursor(config: Optional[Dict[str, Any]], symbol: str, month_start: date) -> Optional[date]:
+    """Load last_ingested_date for one symbol-month cursor from MinIO."""
+    minio_cfg = _minio_config(config)
+    required = ["endpoint", "access_key", "secret_key", "bucket"]
+    if not all(minio_cfg.get(k) for k in required):
+        return None
+
+    try:
+        from minio import Minio
+
+        client = Minio(
+            endpoint=minio_cfg["endpoint"],
+            access_key=minio_cfg["access_key"],
+            secret_key=minio_cfg["secret_key"],
+            secure=minio_cfg.get("secure", False),
+        )
+        obj = client.get_object(minio_cfg["bucket"], _cursor_object_path(symbol, month_start))
+        try:
+            payload = json.loads(obj.read().decode("utf-8"))
+        finally:
+            obj.close()
+            obj.release_conn()
+    except Exception:
+        return None
+
+    raw = str((payload or {}).get("last_ingested_date") or "").strip()
+    if not raw:
+        return None
+    try:
+        return datetime.strptime(raw, "%Y-%m-%d").date()
+    except ValueError:
+        return None
+
+
+def _save_month_cursor(
+    config: Optional[Dict[str, Any]],
+    symbol: str,
+    month_start: date,
+    last_ingested_date: date,
+) -> None:
+    """Persist/update last_ingested_date cursor for one symbol-month."""
+    minio_cfg = _minio_config(config)
+    required = ["endpoint", "access_key", "secret_key", "bucket"]
+    if not all(minio_cfg.get(k) for k in required):
+        return
+
+    payload = {
+        "symbol": symbol,
+        "month_start": month_start.isoformat(),
+        "last_ingested_date": last_ingested_date.isoformat(),
+        "updated_at": datetime.utcnow().isoformat(),
+    }
+
+    try:
+        from minio import Minio
+
+        client = Minio(
+            endpoint=minio_cfg["endpoint"],
+            access_key=minio_cfg["access_key"],
+            secret_key=minio_cfg["secret_key"],
+            secure=minio_cfg.get("secure", False),
+        )
+        bucket = minio_cfg["bucket"]
+        if not client.bucket_exists(bucket):
+            client.make_bucket(bucket)
+
+        data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+        client.put_object(
+            bucket,
+            _cursor_object_path(symbol, month_start),
+            data=BytesIO(data),
+            length=len(data),
+            content_type="application/json",
+        )
+    except Exception as exc:  # pragma: no cover - external service dependent
+        logger.warning("source_b cursor update skipped for %s %s: %r", symbol, month_start, exc)
+
+
 def _normalize_article(article: Dict[str, Any]) -> Dict[str, Any]:
     """Keep only required raw fields for lightweight monthly JSONL objects."""
     return {
@@ -251,6 +377,7 @@ def _normalize_article(article: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _article_dedupe_key(article: Dict[str, Any]) -> str:
+    """Build article dedupe key: URL first, fallback to title+timestamp."""
     url = str(article.get("url") or "").strip().lower()
     if url:
         return f"url:{url}"
@@ -274,11 +401,27 @@ def _dedupe_articles(feed: Iterable[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
 
 def _fetch_news_for_month(symbol: str, month_end: date, api_key: str) -> Dict[str, Any]:
+    """Fetch one symbol-month NEWS_SENTIMENT payload with retry/backoff."""
     parsed = urlparse(ALPHA_VANTAGE_BASE_URL)
     if parsed.scheme != "https" or parsed.netloc != "www.alphavantage.co":
         raise RuntimeError("Invalid Alpha Vantage base URL configuration.")
 
     time_from, time_to = _month_time_range(month_end)
+    return _fetch_news_for_range(symbol, api_key, time_from=time_from, time_to=time_to)
+
+
+def _fetch_news_for_range(
+    symbol: str,
+    api_key: str,
+    *,
+    time_from: str,
+    time_to: str,
+) -> Dict[str, Any]:
+    """Fetch one symbol-range NEWS_SENTIMENT payload with retry/backoff."""
+    parsed = urlparse(ALPHA_VANTAGE_BASE_URL)
+    if parsed.scheme != "https" or parsed.netloc != "www.alphavantage.co":
+        raise RuntimeError("Invalid Alpha Vantage base URL configuration.")
+
     params = {
         "function": "NEWS_SENTIMENT",
         "tickers": symbol,
@@ -317,10 +460,12 @@ def _fetch_news_for_month(symbol: str, month_end: date, api_key: str) -> Dict[st
 
 
 def _tokenize_text(text: str) -> List[str]:
+    """Tokenize free text into lowercase alphanumeric tokens."""
     return [t for t in _TOKEN_SPLIT_RE.split(text.lower()) if t]
 
 
 def _score_text(text: str) -> float:
+    """Score sentiment using LM lexicon if available, otherwise fallback lexicon."""
     _ensure_sentiment_backend()
 
     if _LM_ANALYZER:
@@ -369,7 +514,7 @@ def ingest_source_b_raw(
     config: Optional[Dict[str, Any]] = None,
 ) -> List[Dict[str, Any]]:
     """Ingest raw Source B payloads from Alpha Vantage news endpoint."""
-    _ = frequency  # Source B factor is monthly by definition
+    _ = frequency  # Source B extraction cadence is independent from output sampling label.
     if os.getenv("CW1_TEST_MODE") == "1":
         return []
 
@@ -378,7 +523,9 @@ def ingest_source_b_raw(
         logger.warning("source_b skipped: alpha_vantage key missing")
         return []
 
-    months = _month_end_dates(run_date, backfill_years)
+    windows = _month_windows(run_date, backfill_years)
+    run_dt = datetime.strptime(run_date, "%Y-%m-%d").date()
+    buffer_days = max(0, int(SOURCE_B_INCREMENTAL_BUFFER_DAYS))
     target_symbols = _filter_symbols_for_source_b(symbols, config)
     if not target_symbols:
         logger.info("source_b: no symbols left after filtering policy")
@@ -387,21 +534,34 @@ def ingest_source_b_raw(
     raw_payloads: List[Dict[str, Any]] = []
 
     for symbol in target_symbols:
-        for month_end in months:
+        for month_start, fetch_end in windows:
             try:
-                payload = _fetch_news_for_month(symbol, month_end, api_key)
+                last_ingested = _load_month_cursor(config, symbol, month_start)
+                if last_ingested is None:
+                    fetch_start = month_start
+                else:
+                    fetch_start = max(month_start, last_ingested - timedelta(days=buffer_days))
+
+                if fetch_start > fetch_end:
+                    continue
+
+                time_from, time_to = _date_time_range(fetch_start, fetch_end)
+                payload = _fetch_news_for_range(
+                    symbol, api_key, time_from=time_from, time_to=time_to
+                )
                 articles = _dedupe_articles(payload.get("feed") or [])
-                _save_raw_to_minio(config, symbol, run_date, month_end, articles)
+                _save_raw_to_minio(config, symbol, run_date, month_start, articles)
+                _save_month_cursor(config, symbol, month_start, min(fetch_end, run_dt))
                 raw_payloads.append(
                     {
                         "symbol": symbol,
-                        "month_end": month_end.isoformat(),
+                        "month_end": fetch_end.isoformat(),
                         "feed": articles,
                     }
                 )
                 time.sleep(ALPHA_VANTAGE_THROTTLE_SECONDS)
             except Exception as exc:
-                logger.warning("source_b fetch failed for %s %s: %r", symbol, month_end, exc)
+                logger.warning("source_b fetch failed for %s %s: %r", symbol, month_start, exc)
 
     return raw_payloads
 

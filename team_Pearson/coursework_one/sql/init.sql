@@ -94,3 +94,61 @@ CREATE TABLE IF NOT EXISTS systematic_equity.company_universe_overrides (
 
 CREATE INDEX IF NOT EXISTS idx_company_universe_overrides_action_active
     ON systematic_equity.company_universe_overrides (action, is_active);
+
+CREATE TABLE IF NOT EXISTS systematic_equity.dataset_registry (
+    dataset_name VARCHAR(128) PRIMARY KEY,
+    storage_type VARCHAR(32) NOT NULL
+        CHECK (storage_type IN ('postgresql', 'mongodb', 'minio', 'file')),
+    storage_location TEXT NOT NULL,
+    owner_role VARCHAR(64),
+    refresh_frequency VARCHAR(20)
+        CHECK (refresh_frequency IN ('daily','weekly','monthly','quarterly','annual','ad_hoc')),
+    primary_key_def TEXT,
+    description TEXT,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS systematic_equity.schema_versions (
+    id SERIAL PRIMARY KEY,
+    dataset_name VARCHAR(128) NOT NULL
+        REFERENCES systematic_equity.dataset_registry(dataset_name),
+    version_tag VARCHAR(40) NOT NULL,
+    schema_json JSONB NOT NULL,
+    valid_from TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    valid_to TIMESTAMPTZ,
+    is_current BOOLEAN NOT NULL DEFAULT TRUE,
+    change_note TEXT,
+    CONSTRAINT uniq_schema_version UNIQUE (dataset_name, version_tag)
+);
+
+CREATE INDEX IF NOT EXISTS idx_schema_versions_dataset_current
+    ON systematic_equity.schema_versions (dataset_name, is_current);
+
+CREATE TABLE IF NOT EXISTS systematic_equity.lineage_edges (
+    id SERIAL PRIMARY KEY,
+    upstream_dataset VARCHAR(128) NOT NULL,
+    downstream_dataset VARCHAR(128) NOT NULL,
+    transformation_step VARCHAR(128) NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uniq_lineage_edge UNIQUE (upstream_dataset, downstream_dataset, transformation_step)
+);
+
+CREATE INDEX IF NOT EXISTS idx_lineage_downstream
+    ON systematic_equity.lineage_edges (downstream_dataset);
+
+CREATE TABLE IF NOT EXISTS systematic_equity.quality_snapshots (
+    id BIGSERIAL PRIMARY KEY,
+    run_id VARCHAR(64),
+    run_date DATE NOT NULL,
+    dataset_name VARCHAR(128) NOT NULL,
+    quality_report JSONB NOT NULL,
+    status VARCHAR(20) NOT NULL
+        CHECK (status IN ('pass','warn','fail','unknown')),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_quality_snapshots_run_dataset
+    ON systematic_equity.quality_snapshots (run_date, dataset_name);

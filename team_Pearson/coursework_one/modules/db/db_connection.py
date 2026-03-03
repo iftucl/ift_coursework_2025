@@ -8,12 +8,21 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 
 
+def _require_env(name: str) -> str:
+    """Read one required environment variable and fail fast when missing."""
+    value = str(os.getenv(name, "")).strip()
+    if not value:
+        raise RuntimeError(f"Missing required environment variable: {name}")
+    return value
+
+
 def _build_db_url() -> str:
-    host = os.getenv("POSTGRES_HOST", "localhost")
-    port = os.getenv("POSTGRES_PORT", "5439")
-    dbname = os.getenv("POSTGRES_DB", "postgres")
-    user = os.getenv("POSTGRES_USER", "postgres")
-    password = os.getenv("POSTGRES_PASSWORD", "postgres")
+    """Build PostgreSQL SQLAlchemy URL from ``POSTGRES_*`` env variables."""
+    host = _require_env("POSTGRES_HOST")
+    port = _require_env("POSTGRES_PORT")
+    dbname = _require_env("POSTGRES_DB")
+    user = _require_env("POSTGRES_USER")
+    password = _require_env("POSTGRES_PASSWORD")
     return f"postgresql://{user}:{password}@{host}:{port}/{dbname}"
 
 

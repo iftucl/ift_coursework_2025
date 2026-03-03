@@ -109,7 +109,7 @@ def _build_mongo_collection(
     mongo_cfg: dict[str, Any], collection_name: str, mongo_db: str
 ) -> Collection:
     host = _read_env_or_cfg("MONGO_HOST", mongo_cfg, "host", "localhost")
-    port = int(_read_env_or_cfg("MONGO_PORT", mongo_cfg, "port", "27017"))
+    port = int(_read_env_or_cfg("MONGO_PORT", mongo_cfg, "port", "27019"))
     uri = os.getenv("MONGO_URI", "").strip()
     if uri:
         client = MongoClient(uri, serverSelectionTimeoutMS=5000)
@@ -198,6 +198,7 @@ def _ensure_indexes(coll: Collection) -> None:
         name="idx_text_title_summary",
     )
     coll.create_index([("time_published", 1)], name="idx_time_published")
+    coll.create_index([("published_at", 1)], name="idx_published_at")
     coll.create_index([("url", 1)], name="idx_url_unique", unique=True, sparse=True)
     coll.create_index([("last_seen_run_date", 1)], name="idx_last_seen_run_date")
     coll.create_index(
@@ -383,6 +384,7 @@ def index_news(
                     "url": url or None,
                     "source": source,
                     "time_published": published_at,
+                    "published_at": published_at,  # compatibility alias
                     "title": title,
                     "summary": summary,
                     "topics": _extract_topics(row.get("topics")),
@@ -402,6 +404,7 @@ def index_news(
                             "$setOnInsert": {"first_seen_run_date": effective_run_date or None},
                             "$addToSet": {
                                 "tickers": {"$each": tickers},
+                                "symbols": {"$each": tickers},  # compatibility alias
                                 "minio_object_keys": object_name,
                             },
                         },

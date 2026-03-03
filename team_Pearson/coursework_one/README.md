@@ -348,19 +348,19 @@ cd team_Pearson/coursework_one
 poetry run python scripts/run_pipeline_and_index.py --run-date 2026-02-14 --frequency daily
 ```
 
-Optional Mongo index build (best-effort):
-- enable with `--index-mongo`
+Mongo index build (best-effort, default enabled):
+- enabled by default in `run_pipeline_and_index.py` / `run_scheduled_pipeline.py`
+- disable with `--no-index-mongo`
 - if Mongo indexing fails, pipeline still returns success
-- default remains disabled to avoid turning Mongo into a hard dependency
 
 ```bash
 cd team_Pearson/coursework_one
-poetry run python scripts/run_pipeline_and_index.py --run-date 2026-02-14 --frequency daily --index-mongo
+poetry run python scripts/run_pipeline_and_index.py --run-date 2026-02-14 --frequency daily
 ```
 
 Trigger rules:
 - every day: run `daily` only
-- `monthly` / `quarterly`: manual replay only via `--only`
+- `weekly` / `monthly` / `quarterly`: manual replay only via `--only`
 
 Dry-run plan check:
 ```bash
@@ -368,16 +368,22 @@ cd team_Pearson/coursework_one
 poetry run python scripts/run_scheduled_pipeline.py --plan-only
 ```
 
-Plan check with optional Mongo indexing flag:
+Plan check with Mongo indexing enabled by default:
 ```bash
 cd team_Pearson/coursework_one
-poetry run python scripts/run_scheduled_pipeline.py --plan-only --index-mongo
+poetry run python scripts/run_scheduled_pipeline.py --plan-only
+```
+
+Plan check with Mongo indexing disabled:
+```bash
+cd team_Pearson/coursework_one
+poetry run python scripts/run_scheduled_pipeline.py --plan-only --no-index-mongo
 ```
 
 Force specific frequencies for manual replay (not part of cron default):
 ```bash
 cd team_Pearson/coursework_one
-poetry run python scripts/run_scheduled_pipeline.py --run-date 2026-04-01 --only daily,monthly,quarterly
+poetry run python scripts/run_scheduled_pipeline.py --run-date 2026-04-01 --only daily,weekly,monthly,quarterly
 ```
 
 Install auto-update cron (run every day at 06:05 host local time by default):
@@ -433,12 +439,13 @@ source_b:
 
 Final daily factors `sentiment_30d_avg` and `article_count_30d` are computed in `modules/transform/factors.py` from atomic records (daily reduction + calendar-day fill + rolling 30D window).
 
-## Optional Search Service (MongoDB)
-This project now supports an optional, rebuildable MongoDB news-search index:
+## Search Service (MongoDB)
+This project supports a rebuildable MongoDB news-search index:
 
 - Collection: `news_articles`
 - One global article per document (deduplicated across symbols)
 - MinIO raw remains source of truth; Mongo index is derivable/idempotent
+- Scheduler/orchestrator scripts run Mongo indexing by default; disable with `--no-index-mongo`.
 
 ### Start infrastructure
 From repository root:
@@ -455,10 +462,10 @@ From `team_Pearson/coursework_one`:
 poetry run python scripts/index_news_to_mongo.py --run-date 2026-02-14 --since 2026-01-01 --until 2026-03-01
 ```
 
-Or run in one orchestrated command (pipeline first, then optional index):
+Or run in one orchestrated command (pipeline first, then index by default):
 
 ```bash
-poetry run python scripts/run_pipeline_and_index.py --run-date 2026-02-14 --frequency daily --index-mongo
+poetry run python scripts/run_pipeline_and_index.py --run-date 2026-02-14 --frequency daily
 ```
 
 Key behavior:
@@ -468,6 +475,10 @@ Key behavior:
 - Upsert merge strategy:
   - `UpdateOne(..., upsert=True)` + `$addToSet: {tickers: {$each: [...]}}`
   - Ensures global uniqueness and ticker mapping without duplicates
+- Field naming note (`tickers` vs `symbol`):
+  - Mongo `news_articles` is a search/index serving layer and keeps provider-aligned field name `tickers` (array, one article can map to multiple symbols).
+  - PostgreSQL curated tables use `symbol` as the canonical key.
+  - Compatibility alias `symbols` is also written in Mongo for query convenience.
 - Run-level traceability fields in Mongo documents:
   - `first_seen_run_date`: first run date where this article was indexed
   - `last_seen_run_date`: latest run date where this article was seen
@@ -570,5 +581,20 @@ poetry run bandit -r modules Main.py
 VENV_PATH=$(poetry env info -p) && HOME=/tmp "$VENV_PATH/bin/safety" check -r poetry.lock
 ```
 
+Security vulnerability response process:
+- Run `bandit` and `safety` before merge/release (and after dependency changes).
+- If any vulnerability is reported, open an issue immediately with severity, affected package/module, and scan output.
+- For dependency CVEs, patch by updating/removing the package via Poetry (`poetry add ...` / `poetry remove ...`) and refresh lockfile.
+- For code-level findings, patch in code and add/adjust tests to prevent regression.
+- Re-run `poetry run bandit -r modules Main.py` and `safety` check; merge only after scans are clean.
+- Record remediation summary in PR/commit notes for audit traceability.
+
 Docs entry point after build:
 - `docs/sphinx/build/html/index.html`
+
+Open the full documentation site from this entry point (left navigation contains all pages):
+
+```bash
+cd team_Pearson/coursework_one
+open docs/sphinx/build/html/index.html
+```

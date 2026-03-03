@@ -12,6 +12,7 @@ from modules.utils.env import load_dotenv_if_exists
 
 
 def _build_main_cmd(args: argparse.Namespace) -> List[str]:
+    """Build Main.py command from orchestrator arguments."""
     cmd = [
         sys.executable,
         "Main.py",
@@ -34,6 +35,7 @@ def _build_main_cmd(args: argparse.Namespace) -> List[str]:
 
 
 def _build_mongo_cmd(args: argparse.Namespace) -> List[str]:
+    """Build index_news_to_mongo.py command from orchestrator arguments."""
     cmd = [
         sys.executable,
         "scripts/index_news_to_mongo.py",
@@ -54,6 +56,7 @@ def _build_mongo_cmd(args: argparse.Namespace) -> List[str]:
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """Construct CLI parser for pipeline + optional Mongo indexing."""
     parser = argparse.ArgumentParser(
         description=(
             "Run Main.py pipeline first; optionally build Mongo index from MinIO raw "
@@ -70,8 +73,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     parser.add_argument(
         "--index-mongo",
-        action="store_true",
-        help="After Main succeeds, run scripts/index_news_to_mongo.py.",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="After Main succeeds, run scripts/index_news_to_mongo.py (default: enabled).",
     )
     parser.add_argument("--mongo-db", default="", help="Mongo database name override.")
     parser.add_argument(
@@ -88,6 +92,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main() -> int:
+    """Run main pipeline first, then best-effort Mongo indexing."""
     args = build_parser().parse_args()
     project_root = Path(__file__).resolve().parents[1]
     load_dotenv_if_exists(project_root / ".env")
@@ -100,7 +105,7 @@ def main() -> int:
         return int(main_result.returncode)
 
     if not args.index_mongo:
-        print("[orchestrator] mongo indexing disabled (default)")
+        print("[orchestrator] mongo indexing disabled (--no-index-mongo)")
         return 0
 
     mongo_cmd = _build_mongo_cmd(args)

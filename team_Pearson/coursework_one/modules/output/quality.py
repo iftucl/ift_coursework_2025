@@ -8,6 +8,7 @@ from .data_contract import ALLOWED_FREQUENCIES
 
 
 def _is_missing_required(r: Dict[str, Any]) -> bool:
+    """Return True when required record fields are missing/blank."""
     return (
         not r.get("symbol")
         or not r.get("observation_date")
@@ -18,12 +19,14 @@ def _is_missing_required(r: Dict[str, Any]) -> bool:
 
 
 def _is_invalid_frequency(freq: Optional[str]) -> bool:
+    """Return True when frequency is missing or outside allowed set."""
     if freq is None:
         return True
     return str(freq).strip().lower() not in ALLOWED_FREQUENCIES
 
 
 def _is_non_finite_number(x: Any) -> bool:
+    """Return True for non-numeric, NaN, or infinite numeric values."""
     # factor_value should be float or None after normalize; still guard.
     if x is None:
         return False

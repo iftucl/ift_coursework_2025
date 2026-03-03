@@ -122,7 +122,7 @@ Current data requirements reference / 当前需求对应频率示例:
 - **Role 4 (Integrator):** ensures everyone can start the provided infrastructure via Docker and that the pipeline can connect using the compose-defined ports/credentials.
 
 **Roles that SHOULD use Docker (usually no compose changes):**
-- **Role 5 (DB Connectivity):** connects to PostgreSQL (and optionally MongoDB) started by Docker.
+- **Role 5 (DB Connectivity):** connects to PostgreSQL and MongoDB started by Docker.
 - **Role 6/7 (Extractors):** may need MinIO (and/or MongoDB) running locally to persist raw payloads.
 - **Role 8 (Transform/Quality/Tests):** runs integration/E2E tests against PostgreSQL/MinIO.
 

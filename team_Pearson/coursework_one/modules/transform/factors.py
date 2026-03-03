@@ -33,6 +33,7 @@ _QUALITY_EVENT_COUNTS: Dict[str, Any] = {
 
 
 def _quality_verbose_events_enabled() -> bool:
+    """Return whether per-event quality warnings should be logged verbosely."""
     return str(os.getenv("QUALITY_VERBOSE_EVENTS", "")).strip().lower() in {
         "1",
         "true",
@@ -42,6 +43,7 @@ def _quality_verbose_events_enabled() -> bool:
 
 
 def _reset_quality_event_counts() -> None:
+    """Reset in-memory quality event counters for one factor-build run."""
     _QUALITY_EVENT_COUNTS["stale_count"] = 0
     _QUALITY_EVENT_COUNTS["expired_count"] = 0
     _QUALITY_EVENT_COUNTS["stale_by_factor"] = {}
@@ -49,6 +51,7 @@ def _reset_quality_event_counts() -> None:
 
 
 def _record_quality_event(kind: str, factor: str) -> None:
+    """Increment stale/expired counters for a factor category."""
     if kind == "stale":
         _QUALITY_EVENT_COUNTS["stale_count"] = int(_QUALITY_EVENT_COUNTS["stale_count"]) + 1
         by_factor = dict(_QUALITY_EVENT_COUNTS["stale_by_factor"])
@@ -63,6 +66,7 @@ def _record_quality_event(kind: str, factor: str) -> None:
 
 
 def _flush_quality_event_summary() -> None:
+    """Log aggregated staleness/expiry summary for the current run."""
     stale = int(_QUALITY_EVENT_COUNTS["stale_count"])
     expired = int(_QUALITY_EVENT_COUNTS["expired_count"])
     if stale == 0 and expired == 0:
@@ -93,6 +97,7 @@ FINANCIAL_ATOMIC_FACTORS = {
 
 
 def _parse_iso_date(value: Any) -> Optional[date]:
+    """Parse date-like value as ``YYYY-MM-DD``; return None on failure."""
     raw = str(value or "").strip()[:10]
     if not raw:
         return None
@@ -103,6 +108,7 @@ def _parse_iso_date(value: Any) -> Optional[date]:
 
 
 def _period_key(obs_date: date, output_frequency: str) -> tuple:
+    """Map one observation date to sampling bucket key for target frequency."""
     if output_frequency == "daily":
         return (obs_date.year, obs_date.month, obs_date.day)
     if output_frequency == "weekly":
@@ -165,6 +171,7 @@ def _sample_records_by_frequency(
 
 
 def _month_ends(start: date, end: date) -> List[date]:
+    """Return month-end dates between ``start`` and ``end`` (inclusive)."""
     out: List[date] = []
     cur = date(start.year, start.month, 1)
     while cur <= end:
@@ -233,6 +240,7 @@ def _latest_financial_with_staleness_logging(
 
 
 def _to_float_or_none(value: Any) -> Optional[float]:
+    """Convert numeric-like value to finite float, otherwise None."""
     try:
         v = float(value)
     except (TypeError, ValueError):
@@ -298,7 +306,9 @@ def _find_price_row_with_trading_day_lookback(frame, cutoff: date, max_prior_tra
     return None, None, None
 
 
-def _compute_dividend_yield_monthly(df, end_date: date, start_date: date) -> List[Dict[str, Any]]:
+def _compute_dividend_yield_daily_asof(
+    df, end_date: date, start_date: date
+) -> List[Dict[str, Any]]:
     import pandas as pd
 
     price = (
@@ -327,9 +337,10 @@ def _compute_dividend_yield_monthly(df, end_date: date, start_date: date) -> Lis
         ds = dividend[dividend["symbol"] == symbol].sort_values("observation_date").copy()
         if ps.empty:
             continue
-        for month_end in _month_ends(start_date, end_date):
+        for obs_ts in pd.date_range(start=start_date, end=end_date, freq="D"):
+            obs_date = obs_ts.date()
             p_row, px, trading_days_old = _find_price_row_with_trading_day_lookback(
-                ps, month_end, max_prior_trading_days=3
+                ps, obs_date, max_prior_trading_days=3
             )
             if p_row is None or px is None:
                 continue
@@ -337,10 +348,10 @@ def _compute_dividend_yield_monthly(df, end_date: date, start_date: date) -> Lis
             px_date = p_row["observation_date"]
             if trading_days_old is not None and trading_days_old > 1:
                 logger.warning(
-                    "flag_stale_price=True factor=dividend_yield symbol=%s month_end=%s "
+                    "flag_stale_price=True factor=dividend_yield symbol=%s observation_date=%s "
                     "price_date=%s trading_days_old=%s",
                     symbol,
-                    month_end.isoformat(),
+                    obs_date.isoformat(),
                     px_date.isoformat(),
                     trading_days_old,
                 )
@@ -356,22 +367,24 @@ def _compute_dividend_yield_monthly(df, end_date: date, start_date: date) -> Lis
             records.append(
                 {
                     "symbol": symbol,
-                    "observation_date": month_end.isoformat(),
+                    "observation_date": obs_date.isoformat(),
                     "factor_name": "dividend_yield",
                     "factor_value": float(ttm_dps / px),
                     "source": "factor_transform",
-                    "metric_frequency": "monthly",
+                    "metric_frequency": "daily",
                     "source_report_date": px_date.isoformat(),
                 }
             )
     return records
 
 
-def _compute_pb_ratio_monthly(df, end_date: date, start_date: date) -> List[Dict[str, Any]]:
+def _compute_pb_ratio_daily_asof(df, end_date: date, start_date: date) -> List[Dict[str, Any]]:
     import pandas as pd
 
     pb_min_sample_for_dynamic_cap = 50
     pb_fallback_cap = 100.0
+    pb_winsor_lookback_bdays = int(os.getenv("PB_WINSOR_LOOKBACK_BDAYS", "252"))
+    pb_winsor_lookback_bdays = max(1, pb_winsor_lookback_bdays)
 
     price = df[df["factor_name"] == "adjusted_close_price"][
         ["symbol", "observation_date", "factor_value"]
@@ -396,20 +409,21 @@ def _compute_pb_ratio_monthly(df, end_date: date, start_date: date) -> List[Dict
         if ps.empty or ss.empty or es.empty:
             continue
 
-        for month_end in _month_ends(start_date, end_date):
+        for obs_ts in pd.date_range(start=start_date, end=end_date, freq="D"):
+            obs_date = obs_ts.date()
             p_row, p, trading_days_old = _find_price_row_with_trading_day_lookback(
-                ps, month_end, max_prior_trading_days=3
+                ps, obs_date, max_prior_trading_days=3
             )
             s_row = _latest_financial_with_staleness_logging(
                 ss,
-                cutoff=month_end,
+                cutoff=obs_date,
                 factor="pb_ratio",
                 symbol=symbol,
                 metric="shares_outstanding",
             )
             e_row = _latest_financial_with_staleness_logging(
                 es,
-                cutoff=month_end,
+                cutoff=obs_date,
                 factor="pb_ratio",
                 symbol=symbol,
                 metric="total_shareholder_equity",
@@ -422,10 +436,10 @@ def _compute_pb_ratio_monthly(df, end_date: date, start_date: date) -> List[Dict
                 continue
             if trading_days_old is not None and trading_days_old > 1:
                 logger.warning(
-                    "flag_stale_price=True factor=pb_ratio symbol=%s month_end=%s "
+                    "flag_stale_price=True factor=pb_ratio symbol=%s observation_date=%s "
                     "price_date=%s trading_days_old=%s",
                     symbol,
-                    month_end.isoformat(),
+                    obs_date.isoformat(),
                     p_row["observation_date"].isoformat(),
                     trading_days_old,
                 )
@@ -433,11 +447,11 @@ def _compute_pb_ratio_monthly(df, end_date: date, start_date: date) -> List[Dict
             raw_records.append(
                 {
                     "symbol": symbol,
-                    "observation_date": month_end.isoformat(),
+                    "observation_date": obs_date.isoformat(),
                     "factor_name": "pb_ratio",
                     "factor_value": pb,
                     "source": "factor_transform",
-                    "metric_frequency": "monthly",
+                    "metric_frequency": "daily",
                     "source_report_date": p_row["observation_date"].isoformat(),
                 }
             )
@@ -445,19 +459,56 @@ def _compute_pb_ratio_monthly(df, end_date: date, start_date: date) -> List[Dict
         return []
 
     records: List[Dict[str, Any]] = []
-    by_month: Dict[str, List[Dict[str, Any]]] = {}
+    by_symbol: Dict[str, Dict[str, List[Dict[str, Any]]]] = {}
     for row in raw_records:
-        by_month.setdefault(str(row["observation_date"]), []).append(row)
+        symbol = str(row.get("symbol") or "")
+        obs_date = str(row.get("observation_date") or "")
+        if not symbol or not obs_date:
+            continue
+        by_symbol.setdefault(symbol, {}).setdefault(obs_date, []).append(row)
 
-    for obs_date, month_rows in by_month.items():
-        month_values = [float(r["factor_value"]) for r in month_rows]
-        if len(month_values) >= pb_min_sample_for_dynamic_cap:
-            cap_value = float(pd.Series(month_values).quantile(0.99))
-        else:
-            cap_value = pb_fallback_cap
-        for row in month_rows:
-            row["factor_value"] = float(min(float(row["factor_value"]), cap_value))
-            records.append(row)
+    for symbol in sorted(by_symbol.keys()):
+        by_date = by_symbol[symbol]
+        date_index = sorted(by_date.keys())
+        if not date_index:
+            continue
+
+        bday_dates = [d for d in date_index if pd.Timestamp(d).weekday() < 5]
+        if not bday_dates:
+            bday_dates = date_index
+        bday_pos = {d: i for i, d in enumerate(bday_dates)}
+
+        values_by_date: Dict[str, List[float]] = {}
+        for d in date_index:
+            values_by_date[d] = [float(r["factor_value"]) for r in by_date[d]]
+
+        def _window_values_for_date(current_date: str) -> List[float]:
+            ref = current_date
+            if ref not in bday_pos:
+                ref = max((d for d in bday_dates if d <= current_date), default="")
+            if not ref:
+                return values_by_date.get(current_date, [])
+
+            end_idx = bday_pos[ref]
+            start_idx = max(0, end_idx - pb_winsor_lookback_bdays + 1)
+            window_bdays = set(bday_dates[start_idx : end_idx + 1])
+
+            out: List[float] = []
+            for d in date_index:
+                if d in window_bdays and d <= current_date:
+                    out.extend(values_by_date.get(d, []))
+            return out
+
+        for obs_date in date_index:
+            day_rows = by_date[obs_date]
+            window_values = _window_values_for_date(obs_date)
+            if len(window_values) >= pb_min_sample_for_dynamic_cap:
+                cap_value = float(pd.Series(window_values).quantile(0.99))
+            else:
+                cap_value = pb_fallback_cap
+            for row in day_rows:
+                row["factor_value"] = float(min(float(row["factor_value"]), cap_value))
+                records.append(row)
 
     return records
 
@@ -585,6 +636,7 @@ def _compute_ebitda_margin(df, end_date: date, start_date: date) -> List[Dict[st
 
 
 def _compute_technical_factors_daily(df, end_date: date, start_date: date) -> List[Dict[str, Any]]:
+    """Compute daily technical factors ``momentum_1m`` and ``volatility_20d``."""
     import pandas as pd
 
     price = (
@@ -651,6 +703,7 @@ def _compute_technical_factors_daily(df, end_date: date, start_date: date) -> Li
 
 
 def _compute_sentiment_30d_avg(df, end_date: date, start_date: date) -> List[Dict[str, Any]]:
+    """Compute daily ``sentiment_30d_avg`` and ``article_count_30d`` factors."""
     import pandas as pd
 
     sentiment_atomic = df[df["factor_name"] == "news_sentiment_daily"][
@@ -784,8 +837,8 @@ def compute_final_factor_records(
 
     out: List[Dict[str, Any]] = []
     out.extend(_compute_technical_factors_daily(df, end_date, start_date))
-    out.extend(_compute_dividend_yield_monthly(df, end_date, start_date))
-    out.extend(_compute_pb_ratio_monthly(df, end_date, start_date))
+    out.extend(_compute_dividend_yield_daily_asof(df, end_date, start_date))
+    out.extend(_compute_pb_ratio_daily_asof(df, end_date, start_date))
     out.extend(_compute_debt_to_equity_daily_asof(df, end_date, start_date))
     out.extend(_compute_ebitda_margin(df, end_date, start_date))
     out.extend(_compute_sentiment_30d_avg(df, end_date, start_date))
@@ -798,6 +851,7 @@ def _load_atomic_records_from_postgres(
     backfill_years: int,
     symbols: Optional[List[str]] = None,
 ) -> List[Dict[str, Any]]:
+    """Load atomic market/financial/news factors needed for final-factor build."""
     end_date = datetime.strptime(run_date, "%Y-%m-%d").date()
     lookback_days = max(0, int(round(365.25 * max(int(backfill_years), 0))))
     start_date = end_date - timedelta(days=lookback_days)

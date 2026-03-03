@@ -31,6 +31,7 @@ UNIVERSE_COUNT_SQL = {
 
 
 def _test_mode_symbols(limit: Optional[int]) -> list[str]:
+    """Return deterministic symbol sample for test mode runs."""
     symbols = ["AAPL", "MSFT", "GOOG", "AMZN", "TSLA"]
     if limit is None:
         return symbols
@@ -38,6 +39,7 @@ def _test_mode_symbols(limit: Optional[int]) -> list[str]:
 
 
 def _normalize_country_allowlist(country_allowlist: Optional[object]) -> List[str]:
+    """Normalize country allowlist into unique uppercase codes."""
     if not country_allowlist:
         return []
     if isinstance(country_allowlist, str):

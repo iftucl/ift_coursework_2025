@@ -1,51 +1,72 @@
 # Usage Instructions
 
-## Dry-run pipeline (default extractor: source_a)
+## Quick Start
+
+Run from project root:
 
 ```bash
 cd /Users/celiawong/Desktop/ift_coursework_2025/team_Pearson/coursework_one
-poetry run python Main.py --run-date 2026-02-14 --frequency daily --dry-run
 ```
 
-## Override extractor list via CLI
+### Standard daily run
 
 ```bash
-poetry run python Main.py \
-  --run-date 2026-02-14 \
-  --frequency daily \
-  --dry-run \
-  --enabled-extractors source_a,source_b
+poetry run python Main.py --run-date 2026-02-14 --frequency daily
 ```
 
-## Full test run
+### Teacher-style small sample acceptance run
+
+```bash
+poetry run python scripts/run_pipeline_and_index.py \
+  --run-date 2026-02-14 \
+  --frequency daily \
+  --backfill-years 1 \
+  --company-limit 5
+```
+
+Notes:
+- `source_b` is enabled by default via `pipeline.enabled_extractors` (`source_a,source_b`).
+- Mongo indexing is enabled by default in `run_pipeline_and_index.py` and `run_scheduled_pipeline.py`.
+- Disable Mongo indexing explicitly with `--no-index-mongo` when needed.
+
+## Command Reference
+
+### Pipeline execution
+
+| Goal | Command |
+| --- | --- |
+| Main pipeline single run | `poetry run python Main.py --run-date 2026-02-14 --frequency daily` |
+| Run with scheduler wrapper (daily default) | `poetry run python scripts/run_scheduled_pipeline.py` |
+| Weekly replay plan only | `poetry run python scripts/run_scheduled_pipeline.py --run-date 2026-03-02 --only weekly --plan-only` |
+| Multi-frequency replay plan only | `poetry run python scripts/run_scheduled_pipeline.py --run-date 2026-04-01 --only daily,weekly,monthly,quarterly --plan-only` |
+
+### Validation and inspection
+
+| Goal | Command |
+| --- | --- |
+| Validate pipeline consistency | `poetry run python scripts/validate_pipeline_data.py --tolerance 1e-6` |
+| Search Mongo news index | `poetry run python scripts/search_news.py --ticker AAPL --limit 10` |
+
+### Quality and security gates
 
 ```bash
 poetry run pytest -q
+poetry run bandit -r modules Main.py scripts
+VENV_PATH=$(poetry env info -p) && HOME=/tmp "$VENV_PATH/bin/safety" check -r poetry.lock
 ```
 
-## Coverage run
+## Typical Run Sequence
 
-```bash
-poetry run pytest --cov=modules --cov-report=term-missing -q
-```
+1. Run `scripts/init_db.py` once on a fresh database.
+2. Run `Main.py` or `run_pipeline_and_index.py` for ingestion and load.
+3. Run `validate_pipeline_data.py` to confirm cross-source consistency.
+4. Run `search_news.py` when checking indexed news retrieval behavior.
 
-## Factor Dictionary (Source A)
+## Output Footprint
 
-| factor_name | raw fields | formula | window | drop rule | frequency | source priority |
-| --- | --- | --- | --- | --- | --- | --- |
-| momentum_1m | Adjusted Close Price | `(Price_t / Price_{t-20}) - 1` | 20 trading days | drop if history < 20 trading days or adjusted close <= 0 | daily | alpha_vantage -> yfinance |
-| volatility_20d | Adjusted Close Price | `std(pct_change(price), rolling 20)` (simple return, non-annualized) | 20 trading days | drop if history < 20 trading days or adjusted close <= 0 | daily | alpha_vantage -> yfinance |
+After a successful run, you should see:
 
-## Company Universe (Documentation Example Only)
-
-Runtime company selection comes from PostgreSQL (`systematic_equity.company_static`).
-The following is only a documentation example:
-
-```yaml
-companies:
-  - AAPL
-  - MSFT
-  - GOOGL
-  - AMZN
-  - JPM
-```
+- MinIO raw objects under `raw/source_a/...` and `raw/source_b/...`
+- PostgreSQL updates in `factor_observations`, `financial_observations`, and `pipeline_runs`
+- MongoDB documents in `ift_cw.news_articles`
+- Optional quality snapshots in `systematic_equity.quality_snapshots`

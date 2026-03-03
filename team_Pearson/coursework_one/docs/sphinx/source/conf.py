@@ -22,7 +22,6 @@ extensions = [
 autodoc_mock_imports = [
     "psycopg2",
     "pandas",
-    "sqlalchemy",
     "yfinance",
     "minio",
     "pymongo",

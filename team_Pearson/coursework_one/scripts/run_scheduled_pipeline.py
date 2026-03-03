@@ -19,11 +19,14 @@ from modules.utils.env import load_dotenv_if_exists
 
 @dataclass
 class RunSpec:
+    """One scheduled run unit for a frequency/date pair."""
+
     frequency: str
     run_date: str
 
 
 def _parse_run_date(raw: str | None) -> date:
+    """Parse optional run date, defaulting to current UTC date."""
     if raw:
         return datetime.strptime(raw, "%Y-%m-%d").date()
     return datetime.now(timezone.utc).date()
@@ -35,6 +38,7 @@ def _build_run_specs(
     include_daily: bool,
     force_frequencies: List[str] | None,
 ) -> List[RunSpec]:
+    """Build run plan for forced frequencies or daily default schedule."""
     if force_frequencies:
         return [RunSpec(frequency=f, run_date=run_date.isoformat()) for f in force_frequencies]
 
@@ -53,6 +57,7 @@ def _build_cmd(
     dry_run: bool,
     index_mongo: bool,
 ) -> List[str]:
+    """Build CLI command for one scheduled pipeline invocation."""
     cmd = [
         sys.executable,
         "scripts/run_pipeline_and_index.py",
@@ -73,13 +78,14 @@ def _build_cmd(
 
 
 def main() -> int:
+    """CLI entrypoint for cron-friendly schedule orchestration."""
     parser = argparse.ArgumentParser(description="Calendar-triggered runner for Main.py")
     parser.add_argument("--run-date", default=None, help="YYYY-MM-DD; default is today (UTC).")
     parser.add_argument(
         "--only",
         default="",
         help=(
-            "Comma-separated frequencies to force (daily,monthly,quarterly). "
+            "Comma-separated frequencies to force (daily,weekly,monthly,quarterly). "
             "Default schedule mode runs daily only."
         ),
     )
@@ -93,8 +99,12 @@ def main() -> int:
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument(
         "--index-mongo",
-        action="store_true",
-        help="Also run Mongo news indexing after each successful Main.py run (best-effort).",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help=(
+            "Also run Mongo news indexing after each successful Main.py run "
+            "(default: enabled)."
+        ),
     )
     parser.add_argument(
         "--plan-only",
@@ -107,7 +117,7 @@ def main() -> int:
 
     run_date = _parse_run_date(args.run_date)
     forced = [x.strip().lower() for x in args.only.split(",") if x.strip()]
-    valid = {"daily", "monthly", "quarterly"}
+    valid = {"daily", "weekly", "monthly", "quarterly"}
     invalid = [x for x in forced if x not in valid]
     if invalid:
         raise SystemExit(f"Unsupported frequencies in --only: {invalid}")

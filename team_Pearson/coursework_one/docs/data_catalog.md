@@ -10,6 +10,10 @@ This catalog lists implemented datasets, owners, and storage locations.
 | `financial_observations` | Structured long table | PostgreSQL `systematic_equity.financial_observations` | Atomic financial metrics with period semantics (`symbol/report_date/metric/value/currency/period_type`). | Role 8 |
 | `factor_observations` | Structured long table | PostgreSQL `systematic_equity.factor_observations` | Atomic and final factors in EAV format (`symbol/date/factor/value`). | Role 8 |
 | `pipeline_runs` | Structured audit table | PostgreSQL `systematic_equity.pipeline_runs` | Primary run-level audit trail (`running/success/failed`, context, row counts, errors). | Role 8 |
+| `dataset_registry` | Structured metadata table | PostgreSQL `systematic_equity.dataset_registry` | Dataset-level metadata registry (owner, location, refresh policy, key definition). | Role 8 |
+| `schema_versions` | Structured metadata table | PostgreSQL `systematic_equity.schema_versions` | Versioned schema metadata per dataset (`version_tag`, `schema_json`, current flag). | Role 8 |
+| `lineage_edges` | Structured metadata table | PostgreSQL `systematic_equity.lineage_edges` | Dataset lineage edges (`upstream -> downstream`, transformation step). | Role 8 |
+| `quality_snapshots` | Structured metadata table | PostgreSQL `systematic_equity.quality_snapshots` | Run-level quality snapshots persisted as JSONB for trend/audit analysis. | Role 8 |
 | `pipeline_runs_jsonl` | JSONL log | Local file `logs/pipeline_runs.jsonl` | Secondary debug mirror of run logs (non-authoritative). | Role 8 |
 
 ## Notes
@@ -19,3 +23,4 @@ This catalog lists implemented datasets, owners, and storage locations.
 - Source B alternative atomic factors include `news_sentiment_daily` and `news_article_count_daily`.
 - Final factor computation is handled by `modules/transform/factors.py` and persisted to `factor_observations` (including recomputed technical factors `momentum_1m` and `volatility_20d`).
 - MinIO paths intentionally include `run_date` for traceability and reproducibility.
+- Mongo `news_articles` uses canonical fields `time_published` and `tickers`; compatibility aliases `published_at` and `symbols` are also written with the same values.
