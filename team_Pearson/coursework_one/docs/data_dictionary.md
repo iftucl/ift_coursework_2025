@@ -4,7 +4,7 @@ This document reflects the current implemented schema in `team_Pearson/coursewor
 
 ## 1. Table: `systematic_equity.company_static`
 
-Upstream universe table used by the pipeline (`modules/db/universe.py`).
+Primary upstream universe table used by the pipeline (`modules/db/universe.py`).
 
 | Column Name | Type | Description | Notes |
 | --- | --- | --- | --- |
@@ -12,6 +12,26 @@ Upstream universe table used by the pipeline (`modules/db/universe.py`).
 | `company_name` | TEXT | Company name | Optional in pipeline logic |
 | `country` | TEXT | Country code/name | Used by country allowlist filter |
 | `sector` | TEXT | Sector name | Optional metadata |
+
+Universe read behavior in current code:
+- Primary read target: `systematic_equity.company_static`
+- Fallback read target: `systematic_equity.equity_static` (if primary query fails)
+- Final universe can be adjusted by active rows in `systematic_equity.company_universe_overrides`
+
+## 1.1 Table: `systematic_equity.company_universe_overrides`
+
+Optional runtime override table for include/exclude controls, managed by `scripts/manage_universe_overrides.py`.
+
+| Column Name | Type | Description | Notes |
+| --- | --- | --- | --- |
+| `symbol` | VARCHAR(50) | Company symbol code | Primary key |
+| `action` | VARCHAR(20) | Override action | Check: `include` / `exclude` |
+| `is_active` | BOOLEAN | Whether override is active | Default `TRUE` |
+| `reason` | TEXT | Operator note | Nullable |
+| `updated_at` | TIMESTAMPTZ | Last update time | Default `CURRENT_TIMESTAMP` |
+
+Supporting index:
+- `idx_company_universe_overrides_action_active`
 
 ## 2. Table: `systematic_equity.factor_observations`
 

@@ -158,10 +158,10 @@ docker compose up -d pgadmin
 
 3) Re-open `http://localhost:5051/login` (avoid going directly to `/browser/`), log in again, then re-register the server.
 
-### Advanced: pin pgAdmin to a stable version using a local override (DO NOT COMMIT)
-If pgAdmin still fails due to a pgAdmin-internal error (HTTP 500 in `pg_admin_cw` logs), you may pin pgAdmin to a stable tag *locally* using a Docker Compose override file. This does **not** modify the teacher file and should not be committed.
+### Advanced: pin pgAdmin to a stable version using team override
+If pgAdmin still fails due to a pgAdmin-internal error (HTTP 500 in `pg_admin_cw` logs), use the team-scoped Compose override file. This keeps the teacher root compose file unchanged.
 
-Create (or update) `ift_coursework_2025/docker-compose.override.yml` with:
+Create (or update) `ift_coursework_2025/team_Pearson/coursework_one/docker-compose.pearson.override.yml` with:
 
 ```yaml
 services:
@@ -175,11 +175,11 @@ Then restart:
 
 ```bash
 cd ift_coursework_2025
-docker compose rm -sf pgadmin
-docker compose up -d pgadmin
+docker compose -f docker-compose.yml -f team_Pearson/coursework_one/docker-compose.pearson.override.yml rm -sf pgadmin
+docker compose -f docker-compose.yml -f team_Pearson/coursework_one/docker-compose.pearson.override.yml up -d pgadmin
 ```
 
-This override is purely for local convenience; grading and CI do not require pgAdmin.
+This override is team-scoped convenience; grading and CI can still run from root `docker-compose.yml` only.
 
 Docker-aligned defaults used by this project (single source: repo root `docker-compose.yml`):
 - `POSTGRES_HOST=localhost`
@@ -229,8 +229,8 @@ MinIO bucket initialization behavior from compose:
 - `minio_client_cw` runs `mc rm -r --force minio/csreport` then `mc mb minio/csreport`.
 - This means bucket `csreport` is recreated by compose bootstrap (not manually created in app setup docs).
 
-Optional local-only safety override (do not edit teacher compose):
-- Use repo root `docker-compose.override.yml` to keep bucket contents by default:
+Optional team-scoped safety override (do not edit teacher compose):
+- Use `team_Pearson/coursework_one/docker-compose.pearson.override.yml` to keep bucket contents by default:
   - `minio_client_cw`: remove auto-delete, keep `mc mb --ignore-existing`.
   - `miniocw`: mount `./minio-data:/data` for persistence across container rebuilds.
   - `minio_reset_cw` (manual profile): explicit reset service when you really need clean state.
@@ -238,7 +238,7 @@ Optional local-only safety override (do not edit teacher compose):
 
 ```bash
 cd ift_coursework_2025
-docker compose --profile manual-reset run --rm minio_reset_cw
+docker compose -f docker-compose.yml -f team_Pearson/coursework_one/docker-compose.pearson.override.yml --profile manual-reset run --rm minio_reset_cw
 ```
 
 MinIO client compatibility note (do not modify teacher `docker-compose.yml`):
