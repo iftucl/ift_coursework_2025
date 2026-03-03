@@ -9,7 +9,7 @@
 Run from repository root:
 
 ```bash
-cd /Users/celiawong/Desktop/ift_coursework_2025
+cd ift_coursework_2025
 docker compose up -d postgres_db mongo_db miniocw minio_client_cw
 ```
 

@@ -250,7 +250,8 @@ def _monthly_current_object_path(symbol: str, month_start: date) -> str:
     """Build stable object key for merged current-month Source B JSONL."""
     return (
         "raw/source_b/news_current/"
-        f"year={month_start.strftime('%Y')}/month={month_start.strftime('%m')}/symbol={symbol}.jsonl"
+        f"year={month_start.strftime('%Y')}/month={month_start.strftime('%m')}/"
+        f"symbol={symbol}.jsonl"
     )
 
 
@@ -322,7 +323,9 @@ def _load_current_month_articles(
             secret_key=minio_cfg["secret_key"],
             secure=minio_cfg.get("secure", False),
         )
-        obj = client.get_object(minio_cfg["bucket"], _monthly_current_object_path(symbol, month_start))
+        obj = client.get_object(
+            minio_cfg["bucket"], _monthly_current_object_path(symbol, month_start)
+        )
         try:
             data = obj.read().decode("utf-8")
         finally:
@@ -338,10 +341,11 @@ def _load_current_month_articles(
             continue
         try:
             parsed = json.loads(line)
-        except Exception:
+        except json.JSONDecodeError:
+            parsed = None
+        if not isinstance(parsed, dict):
             continue
-        if isinstance(parsed, dict):
-            records.append(_normalize_article(parsed))
+        records.append(_normalize_article(parsed))
     return records
 
 
@@ -381,10 +385,14 @@ def _save_current_month_articles(
             content_type="application/json",
         )
     except Exception as exc:  # pragma: no cover - external service dependent
-        logger.warning("source_b current-month save skipped for %s %s: %r", symbol, month_start, exc)
+        logger.warning(
+            "source_b current-month save skipped for %s %s: %r", symbol, month_start, exc
+        )
 
 
-def _load_month_cursor(config: Optional[Dict[str, Any]], symbol: str, month_start: date) -> Optional[date]:
+def _load_month_cursor(
+    config: Optional[Dict[str, Any]], symbol: str, month_start: date
+) -> Optional[date]:
     """Load last_ingested_date for one symbol-month cursor from MinIO."""
     minio_cfg = _minio_config(config)
     required = ["endpoint", "access_key", "secret_key", "bucket"]
@@ -795,7 +803,10 @@ def transform_source_b_features(
         # New schema uses fetch_start as fallback anchor; keep backward compatibility
         # with older payloads that only carried month_end.
         default_obs_date = str(
-            payload.get("fetch_start") or payload.get("month_start") or payload.get("month_end") or ""
+            payload.get("fetch_start")
+            or payload.get("month_start")
+            or payload.get("month_end")
+            or ""
         ).strip()
         feed = payload.get("feed") or []
         if not symbol or not default_obs_date:
@@ -854,7 +865,8 @@ def transform_source_b_features(
 
     if time_fallback_count or time_drop_count:
         logger.warning(
-            "source_b_time_quality strict_time=%s fallback_to_default_obs_date=%s dropped_missing_time=%s",
+            "source_b_time_quality strict_time=%s "
+            "fallback_to_default_obs_date=%s dropped_missing_time=%s",
             strict_time,
             time_fallback_count,
             time_drop_count,

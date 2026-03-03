@@ -102,8 +102,7 @@ def main() -> int:
         action=argparse.BooleanOptionalAction,
         default=True,
         help=(
-            "Also run Mongo news indexing after each successful Main.py run "
-            "(default: enabled)."
+            "Also run Mongo news indexing after each successful Main.py run " "(default: enabled)."
         ),
     )
     parser.add_argument(

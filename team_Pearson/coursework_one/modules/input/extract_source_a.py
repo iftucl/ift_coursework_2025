@@ -364,9 +364,7 @@ def _build_quarterly_income_map_from_av_income_statement(
         if not report_date or not _in_backfill_window(report_date, run_date, backfill_years):
             continue
         out[report_date] = {
-            "enterprise_ebitda": _to_float_or_none(
-                report.get("ebitda") or report.get("ebit") or report.get("operatingIncome")
-            ),
+            "enterprise_ebitda": _to_float_or_none(report.get("ebitda")),
             "enterprise_revenue": _to_float_or_none(report.get("totalRevenue")),
         }
     return out

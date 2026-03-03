@@ -5,7 +5,7 @@
 Run from project root:
 
 ```bash
-cd /Users/celiawong/Desktop/ift_coursework_2025/team_Pearson/coursework_one
+cd team_Pearson/coursework_one
 ```
 
 ### Standard daily run

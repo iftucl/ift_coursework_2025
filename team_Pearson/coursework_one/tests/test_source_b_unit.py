@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+import sys
 from datetime import date
 
 import pytest
@@ -199,7 +200,9 @@ def test_month_incremental_merge_builds_complete_coverage_with_dedup():
 def test_monthly_current_helpers_no_minio_config_are_noop():
     key = source_b._monthly_current_object_path("AAPL", date(2026, 2, 1))
     assert "raw/source_b/news_current/" in key
-    loaded = source_b._load_current_month_articles(config={}, symbol="AAPL", month_start=date(2026, 2, 1))
+    loaded = source_b._load_current_month_articles(
+        config={}, symbol="AAPL", month_start=date(2026, 2, 1)
+    )
     assert loaded == []
     source_b._save_current_month_articles(
         config={},
@@ -289,12 +292,16 @@ def test_source_b_symbol_filter_can_relax_rules():
 def test_ingest_source_b_raw_collects_payloads(monkeypatch):
     monkeypatch.setenv("ALPHA_VANTAGE_API_KEY", "k")
     monkeypatch.setattr(
-        source_b, "_month_windows", lambda run_date, backfill_years: [(date(2026, 2, 1), date(2026, 2, 14))]
+        source_b,
+        "_month_windows",
+        lambda run_date, backfill_years: [(date(2026, 2, 1), date(2026, 2, 14))],
     )
     monkeypatch.setattr(
         source_b,
         "_fetch_news_for_range",
-        lambda symbol, api_key, time_from, time_to: {"feed": [{"title": "good", "summary": "profit"}]},
+        lambda symbol, api_key, time_from, time_to: {
+            "feed": [{"title": "good", "summary": "profit"}]
+        },
     )
     monkeypatch.setattr(source_b, "_load_month_cursor_closed", lambda *args, **kwargs: False)
     monkeypatch.setattr(source_b, "_load_month_cursor", lambda *args, **kwargs: None)
@@ -589,7 +596,10 @@ def test_ingest_source_b_raw_merges_with_current_month_view(monkeypatch):
     monkeypatch.setattr(
         source_b,
         "_load_current_month_articles",
-        lambda *args, **kwargs: [{"url": "https://x.com/1", "title": "Old"}, {"url": "https://x.com/2"}],
+        lambda *args, **kwargs: [
+            {"url": "https://x.com/1", "title": "Old"},
+            {"url": "https://x.com/2"},
+        ],
     )
     monkeypatch.setattr(source_b, "_save_raw_to_minio", lambda *args, **kwargs: None)
     monkeypatch.setattr(source_b, "_save_month_cursor", lambda *args, **kwargs: None)
@@ -669,6 +679,21 @@ def test_fetch_news_for_range_raises_information(monkeypatch):
         )
 
 
+def test_fetch_news_for_range_invalid_url():
+    original = source_b.ALPHA_VANTAGE_BASE_URL
+    source_b.ALPHA_VANTAGE_BASE_URL = "http://evil.local/query"
+    try:
+        with pytest.raises(RuntimeError, match="Invalid Alpha Vantage base URL"):
+            source_b._fetch_news_for_range(
+                "AAPL",
+                "k",
+                time_from="20260201T0000",
+                time_to="20260214T2359",
+            )
+    finally:
+        source_b.ALPHA_VANTAGE_BASE_URL = original
+
+
 def test_transform_source_b_features_legacy_month_end_fallback_and_empty_text(monkeypatch):
     monkeypatch.delenv("CW1_TEST_MODE", raising=False)
     raw_payloads = [
@@ -683,3 +708,83 @@ def test_transform_source_b_features_legacy_month_end_fallback_and_empty_text(mo
     assert out[0]["factor_name"] == "news_article_count_daily"
     assert out[0]["observation_date"] == "2026-02-28"
     assert out[0]["timestamp_inferred"] == 1
+
+
+def test_source_b_minio_paths_save_and_load_helpers(monkeypatch):
+    storage = {}
+
+    class _Obj:
+        def __init__(self, data):
+            self._data = data
+
+        def read(self):
+            return self._data
+
+        def close(self):
+            return None
+
+        def release_conn(self):
+            return None
+
+    class _FakeMinio:
+        def __init__(self, endpoint, access_key, secret_key, secure=False):  # noqa: ARG002
+            pass
+
+        def bucket_exists(self, bucket):
+            return bucket in storage
+
+        def make_bucket(self, bucket):
+            storage.setdefault(bucket, {})
+
+        def put_object(self, bucket, key, data, length, content_type):  # noqa: ARG002
+            payload = data.read()
+            assert len(payload) == length
+            storage.setdefault(bucket, {})[key] = payload
+
+        def get_object(self, bucket, key):
+            return _Obj(storage[bucket][key])
+
+    monkeypatch.setitem(sys.modules, "minio", type("M", (), {"Minio": _FakeMinio}))
+    cfg = {
+        "minio": {
+            "endpoint": "localhost:9000",
+            "access_key": "x",
+            "secret_key": "y",
+            "bucket": "csreport",
+            "secure": False,
+        }
+    }
+    symbol = "AAPL"
+    month_start = date(2026, 2, 1)
+
+    source_b._save_raw_to_minio(
+        cfg,
+        symbol=symbol,
+        run_date="2026-02-14",
+        month_end=month_start,
+        articles=[{"article_id": "1", "title": "t"}],
+    )
+    raw_keys = list(storage["csreport"].keys())
+    assert any(k.startswith("raw/source_b/news/run_date=2026-02-14/") for k in raw_keys)
+
+    source_b._save_current_month_articles(
+        cfg,
+        symbol=symbol,
+        month_start=month_start,
+        articles=[{"article_id": "1", "title": "new"}],
+    )
+    loaded = source_b._load_current_month_articles(cfg, symbol=symbol, month_start=month_start)
+    assert loaded[0]["article_id"] == "1"
+    assert loaded[0]["title"] == "new"
+
+    source_b._save_month_cursor(
+        cfg,
+        symbol=symbol,
+        month_start=month_start,
+        last_ingested_date=date(2026, 2, 14),
+        is_closed=True,
+    )
+    assert source_b._load_month_cursor(cfg, symbol=symbol, month_start=month_start) == date(
+        2026, 2, 14
+    )
+    assert source_b._load_month_cursor_closed(cfg, symbol=symbol, month_start=month_start) is True

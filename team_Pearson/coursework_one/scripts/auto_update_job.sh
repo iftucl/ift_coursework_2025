@@ -5,7 +5,11 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 COURSEWORK_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 REPO_ROOT="$(cd "$COURSEWORK_DIR/.." && pwd)"
 
-POETRY_BIN="${POETRY_BIN:-/Users/celiawong/.local/bin/poetry}"
+POETRY_BIN="${POETRY_BIN:-$(command -v poetry || true)}"
+if [[ -z "$POETRY_BIN" ]]; then
+  echo "poetry not found in PATH; set POETRY_BIN explicitly." >&2
+  exit 1
+fi
 
 cd "$REPO_ROOT"
 # Ensure required infra is available before pipeline update.

@@ -11,7 +11,6 @@ from modules.output.normalize import normalize_financial_records, normalize_reco
 from modules.output.quality import run_quality_checks
 from modules.transform.factors import compute_final_factor_records
 
-
 RUN_DATE = "2026-02-10"
 BACKFILL_YEARS = 1
 SNAPSHOT_PATH = Path(__file__).resolve().parent / "fixtures" / "golden_final_factors_snapshot.csv"
@@ -333,10 +332,7 @@ def test_offline_replay_e2e_chain_covers_key_boundary_rules():
     # malformed raw rows are present and should be surfaced before transform.
     assert quality["missing_required"] >= 1
 
-    by_key = {
-        (r["symbol"], r["observation_date"], r["factor_name"]): r
-        for r in final_records
-    }
+    by_key = {(r["symbol"], r["observation_date"], r["factor_name"]): r for r in final_records}
 
     # price lookback <= 3 trading-day records: AAA can still compute on run_date.
     assert ("AAA", RUN_DATE, "dividend_yield") in by_key

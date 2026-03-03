@@ -9,8 +9,24 @@ All deliverables must live under:
 
 Do not commit changes outside this folder (e.g., `000.Database`).
 
+### Documentation (Sphinx)
+Docs entry point after build:
+- `docs/sphinx/build/html/index.html`
+
+Open the full documentation site from this entry point (left navigation contains all pages):
+
+```bash
+cd team_Pearson/coursework_one
+open docs/sphinx/build/html/index.html
+```
+
 ## Quickstart (local)
 From repository root:
+
+Environment setup (run once per shell session in `team_Pearson/coursework_one`):
+```bash
+set -a; source .env; set +a
+```
 
 1) If Poetry is installed:
 
@@ -60,6 +76,8 @@ cd team_Pearson/coursework_one
 cp .env.example .env
 # set ALPHA_VANTAGE_API_KEY in .env (recommended)
 poetry install
+# load env once in this shell session
+set -a; source .env; set +a
 poetry run python Main.py --run-date 2026-02-14 --frequency daily --dry-run
 poetry run pytest tests -q
 ```
@@ -81,6 +99,10 @@ poetry run python scripts/init_db.py
 This project-level initializer does two steps:
 1. Applies `sql/init.sql` into running `postgres_db_cw` via `docker exec`.
 2. Seeds `systematic_equity.company_static` from `000.Database/SQL/Equity.db`.
+
+Important:
+- Always load `.env` before `scripts/init_db.py`, `Main.py`, and validation scripts.
+- If you skip `set -a; source .env; set +a`, database host/port/user/password may not be loaded, and init/seed can fail.
 
 Data validation (date-type consistent checks):
 
@@ -120,14 +142,14 @@ Some environments (especially on macOS with bind mounts) may experience pgAdmin 
 1) Stop pgAdmin from the repo root:
 
 ```bash
-cd /Users/celiawong/Desktop/ift_coursework_2025
+cd ift_coursework_2025
 docker compose stop pgadmin
 ```
 
 2) Reset pgAdmin local state directory and permissions (repo root):
 
 ```bash
-cd /Users/celiawong/Desktop/ift_coursework_2025
+cd ift_coursework_2025
 rm -rf pgadmin-data
 mkdir -p pgadmin-data
 chmod -R 777 pgadmin-data
@@ -152,7 +174,7 @@ services:
 Then restart:
 
 ```bash
-cd /Users/celiawong/Desktop/ift_coursework_2025
+cd ift_coursework_2025
 docker compose rm -sf pgadmin
 docker compose up -d pgadmin
 ```
@@ -215,7 +237,7 @@ Optional local-only safety override (do not edit teacher compose):
 - Manual reset command:
 
 ```bash
-cd /Users/celiawong/Desktop/ift_coursework_2025
+cd ift_coursework_2025
 docker compose --profile manual-reset run --rm minio_reset_cw
 ```
 
@@ -224,7 +246,7 @@ MinIO client compatibility note (do not modify teacher `docker-compose.yml`):
 - If you see `mc: <ERROR> 'config' is not a recognized command`, use this one-off compatible reset command:
 
 ```bash
-cd /Users/celiawong/Desktop/ift_coursework_2025
+cd ift_coursework_2025
 docker run --rm --entrypoint /bin/sh --network ift_coursework_2025_iceberg_net minio/mc -c \
 "mc alias set minio http://miniocw:9000 ift_bigdata minio_password && \
 mc rm -r --force minio/csreport || true && \
@@ -348,10 +370,16 @@ cd team_Pearson/coursework_one
 poetry run python scripts/run_pipeline_and_index.py --run-date 2026-02-14 --frequency daily
 ```
 
-Mongo index build (best-effort, default enabled):
-- enabled by default in `run_pipeline_and_index.py` / `run_scheduled_pipeline.py`
-- disable with `--no-index-mongo`
-- if Mongo indexing fails, pipeline still returns success
+Default database/storage targets:
+- `Main.py` direct writes:
+  - PostgreSQL tables: `systematic_equity.factor_observations`, `systematic_equity.financial_observations`, `systematic_equity.pipeline_runs`
+  - MinIO objects: `raw/source_a/...`, `raw/source_b/...`, plus Source B cursor/current-month objects
+  - MongoDB: not written by `Main.py` directly
+- MongoDB indexing (serving/search layer):
+  - runs after successful `Main.py` in `scripts/run_pipeline_and_index.py` / `scripts/run_scheduled_pipeline.py`
+  - enabled by default
+  - disable with `--no-index-mongo`
+  - best-effort: if Mongo indexing fails, core pipeline still returns success
 
 ```bash
 cd team_Pearson/coursework_one
@@ -392,6 +420,11 @@ cd team_Pearson/coursework_one
 ./scripts/install_auto_update_cron.sh
 ```
 
+Poetry discovery for auto-update scripts:
+- `scripts/auto_update_job.sh` auto-detects Poetry from `PATH` (`command -v poetry`).
+- Manual override is optional (only needed if Poetry is not on `PATH`):
+  `POETRY_BIN=/path/to/poetry ./scripts/auto_update_job.sh`
+
 Custom schedule example:
 ```bash
 cd team_Pearson/coursework_one
@@ -408,7 +441,7 @@ cd team_Pearson/coursework_one
 ./scripts/uninstall_auto_update_cron.sh
 ```
 
-## Integration contracts (for roles 3/5/6/7/8)
+## Integration contracts
 - `modules.db.get_company_universe(company_limit: int, country_allowlist: list[str] | None = None) -> list[str]`
 - `modules.input.extract_source_a(symbols, run_date, backfill_years, frequency, config=None) -> list[dict]`
 - `modules.input.extract_source_b(symbols, run_date, backfill_years, frequency, config=None) -> list[dict]`
@@ -451,7 +484,7 @@ This project supports a rebuildable MongoDB news-search index:
 From repository root:
 
 ```bash
-cd /Users/celiawong/Desktop/ift_coursework_2025
+cd ift_coursework_2025
 docker compose up -d mongo_db miniocw minio_client_cw
 ```
 
@@ -512,13 +545,6 @@ Mongo defaults in these scripts:
 - default database: `ift_cw` (override with `MONGO_DB` / `config.mongo.database`)
 - collection: `news_articles`
 
-## Output and Infra Ownership
-- Role 3 (primary): `modules/output/load.py` and SQL persistence rules (e.g., `sql/init.sql` with upsert/index/constraints)
-- Role 5 (support): database-schema compatibility checks for SQL changes
-- Role 4 (primary): integration-safe management of shared runtime config (`docker-compose.yml`, `.env` conventions)
-
-This split is used to reduce merge conflicts on shared infra files while keeping storage logic owned by the output/database roles.
-
 ## Database verification (terminal)
 If pgAdmin is unavailable, verify the curated load via `psql`:
 
@@ -567,8 +593,9 @@ Run from `team_Pearson/coursework_one`:
 poetry run pytest -q
 # coverage threshold is enforced by pytest config (>=80%)
 poetry run pytest
+poetry run flake8 .
 poetry run bandit -r modules Main.py
-# safety check is used here because safety scan requires interactive login in some CLI environments
+# primary safety command (works in current coursework environment)
 VENV_PATH=$(poetry env info -p) && HOME=/tmp "$VENV_PATH/bin/safety" check -r poetry.lock
 cd docs/sphinx && poetry run make html
 ```
@@ -577,24 +604,20 @@ Bandit / Safety quick run:
 
 ```bash
 cd team_Pearson/coursework_one
+poetry run flake8 .
 poetry run bandit -r modules Main.py
 VENV_PATH=$(poetry env info -p) && HOME=/tmp "$VENV_PATH/bin/safety" check -r poetry.lock
 ```
 
+Safety CLI note:
+- `safety check` is deprecated in Safety v3 and may show a warning.
+- If your environment supports it, you can use:
+  `VENV_PATH=$(poetry env info -p) && HOME=/tmp "$VENV_PATH/bin/safety" scan -r poetry.lock`
+
 Security vulnerability response process:
-- Run `bandit` and `safety` before merge/release (and after dependency changes).
+- Run `flake8`, `bandit`, and `safety` before merge/release (and after dependency changes).
 - If any vulnerability is reported, open an issue immediately with severity, affected package/module, and scan output.
 - For dependency CVEs, patch by updating/removing the package via Poetry (`poetry add ...` / `poetry remove ...`) and refresh lockfile.
 - For code-level findings, patch in code and add/adjust tests to prevent regression.
-- Re-run `poetry run bandit -r modules Main.py` and `safety` check; merge only after scans are clean.
+- Re-run `poetry run flake8 .`, `poetry run bandit -r modules Main.py`, and `safety` check; merge only after scans are clean.
 - Record remediation summary in PR/commit notes for audit traceability.
-
-Docs entry point after build:
-- `docs/sphinx/build/html/index.html`
-
-Open the full documentation site from this entry point (left navigation contains all pages):
-
-```bash
-cd team_Pearson/coursework_one
-open docs/sphinx/build/html/index.html
-```

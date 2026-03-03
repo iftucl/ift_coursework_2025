@@ -293,7 +293,9 @@ def test_compute_final_factor_records_pb_ratio_uses_per_symbol_rolling_q99_with_
     atomic = []
     symbol = "S000"
     start = date(2026, 1, 1)
-    dates = [start + timedelta(days=i) for i in range(90) if (start + timedelta(days=i)).weekday() < 5]
+    dates = [
+        start + timedelta(days=i) for i in range(90) if (start + timedelta(days=i)).weekday() < 5
+    ]
     obs_date = dates[-1].isoformat()
     for d in dates:
         price = 1000.0 if d.isoformat() == obs_date else 1.0

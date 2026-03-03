@@ -1,8 +1,11 @@
 import importlib
 import json
 import math
+import sys
 
 import pandas as pd
+import pytest
+import requests
 
 source_a = importlib.import_module("modules.input.extract_source_a")
 
@@ -565,3 +568,95 @@ def test_download_with_provider_uses_alpha_vantage_first(monkeypatch):
     assert source == "alpha_vantage"
     assert ticker is None
     assert len(history) == 2
+
+
+def test_download_price_history_alpha_vantage_request_exception(monkeypatch):
+    class _Boom:
+        @staticmethod
+        def raise_for_status():
+            raise requests.RequestException("network down")
+
+    monkeypatch.setattr(source_a.requests, "get", lambda *args, **kwargs: _Boom())
+
+    with pytest.raises(RuntimeError, match="request failed"):
+        source_a._download_price_history_alpha_vantage("AAPL", 1, "k")
+
+
+def test_download_price_history_alpha_vantage_invalid_json(monkeypatch):
+    class _BadJson:
+        @staticmethod
+        def raise_for_status():
+            return None
+
+        @staticmethod
+        def json():
+            raise ValueError("bad json")
+
+    monkeypatch.setattr(source_a.requests, "get", lambda *args, **kwargs: _BadJson())
+
+    with pytest.raises(RuntimeError, match="invalid JSON"):
+        source_a._download_price_history_alpha_vantage("AAPL", 1, "k")
+
+
+def test_download_price_history_retries_then_success(monkeypatch):
+    calls = {"n": 0}
+    sleeps = []
+
+    class _FakeTicker:
+        def __init__(self, symbol):  # noqa: ARG002
+            pass
+
+        def history(self, period, auto_adjust=False):  # noqa: ARG002
+            calls["n"] += 1
+            if calls["n"] == 1:
+                raise RuntimeError("transient")
+            idx = pd.to_datetime(["2026-02-13"])
+            return pd.DataFrame({"Close": [101.0], "Dividends": [0.0]}, index=idx)
+
+    monkeypatch.setitem(sys.modules, "yfinance", type("YF", (), {"Ticker": _FakeTicker}))
+    monkeypatch.setattr(source_a.time, "sleep", lambda v: sleeps.append(v))
+    _, history = source_a._download_price_history("AAPL", 1, max_retries=2)
+    assert len(history) == 1
+    assert sleeps == [1]
+
+
+def test_extract_source_a_uses_cache_payload_branch(monkeypatch):
+    monkeypatch.delenv("CW1_TEST_MODE", raising=False)
+
+    history_rows = [
+        {"observation_date": "2026-02-13", "Close": 100.0, "Dividends": 0.0},
+        {"observation_date": "2026-02-14", "Close": 101.0, "Dividends": 0.1},
+    ]
+    cached_payload = {
+        # intentionally mismatched to trigger cache consistency warning path
+        "symbol": "MSFT",
+        "run_date": "2026-02-13",
+        "rows": 999,
+        "history": history_rows,
+        "fundamentals": {
+            "total_debt": 1.0,
+            "total_shareholder_equity": 2.0,
+            "book_value": 3.0,
+            "shares_outstanding": 4.0,
+            "enterprise_ebitda": 5.0,
+            "enterprise_revenue": 6.0,
+        },
+        "source_used": "cache_replay",
+    }
+
+    monkeypatch.setattr(source_a, "_load_raw_from_minio", lambda *args, **kwargs: cached_payload)
+
+    def _should_not_download(*args, **kwargs):
+        raise AssertionError("download path should not be used when cache payload exists")
+
+    monkeypatch.setattr(source_a, "_download_with_provider", _should_not_download)
+
+    out = source_a.extract_source_a(
+        symbols=["AAPL"],
+        run_date="2026-02-14",
+        backfill_years=1,
+        frequency="daily",
+        config={"source_a": {"use_cache": True}},
+    )
+    assert len(out) > 0
+    assert all(r["source"] == "cache_replay" for r in out)
