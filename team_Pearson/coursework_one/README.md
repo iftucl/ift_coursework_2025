@@ -302,7 +302,7 @@ poetry run python scripts/validate_pipeline_data.py --tolerance 1e-6
 
 Notes:
 - `pytest` coverage threshold is enforced by config (`>=80%`).
-- `safety check` scans `poetry.lock` without interactive login in this workflow.
+- In this workflow, `safety check` verifies `poetry.lock` without interactive login.
 - `safety scan` is the newer command but requires Safety account login/registration (interactive prompt).
 - If you need non-interactive coursework checks, use `check`.
 
