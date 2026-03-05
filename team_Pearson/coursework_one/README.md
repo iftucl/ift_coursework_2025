@@ -203,15 +203,15 @@ poetry run python scripts/index_news_to_mongo.py --run-date 2026-03-05 --since 2
 ### Search indexed news
 
 ```bash
-poetry run python scripts/search_news.py --q "earnings surprise" --ticker AAPL --from 2026-01-01 --to 2026-03-05 --limit 20
+poetry run python scripts/search_news.py --q "earnings surprise" --symbol AAPL --from 2026-01-01 --to 2026-03-05 --limit 20
 ```
 
 ### Mongo index set created by script
 
 - text: `title + summary`
 - time: `time_published`
-- ticker: `tickers`
-- ticker+time: `tickers + time_published(desc)`
+- symbol: `symbols`
+- symbol+time: `symbols + time_published(desc)`
 - sparse unique: `url`
 - run: `last_seen_run_date`
 - run+time: `last_seen_run_date + time_published(desc)`
@@ -258,8 +258,8 @@ db.news_articles.countDocuments({})
 
 // latest 20 AAP news docs
 db.news_articles.find(
-  { tickers: "AAP" },
-  { _id: 0, title: 1, time_published: 1, url: 1, tickers: 1 }
+  { symbols: "AAP" },
+  { _id: 0, title: 1, time_published: 1, url: 1, symbols: 1 }
 ).sort({ time_published: -1 }).limit(20)
 ```
 

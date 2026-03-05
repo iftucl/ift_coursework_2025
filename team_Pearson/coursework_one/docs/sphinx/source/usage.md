@@ -46,7 +46,7 @@ Notes:
 | Goal | Command |
 | --- | --- |
 | Validate pipeline consistency | `poetry run python scripts/validate_pipeline_data.py --tolerance 1e-6` |
-| Search Mongo news index | `poetry run python scripts/search_news.py --ticker AAPL --limit 10` |
+| Search Mongo news index | `poetry run python scripts/search_news.py --symbol AAPL --limit 10` |
 
 ### 2.3 Quality and security gates
 

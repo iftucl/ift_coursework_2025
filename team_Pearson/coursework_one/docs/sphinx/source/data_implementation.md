@@ -78,8 +78,8 @@ Key clarification:
 ### 3.3 MongoDB search index
 
 - Collection: `ift_cw.news_articles`
-- Canonical fields: `time_published`, `tickers`
-- Compatibility aliases: `published_at`, `symbols`
+- Canonical fields: `time_published`, `symbols`
+- Compatibility aliases: `published_at`, `tickers`
 - Enabled by default in `Main.py` and scheduler/orchestrator scripts; disable with `--no-index-mongo`.
 
 Mongo responsibility split:

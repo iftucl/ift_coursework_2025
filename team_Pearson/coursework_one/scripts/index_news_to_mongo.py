@@ -8,6 +8,7 @@ import json
 import logging
 import os
 import re
+import sys
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Iterator
@@ -17,8 +18,12 @@ from minio import Minio
 from pymongo import UpdateOne
 from pymongo.collection import Collection
 
-from modules.utils.mongo import build_mongo_collection, resolve_mongo_db
-from modules.utils.env import load_dotenv_if_exists
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from modules.utils.mongo import build_mongo_collection, resolve_mongo_db  # noqa: E402
+from modules.utils.env import load_dotenv_if_exists  # noqa: E402
 
 try:
     import langid  # type: ignore
@@ -138,7 +143,7 @@ def _extract_topics(raw_topics: Any) -> list[str]:
     return out
 
 
-def _extract_tickers(raw_item: dict[str, Any], object_symbol: str) -> list[str]:
+def _extract_symbols(raw_item: dict[str, Any], object_symbol: str) -> list[str]:
     out: list[str] = []
     seen: set[str] = set()
     symbol = object_symbol.strip().upper()
@@ -173,10 +178,10 @@ def _ensure_indexes(coll: Collection) -> None:
         name="idx_text_title_summary",
     )
     coll.create_index([("time_published", 1)], name="idx_time_published")
-    coll.create_index([("tickers", 1)], name="idx_tickers")
+    coll.create_index([("symbols", 1)], name="idx_symbols")
     coll.create_index(
-        [("tickers", 1), ("time_published", -1)],
-        name="idx_tickers_time_published_desc",
+        [("symbols", 1), ("time_published", -1)],
+        name="idx_symbols_time_published_desc",
     )
     coll.create_index([("published_at", 1)], name="idx_published_at")
     coll.create_index([("url", 1)], name="idx_url_unique", unique=True, sparse=True)
@@ -342,7 +347,7 @@ def index_news(
                     if until_dt and published_at >= until_dt:
                         stats["articles_filtered_by_time"] += 1
                         continue
-                tickers = _extract_tickers(row, object_symbol=object_symbol)
+                symbols = _extract_symbols(row, object_symbol=object_symbol)
                 effective_run_date = str(run_date or "").strip()
                 if not effective_run_date:
                     effective_run_date = _parse_run_date_from_object_name(object_name)
@@ -383,8 +388,8 @@ def index_news(
                             "$set": doc,
                             "$setOnInsert": {"first_seen_run_date": effective_run_date or None},
                             "$addToSet": {
-                                "tickers": {"$each": tickers},
-                                "symbols": {"$each": tickers},  # compatibility alias
+                                "symbols": {"$each": symbols},
+                                "tickers": {"$each": symbols},  # compatibility alias
                                 "minio_object_keys": object_name,
                             },
                         },
@@ -466,8 +471,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> int:
     args = build_parser().parse_args()
-    project_root = Path(__file__).resolve().parents[1]
-    load_dotenv_if_exists(project_root / ".env")
+    load_dotenv_if_exists(PROJECT_ROOT / ".env")
     _configure_logging(args.log_level)
     if not _LANGID_AVAILABLE:
         logger.warning("langid_unavailable language_inference_disabled fallback=unknown")

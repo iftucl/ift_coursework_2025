@@ -8,8 +8,12 @@ import sys
 from pathlib import Path
 from typing import List
 
-from modules.utils.args_parser import ALLOWED_FREQUENCIES, valid_date
-from modules.utils.env import load_dotenv_if_exists
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from modules.utils.args_parser import ALLOWED_FREQUENCIES, valid_date  # noqa: E402
+from modules.utils.env import load_dotenv_if_exists  # noqa: E402
 
 
 def _build_main_cmd(args: argparse.Namespace, project_root: Path) -> List[str]:
@@ -67,7 +71,7 @@ def build_parser() -> argparse.ArgumentParser:
 def main() -> int:
     """Run main pipeline once; Mongo stage is handled inside Main.py."""
     args = build_parser().parse_args()
-    project_root = Path(__file__).resolve().parents[1]
+    project_root = PROJECT_ROOT
     load_dotenv_if_exists(project_root / ".env")
 
     main_cmd = _build_main_cmd(args, project_root)
