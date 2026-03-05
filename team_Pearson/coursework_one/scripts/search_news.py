@@ -4,57 +4,14 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-import yaml
-from pymongo import MongoClient
+from modules.utils.env import load_dotenv_if_exists
+from modules.utils.mongo import build_mongo_collection, load_mongo_cfg, resolve_mongo_db
 
 DEFAULT_COLLECTION = "news_articles"
-
-
-def _load_yaml(path: str) -> dict[str, Any]:
-    with open(path, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f) or {}
-
-
-def _resolve_mongo_cfg(config_path: str) -> dict[str, Any]:
-    cfg_path = Path(config_path)
-    if not cfg_path.is_absolute():
-        cfg_path = Path(__file__).resolve().parents[1] / cfg_path
-    cfg = _load_yaml(str(cfg_path))
-    return dict(cfg.get("mongo") or {})
-
-
-def _read_env_or_cfg(env_key: str, cfg: dict[str, Any], cfg_key: str, default: str = "") -> str:
-    raw = os.getenv(env_key, str(cfg.get(cfg_key, default) or default))
-    return str(raw).strip()
-
-
-def _resolve_mongo_db(cli_mongo_db: str, mongo_cfg: dict[str, Any]) -> str:
-    cli_value = str(cli_mongo_db or "").strip()
-    if cli_value:
-        return cli_value
-    env_value = str(os.getenv("MONGO_DB", "")).strip()
-    if env_value:
-        return env_value
-    cfg_value = str(mongo_cfg.get("database", "")).strip()
-    if cfg_value:
-        return cfg_value
-    return "ift_cw"
-
-
-def _build_collection(mongo_cfg: dict[str, Any], collection_name: str, mongo_db: str):
-    host = _read_env_or_cfg("MONGO_HOST", mongo_cfg, "host", "localhost")
-    port = int(_read_env_or_cfg("MONGO_PORT", mongo_cfg, "port", "27019"))
-    uri = os.getenv("MONGO_URI", "").strip()
-    if uri:
-        client = MongoClient(uri, serverSelectionTimeoutMS=5000)
-    else:
-        client = MongoClient(host=host, port=port, serverSelectionTimeoutMS=5000)
-    return client[mongo_db][collection_name]
 
 
 def _parse_date_floor(value: str) -> datetime:
@@ -94,50 +51,56 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> int:
     args = build_parser().parse_args()
-    mongo_cfg = _resolve_mongo_cfg(args.config)
-    mongo_db = _resolve_mongo_db(args.mongo_db, mongo_cfg)
-    coll = _build_collection(mongo_cfg, args.collection, mongo_db)
+    project_root = Path(__file__).resolve().parents[1]
+    load_dotenv_if_exists(project_root / ".env")
 
-    query: dict[str, Any] = {}
-    sort_spec: list[tuple[str, Any]] = [("time_published", -1)]
-    projection: dict[str, Any] = {
-        "_id": 0,
-        "title": 1,
-        "summary": 1,
-        "url": 1,
-        "time_published": 1,
-        "source": 1,
-        "tickers": 1,
-        "topics": 1,
-        "lang": 1,
-    }
+    mongo_cfg = load_mongo_cfg(args.config, project_root)
+    mongo_db = resolve_mongo_db(args.mongo_db, mongo_cfg)
+    mongo_client, coll = build_mongo_collection(mongo_cfg, args.collection, mongo_db)
 
-    q = str(args.q or "").strip()
-    if q:
-        query["$text"] = {"$search": q}
-        projection["score"] = {"$meta": "textScore"}
-        sort_spec = [("score", {"$meta": "textScore"}), ("time_published", -1)]
+    try:
+        query: dict[str, Any] = {}
+        sort_spec: list[tuple[str, Any]] = [("time_published", -1)]
+        projection: dict[str, Any] = {
+            "_id": 0,
+            "title": 1,
+            "summary": 1,
+            "url": 1,
+            "time_published": 1,
+            "source": 1,
+            "tickers": 1,
+            "topics": 1,
+            "lang": 1,
+        }
 
-    ticker = str(args.ticker or "").strip().upper()
-    if ticker:
-        query["tickers"] = ticker
+        q = str(args.q or "").strip()
+        if q:
+            query["$text"] = {"$search": q}
+            projection["score"] = {"$meta": "textScore"}
+            sort_spec = [("score", {"$meta": "textScore"}), ("time_published", -1)]
 
-    time_filter: dict[str, Any] = {}
-    if args.from_date:
-        time_filter["$gte"] = _parse_date_floor(args.from_date)
-    if args.to_date:
-        time_filter["$lt"] = _parse_date_ceil_exclusive(args.to_date)
-    if time_filter:
-        query["time_published"] = time_filter
+        ticker = str(args.ticker or "").strip().upper()
+        if ticker:
+            query["tickers"] = ticker
 
-    cursor = coll.find(query, projection).sort(sort_spec).limit(max(1, int(args.limit)))
-    rows = list(cursor)
-    print(json.dumps({"count": len(rows)}, ensure_ascii=False))
-    for row in rows:
-        if isinstance(row.get("time_published"), datetime):
-            row["time_published"] = row["time_published"].astimezone(UTC).isoformat()
-        print(json.dumps(row, ensure_ascii=False))
-    return 0
+        time_filter: dict[str, Any] = {}
+        if args.from_date:
+            time_filter["$gte"] = _parse_date_floor(args.from_date)
+        if args.to_date:
+            time_filter["$lt"] = _parse_date_ceil_exclusive(args.to_date)
+        if time_filter:
+            query["time_published"] = time_filter
+
+        cursor = coll.find(query, projection).sort(sort_spec).limit(max(1, int(args.limit)))
+        rows = list(cursor)
+        print(json.dumps({"count": len(rows)}, ensure_ascii=False))
+        for row in rows:
+            if isinstance(row.get("time_published"), datetime):
+                row["time_published"] = row["time_published"].astimezone(UTC).isoformat()
+            print(json.dumps(row, ensure_ascii=False))
+        return 0
+    finally:
+        mongo_client.close()
 
 
 if __name__ == "__main__":

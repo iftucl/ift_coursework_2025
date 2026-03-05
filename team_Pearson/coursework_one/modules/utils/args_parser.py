@@ -84,4 +84,13 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Comma-separated extractors to run, e.g. source_a,source_b (default from config).",
     )
+    parser.add_argument(
+        "--index-mongo",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help=(
+            "After successful main pipeline run, also build Mongo news index "
+            "(disable with --no-index-mongo)."
+        ),
+    )
     return parser

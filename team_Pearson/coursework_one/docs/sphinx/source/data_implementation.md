@@ -44,7 +44,7 @@ Key clarification:
 
 ## 3. Storage Contract
 
-### 3.0 Main.py direct write scope
+### Main.py direct write scope
 
 `Main.py` directly writes to:
 - PostgreSQL:
@@ -55,8 +55,10 @@ Key clarification:
   - Source A / Source B raw snapshots
   - Source B cursor objects
   - Source B current-month merged objects
-
-`Main.py` does not directly write MongoDB.
+- MongoDB (default enabled, best-effort):
+  - runs `scripts/index_news_to_mongo.py` post-success
+  - writes search/index collection `ift_cw.news_articles`
+  - disable with `--no-index-mongo`
 
 ### 3.1 PostgreSQL curated tables
 
@@ -78,12 +80,12 @@ Key clarification:
 - Collection: `ift_cw.news_articles`
 - Canonical fields: `time_published`, `tickers`
 - Compatibility aliases: `published_at`, `symbols`
-- Enabled by default in scheduler/orchestrator scripts; disable with `--no-index-mongo`.
-- `Main.py` does not directly index MongoDB.
+- Enabled by default in `Main.py` and scheduler/orchestrator scripts; disable with `--no-index-mongo`.
 
 Mongo responsibility split:
-- `Main.py` is the core ETL path (extract -> normalize -> PostgreSQL load, with raw MinIO archive).
-- MongoDB indexing is a serving/search layer executed after a successful main run by:
+- `Main.py` remains the core ETL path (extract -> normalize -> PostgreSQL load, with raw MinIO archive).
+- MongoDB indexing remains a serving/search layer executed as post-success best-effort by:
+  - `Main.py` (default)
   - `scripts/run_pipeline_and_index.py`
   - `scripts/run_scheduled_pipeline.py`
 - This keeps core factor loading independent from search-index availability.

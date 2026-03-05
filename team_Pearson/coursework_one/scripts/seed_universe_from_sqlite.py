@@ -4,12 +4,19 @@ from __future__ import annotations
 
 import argparse
 import sqlite3
+import sys
 from pathlib import Path
 
 import pandas as pd
 from sqlalchemy import text
 
-from modules.db.db_connection import get_db_engine
+# Make script robust when executed as a file path from arbitrary cwd.
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from modules.utils.env import load_dotenv_if_exists  # noqa: E402
+from modules.db.db_connection import get_db_engine  # noqa: E402
 
 
 def default_sqlite_path() -> Path:
@@ -77,6 +84,7 @@ def seed_company_static(df: pd.DataFrame) -> int:
 
 
 def main() -> int:
+    load_dotenv_if_exists(PROJECT_ROOT / ".env")
     args = parse_args()
     source_path = Path(args.sqlite_path).expanduser().resolve()
     df = load_equity_static(source_path)

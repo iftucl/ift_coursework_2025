@@ -30,6 +30,12 @@ CREATE INDEX IF NOT EXISTS idx_factor_obs_symbol
 CREATE INDEX IF NOT EXISTS idx_factor_obs_observation_date
     ON systematic_equity.factor_observations (observation_date);
 
+CREATE INDEX IF NOT EXISTS idx_factor_obs_symbol_factor_date
+    ON systematic_equity.factor_observations (symbol, factor_name, observation_date);
+
+CREATE INDEX IF NOT EXISTS idx_factor_obs_factor_date
+    ON systematic_equity.factor_observations (factor_name, observation_date);
+
 CREATE TABLE systematic_equity.financial_observations (
     id SERIAL PRIMARY KEY,
 

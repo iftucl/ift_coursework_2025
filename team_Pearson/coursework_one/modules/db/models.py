@@ -33,6 +33,8 @@ class FactorObservation(Base):
         ),
         Index("idx_factor_obs_symbol", "symbol"),
         Index("idx_factor_obs_observation_date", "observation_date"),
+        Index("idx_factor_obs_symbol_factor_date", "symbol", "factor_name", "observation_date"),
+        Index("idx_factor_obs_factor_date", "factor_name", "observation_date"),
         {"schema": "systematic_equity"},
     )
 

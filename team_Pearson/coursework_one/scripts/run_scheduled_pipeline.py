@@ -56,11 +56,12 @@ def _build_cmd(
     company_limit: int | None,
     dry_run: bool,
     index_mongo: bool,
+    project_root: Path,
 ) -> List[str]:
     """Build CLI command for one scheduled pipeline invocation."""
     cmd = [
         sys.executable,
-        "scripts/run_pipeline_and_index.py",
+        str((project_root / "scripts" / "run_pipeline_and_index.py").resolve()),
         "--run-date",
         run_spec.run_date,
         "--frequency",
@@ -74,6 +75,8 @@ def _build_cmd(
         cmd.append("--dry-run")
     if index_mongo:
         cmd.append("--index-mongo")
+    else:
+        cmd.append("--no-index-mongo")
     return cmd
 
 
@@ -137,12 +140,17 @@ def main() -> int:
             company_limit=args.company_limit,
             dry_run=args.dry_run,
             index_mongo=bool(args.index_mongo),
+            project_root=project_root,
         )
         print(f"[scheduled] frequency={spec.frequency} run_date={spec.run_date}")
         print("[cmd] " + " ".join(cmd))
         if args.plan_only:
             continue
-        subprocess.run(cmd, check=True)  # nosec B603
+        # Safe: validated schedule values + fixed script path; shell not used.
+        subprocess.run(
+            cmd,
+            check=True,
+        )  # nosec B603
     return 0
 
 

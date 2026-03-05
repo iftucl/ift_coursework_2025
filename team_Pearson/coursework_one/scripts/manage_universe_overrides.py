@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-"""Manage dynamic company universe overrides without editing teacher source data."""
+"""Manage dynamic company universe overrides."""
 
 import argparse
 import os

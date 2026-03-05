@@ -14,9 +14,10 @@ from typing import Any, Iterator
 
 import yaml
 from minio import Minio
-from pymongo import MongoClient, UpdateOne
+from pymongo import UpdateOne
 from pymongo.collection import Collection
 
+from modules.utils.mongo import build_mongo_collection, resolve_mongo_db
 from modules.utils.env import load_dotenv_if_exists
 
 try:
@@ -90,32 +91,6 @@ def _build_minio_client(minio_cfg: dict[str, Any]) -> tuple[Minio, str]:
         ),
         bucket,
     )
-
-
-def _resolve_mongo_db(cli_mongo_db: str, mongo_cfg: dict[str, Any]) -> str:
-    cli_value = str(cli_mongo_db or "").strip()
-    if cli_value:
-        return cli_value
-    env_value = str(os.getenv("MONGO_DB", "")).strip()
-    if env_value:
-        return env_value
-    cfg_value = str(mongo_cfg.get("database", "")).strip()
-    if cfg_value:
-        return cfg_value
-    return "ift_cw"
-
-
-def _build_mongo_collection(
-    mongo_cfg: dict[str, Any], collection_name: str, mongo_db: str
-) -> Collection:
-    host = _read_env_or_cfg("MONGO_HOST", mongo_cfg, "host", "localhost")
-    port = int(_read_env_or_cfg("MONGO_PORT", mongo_cfg, "port", "27019"))
-    uri = os.getenv("MONGO_URI", "").strip()
-    if uri:
-        client = MongoClient(uri, serverSelectionTimeoutMS=5000)
-    else:
-        client = MongoClient(host=host, port=port, serverSelectionTimeoutMS=5000)
-    return client[mongo_db][collection_name]
 
 
 def _normalize_title(title: str) -> str:
@@ -198,6 +173,11 @@ def _ensure_indexes(coll: Collection) -> None:
         name="idx_text_title_summary",
     )
     coll.create_index([("time_published", 1)], name="idx_time_published")
+    coll.create_index([("tickers", 1)], name="idx_tickers")
+    coll.create_index(
+        [("tickers", 1), ("time_published", -1)],
+        name="idx_tickers_time_published_desc",
+    )
     coll.create_index([("published_at", 1)], name="idx_published_at")
     coll.create_index([("url", 1)], name="idx_url_unique", unique=True, sparse=True)
     coll.create_index([("last_seen_run_date", 1)], name="idx_last_seen_run_date")
@@ -491,11 +471,12 @@ def main() -> int:
     _configure_logging(args.log_level)
     if not _LANGID_AVAILABLE:
         logger.warning("langid_unavailable language_inference_disabled fallback=unknown")
+    mongo_client = None
     try:
         minio_cfg, mongo_cfg = _resolve_config(args.config)
         minio_client, bucket = _build_minio_client(minio_cfg)
-        mongo_db = _resolve_mongo_db(args.mongo_db, mongo_cfg)
-        coll = _build_mongo_collection(mongo_cfg, args.collection, mongo_db)
+        mongo_db = resolve_mongo_db(args.mongo_db, mongo_cfg)
+        mongo_client, coll = build_mongo_collection(mongo_cfg, args.collection, mongo_db)
 
         if not args.skip_indexes and not args.dry_run:
             _ensure_indexes(coll)
@@ -544,6 +525,9 @@ def main() -> int:
             )
         )
         return 1
+    finally:
+        if mongo_client is not None:
+            mongo_client.close()
 
 
 if __name__ == "__main__":

@@ -52,9 +52,8 @@ Provide a reproducible CW1 pipeline that can start from a fresh environment, ing
    - `financial_observations`
    - `pipeline_runs`
 7. Compute final factors (`modules.transform.factors`) and write back to curated factors.
-8. Index Source B records into MongoDB `ift_cw.news_articles` by default in scheduler/orchestrator scripts; disable explicitly with `--no-index-mongo`.
-   - `Main.py` itself does not directly index MongoDB.
-   - Mongo indexing is intentionally separated as a post-run serving step.
+8. Index Source B records into MongoDB `ift_cw.news_articles` by default after successful runs (`Main.py` and scheduler/orchestrator scripts); disable explicitly with `--no-index-mongo`.
+   - Mongo indexing is intentionally handled as a post-run serving step (best-effort).
 9. Persist metadata governance state:
    - `dataset_registry`
    - `schema_versions`
@@ -81,7 +80,7 @@ Provide a reproducible CW1 pipeline that can start from a fresh environment, ing
   - `systematic_equity.lineage_edges`
   - `systematic_equity.quality_snapshots`
 
-### MongoDB (serving index; enabled by default in scheduler/orchestrator scripts)
+### MongoDB (serving index; enabled by default in `Main.py` and scheduler/orchestrator scripts)
 
 - `ift_cw.news_articles`
 

@@ -4,15 +4,22 @@ from __future__ import annotations
 
 import argparse
 import math
+import sys
 from datetime import date
+from pathlib import Path
 from typing import Optional
 
 import numpy as np
 import pandas as pd
 from sqlalchemy import text
 
-from modules.db import get_db_engine
-from modules.output.data_contract import ALLOWED_FREQUENCIES, ALLOWED_SOURCES
+# Ensure script execution resolves local project modules without requiring PYTHONPATH.
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from modules.db import get_db_engine  # noqa: E402
+from modules.output.data_contract import ALLOWED_FREQUENCIES, ALLOWED_SOURCES  # noqa: E402
 
 DEFAULT_COVERAGE_FACTORS = {"sentiment_30d_avg", "article_count_30d"}
 

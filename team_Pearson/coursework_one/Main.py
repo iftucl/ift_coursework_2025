@@ -1,6 +1,8 @@
 import json
 import logging
 import os
+import subprocess  # nosec B404
+import sys
 import time
 import traceback
 import uuid
@@ -882,6 +884,59 @@ def finalize_audit_and_runlog(ctx: RunContext, state: PipelineState) -> int:
     return 0 if state.status == "success" else 1
 
 
+def run_mongo_index_stage(ctx: RunContext, state: PipelineState) -> None:
+    """Best-effort Mongo indexing stage after a successful main pipeline run."""
+    if state.status != "success":
+        return
+    if not bool(getattr(ctx.args, "index_mongo", True)):
+        logger.info("mongo_index_skipped run_id=%s reason=disabled_by_cli", ctx.run_id)
+        return
+    if bool(ctx.args.dry_run):
+        logger.info("mongo_index_skipped run_id=%s reason=dry_run", ctx.run_id)
+        return
+
+    t0 = time.monotonic()
+    cmd = [
+        sys.executable,
+        "-m",
+        "scripts.index_news_to_mongo",
+        "--run-date",
+        ctx.args.run_date,
+        "--config",
+        ctx.args.config,
+    ]
+    logger.info("mongo_index_start run_id=%s cmd=%s", ctx.run_id, " ".join(cmd))
+    # Safe: fixed script path + validated runtime args; shell not used.
+    result = subprocess.run(
+        cmd,
+        cwd=ctx.base_dir,
+        check=False,
+    )  # nosec B603
+    if result.returncode != 0:
+        logger.warning(
+            "mongo_index_warning run_id=%s rc=%s mode=best_effort",
+            ctx.run_id,
+            result.returncode,
+        )
+        state.notes = _append_note(state.notes, f"mongo_index_warning_rc={result.returncode}")
+        _log_stage_event(
+            run_id=ctx.run_id,
+            stage="mongo_index",
+            status="warning",
+            elapsed_ms=int((time.monotonic() - t0) * 1000),
+        )
+        return
+
+    logger.info("mongo_index_done run_id=%s", ctx.run_id)
+    state.stages_ok += 1
+    _log_stage_event(
+        run_id=ctx.run_id,
+        stage="mongo_index",
+        status="ok",
+        elapsed_ms=int((time.monotonic() - t0) * 1000),
+    )
+
+
 def main() -> int:
     """Program entrypoint for one end-to-end pipeline run."""
     base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -894,6 +949,7 @@ def main() -> int:
     run_scheduling_stage(ctx, state)
     write_audit_start_stage(ctx, state)
     run_pipeline_stage(ctx, state)
+    run_mongo_index_stage(ctx, state)
     return finalize_audit_and_runlog(ctx, state)
 
 

@@ -1,623 +1,340 @@
 # Team Pearson - Coursework One (CW1)
 
-## Branch
-Work on: `feature/coursework_one_Team_04_Pearson`
+End-to-end data pipeline for structured factors (`source_a`) and news-derived factors (`source_b`), with:
+- PostgreSQL as factor source of truth
+- MinIO as raw lake/replay layer
+- MongoDB as supplementary news search/index layer
 
-## Folder rule
-All deliverables must live under:
-`team_Pearson/coursework_one/`
+## Quick Run
 
-Do not commit changes outside this folder (e.g., `000.Database`).
-
-### Documentation (Sphinx)
-Docs entry point after build:
-- `docs/sphinx/build/html/index.html`
-
-Open the full documentation site from this entry point (left navigation contains all pages):
+Run in this exact order:
 
 ```bash
+# 1) repo root
+cd <repo-root>
+docker compose up -d postgres_db mongo_db miniocw minio_client_cw
+
+# 2) coursework folder
 cd team_Pearson/coursework_one
-open docs/sphinx/build/html/index.html
-```
-
-## Quickstart (local)
-From repository root:
-
-Environment setup (run once per shell session in `team_Pearson/coursework_one`):
-```bash
+cp .env.example .env
+# set ALPHA_VANTAGE_API_KEY in .env
+poetry install
 set -a; source .env; set +a
+
+# 3) init DB + seed universe
+poetry run python scripts/init_db.py
+
+# 4) run one end-to-end job
+poetry run python Main.py --run-date 2026-03-05 --frequency daily --backfill-years 1 --company-limit 5
+
+# 5) verify in PostgreSQL
+docker exec -i postgres_db_cw psql -U postgres -d postgres -c \
+"select run_id, run_date, status, rows_written from systematic_equity.pipeline_runs order by started_at desc limit 5;"
 ```
 
-1) If Poetry is installed:
+## What This Repo Runs
+
+Main pipeline stages (`Main.py`):
+1. Scheduling / run context
+2. Universe selection from PostgreSQL
+3. Extraction (`source_a`, `source_b`)
+4. Normalize + quality checks
+5. Upsert atomic records into PostgreSQL
+6. Build and upsert final factors
+7. Audit/metadata snapshots
+8. Mongo news indexing by default (best-effort, disable with `--no-index-mongo`)
+
+Wrapper script (`scripts/run_pipeline_and_index.py`):
+- Runs `Main.py` only; Mongo indexing is handled inside `Main.py` (enabled by default, disable with `--no-index-mongo`).
+
+## Storage Responsibilities
+
+| Layer | Role | Example Datasets |
+|---|---|---|
+| PostgreSQL | Structured factor source of truth, upsert target, audit trail | `systematic_equity.factor_observations`, `financial_observations`, `pipeline_runs` |
+| MinIO | Raw/replay lake objects from extractors | `raw/source_a/...`, `raw/source_b/...` |
+| MongoDB | Rebuildable serving/search index for news | `ift_cw.news_articles` |
+
+## Project Layout
+
+```text
+team_Pearson/coursework_one/
+├── Main.py
+├── config/
+│   ├── conf.yaml
+├── modules/
+│   ├── db/            # DB engine, models, universe selection
+│   ├── input/         # source_a/source_b extractors
+│   ├── output/        # normalize, quality, load, audit, metadata
+│   ├── transform/     # final factor construction
+│   └── utils/         # args/env/mongo helpers
+├── scripts/
+│   ├── init_db.py
+│   ├── seed_universe_from_sqlite.py
+│   ├── run_pipeline_and_index.py
+│   ├── run_scheduled_pipeline.py
+│   ├── index_news_to_mongo.py
+│   ├── search_news.py
+│   ├── validate_pipeline_data.py
+│   ├── verify_minio.sh
+│   └── manage_universe_overrides.py
+├── sql/
+│   └── init.sql
+├── tests/
+└── docs/               # Sphinx docs source at docs/sphinx/source, HTML output at docs/sphinx/build/html
+```
+
+## Prerequisites
+
+- Python `3.11`
+- Poetry
+- Docker Desktop
+- Repo root compose file at `ift_coursework_2025 .../docker-compose.yml`
+
+Important:
+- Run `docker compose ...` in repository root, not inside `coursework_one`.
+- Run `poetry ...` inside `team_Pearson/coursework_one` (where `pyproject.toml` is).
+
+## Environment Setup
 
 ```bash
 cd team_Pearson/coursework_one
 cp .env.example .env
-# set ALPHA_VANTAGE_API_KEY in .env (recommended)
+# set ALPHA_VANTAGE_API_KEY in .env
 poetry install
-poetry run python Main.py --run-date 2026-02-14 --frequency daily --dry-run
-```
-
-2) Minimal run without Poetry (for skeleton smoke check):
-
-```bash
-cd team_Pearson/coursework_one
-python Main.py --run-date 2026-02-14 --frequency daily --dry-run
-python -m pytest tests -q
-```
-
-## Container bootstrap (minimal)
-Mandatory rule:
-- Run `docker compose ...` only in repository root `ift_coursework_2025/`.
-- Do not run `docker compose` inside `team_Pearson/coursework_one/`.
-
-Use the repository root `docker-compose.yml` as shared infra. From repo root:
-
-```bash
-cd ift_coursework_2025
-docker compose up -d postgres_db mongo_db miniocw minio_client_cw
-```
-
-Important MinIO behavior from teacher compose:
-- `minio_client_cw` includes `mc rm -r --force minio/csreport` during bootstrap.
-- Restarting `minio_client_cw` recreates bucket `csreport`, so previously written objects are removed.
-- If you see object count drop (for example back to `48 objects`), first check whether `minio_client_cw` restarted.
-
-## Standard run sequence (copy/paste)
-Run exactly in this order:
-
-```bash
-# 1) Start infra in repo root
-cd ift_coursework_2025
-docker compose up -d postgres_db mongo_db miniocw minio_client_cw
-
-# 2) Run app and tests in coursework_one
-cd team_Pearson/coursework_one
-cp .env.example .env
-# set ALPHA_VANTAGE_API_KEY in .env (recommended)
-poetry install
-# load env once in this shell session
 set -a; source .env; set +a
-poetry run python Main.py --run-date 2026-02-14 --frequency daily --dry-run
-poetry run pytest tests -q
 ```
 
-If universe tables are missing, seed from the teacher SQLite file (no edits to `000.Database`):
+Defaults in `.env.example` are aligned with root compose:
+- PostgreSQL `localhost:5439`
+- MongoDB `localhost:27019`
+- MinIO `localhost:9000`
+
+## 10-Minute Runbook (First Successful Run)
+
+### 1) Start infra (repo root)
+
+```bash
+cd <repo-root>
+docker compose up -d postgres_db mongo_db miniocw minio_client_cw
+```
+
+### 2) Initialize PostgreSQL schema + seed universe
 
 ```bash
 cd team_Pearson/coursework_one
-poetry run python scripts/seed_universe_from_sqlite.py
-```
-
-Recommended first-time DB initialization (no compose parameter changes):
-
-```bash
-cd team_Pearson/coursework_one
+set -a; source .env; set +a
 poetry run python scripts/init_db.py
 ```
 
-This project-level initializer does two steps:
-1. Applies `sql/init.sql` into running `postgres_db_cw` via `docker exec`.
-2. Seeds `systematic_equity.company_static` from `000.Database/SQL/Equity.db`.
+`init_db.py` does:
+1. Apply `sql/init.sql` via `docker exec ... psql`
+2. Seed `systematic_equity.company_static` from `000.Database/SQL/Equity.db`
 
-Important:
-- Always load `.env` before `scripts/init_db.py`, `Main.py`, and validation scripts.
-- If you skip `set -a; source .env; set +a`, database host/port/user/password may not be loaded, and init/seed can fail.
+### 3) Run one end-to-end pipeline job
 
-Data validation (date-type consistent checks):
+Example: 1 year, 5 companies
 
 ```bash
-cd team_Pearson/coursework_one
+poetry run python Main.py --run-date 2026-03-05 --frequency daily --backfill-years 1 --company-limit 5
+```
+
+### 4) Verify load result
+
+```bash
+docker exec -i postgres_db_cw psql -U postgres -d postgres -c \
+"select run_id, run_date, status, rows_written from systematic_equity.pipeline_runs order by started_at desc limit 5;"
+
+docker exec -i postgres_db_cw psql -U postgres -d postgres -c \
+"select count(*) from systematic_equity.factor_observations;"
+```
+
+## Core CLI Commands
+
+### Main pipeline
+
+```bash
+poetry run python Main.py --run-date 2026-03-05 --frequency daily
+poetry run python Main.py --run-date 2026-03-05 --frequency daily --dry-run
+poetry run python Main.py --run-date 2026-03-05 --frequency daily --enabled-extractors source_a,source_b
+poetry run python Main.py --run-date 2026-03-05 --frequency daily --no-index-mongo
+```
+
+### Wrapper run (orchestration helper)
+
+```bash
+poetry run python scripts/run_pipeline_and_index.py --run-date 2026-03-05 --frequency daily
+# disable mongo indexing
+poetry run python scripts/run_pipeline_and_index.py --run-date 2026-03-05 --frequency daily --no-index-mongo
+```
+
+### Scheduled wrapper
+
+```bash
+# default schedule mode: daily only
+poetry run python scripts/run_scheduled_pipeline.py
+
+# print plan only
+poetry run python scripts/run_scheduled_pipeline.py --plan-only
+
+# force frequencies for replay
+poetry run python scripts/run_scheduled_pipeline.py --run-date 2026-03-05 --only daily,weekly,monthly,quarterly
+```
+
+## Mongo News Search Layer
+
+Role:
+- MinIO raw is source of truth
+- Mongo `news_articles` is derivable serving/search index
+
+### Rationale for a SQL-Centric Factor Storage Strategy
+
+- Factor master data stays in PostgreSQL as the source of truth (constraints, idempotent upsert, consistent schema).
+- Typical factor queries are relational/time-series (`symbol`, `factor_name`, `observation_date`), which are already covered by SQL indexes.
+- Full-factor indexing in Mongo would add write amplification and index maintenance cost with limited benefit for the current query path.
+- Therefore Mongo is used as a supplementary news search/index layer, not the primary factor store.
+
+### Build/rebuild Mongo index
+
+```bash
+poetry run python scripts/index_news_to_mongo.py --run-date 2026-03-05 --since 2026-01-01 --until 2026-03-05
+```
+
+### Search indexed news
+
+```bash
+poetry run python scripts/search_news.py --q "earnings surprise" --ticker AAPL --from 2026-01-01 --to 2026-03-05 --limit 20
+```
+
+### Mongo index set created by script
+
+- text: `title + summary`
+- time: `time_published`
+- ticker: `tickers`
+- ticker+time: `tickers + time_published(desc)`
+- sparse unique: `url`
+- run: `last_seen_run_date`
+- run+time: `last_seen_run_date + time_published(desc)`
+
+## PostgreSQL Schema Highlights
+
+Main tables from `sql/init.sql`:
+- `systematic_equity.factor_observations`
+- `systematic_equity.financial_observations`
+- `systematic_equity.pipeline_runs`
+- `systematic_equity.company_universe_overrides`
+- metadata/lineage/quality tables
+
+`factor_observations` key/index strategy:
+- unique key: `(symbol, observation_date, factor_name)`
+- performance indexes:
+  - `(symbol)`
+  - `(observation_date)`
+  - `(symbol, factor_name, observation_date)`
+  - `(factor_name, observation_date)`
+
+## Database Query Examples (AAP)
+
+### PostgreSQL (factors)
+
+Run in pgAdmin Query Tool (or any SQL client connected to PostgreSQL):
+
+```sql
+-- AAP factors on one date
+select symbol, observation_date, factor_name, factor_value, source
+from systematic_equity.factor_observations
+where symbol = 'AAP'
+  and observation_date = '2026-03-04'
+order by factor_name;
+```
+
+### MongoDB (news index)
+
+Run in Mongo UI (Compass or container `mongosh`) on DB `ift_cw`, collection `news_articles`:
+
+```javascript
+// count all indexed news
+db.news_articles.countDocuments({})
+
+// latest 20 AAP news docs
+db.news_articles.find(
+  { tickers: "AAP" },
+  { _id: 0, title: 1, time_published: 1, url: 1, tickers: 1 }
+).sort({ time_published: -1 }).limit(20)
+```
+
+## Data and Ops Utilities
+
+### Validate loaded data
+
+```bash
 poetry run python scripts/validate_pipeline_data.py --tolerance 1e-6
 ```
 
-The validator normalizes date columns on both sides to `date` type before merge/filter checks.
-
-
-Services and local ports from current compose:
-- PostgreSQL: `localhost:5439` -> container `5432`
-- MongoDB: `localhost:27019` -> container `27017`
-- MinIO API: `localhost:9000` (Console: `localhost:9001`)
-
-## pgAdmin (optional UI) and common issues
-pgAdmin is optional for marking/verification. All required database checks can be performed via `psql` (see below). However, if you prefer a UI, the repo root compose exposes pgAdmin at:
-
-- pgAdmin UI: `http://localhost:5051/login`
-- Login (from compose defaults): `admin@admin.com` / `root`
-
-### How to register the coursework Postgres server in pgAdmin
-pgAdmin runs *inside a container*, so it must connect to Postgres using the Docker network address and the container port:
-
-- **Host name/address:** `postgres_db`
-- **Port:** `5432` (container port)
-- **Maintenance database:** `postgres`
-- **Username:** `postgres`
-- **Password:** `postgres`
-
-> Note: `localhost:5439` is the host-machine mapping and is used by local tools (Python/psql/DBeaver) running on your Mac/Windows host, not by pgAdmin inside Docker.
-
-### If pgAdmin shows CSRF/session errors or infinite loading
-Some environments (especially on macOS with bind mounts) may experience pgAdmin session/CSRF issues (e.g., “CSRF session token is missing”) or a stuck loading screen. Use the following reset procedure **without modifying the teacher `docker-compose.yml`**:
-
-1) Stop pgAdmin from the repo root:
+### Verify MinIO raw objects
 
 ```bash
-cd ift_coursework_2025
-docker compose stop pgadmin
+./scripts/verify_minio.sh 2026-03-05 AAPL
 ```
 
-2) Reset pgAdmin local state directory and permissions (repo root):
+### Manage dynamic universe overrides
 
 ```bash
-cd ift_coursework_2025
-rm -rf pgadmin-data
-mkdir -p pgadmin-data
-chmod -R 777 pgadmin-data
-docker compose up -d pgadmin
-```
-
-3) Re-open `http://localhost:5051/login` (avoid going directly to `/browser/`), log in again, then re-register the server.
-
-### Advanced: pin pgAdmin to a stable version using team override
-If pgAdmin still fails due to a pgAdmin-internal error (HTTP 500 in `pg_admin_cw` logs), use the team-scoped Compose override file. This keeps the teacher root compose file unchanged.
-
-Create (or update) `ift_coursework_2025/team_Pearson/coursework_one/docker-compose.pearson.override.yml` with:
-
-```yaml
-services:
-  pgadmin:
-    image: dpage/pgadmin4:8
-    volumes:
-      - ./pgadmin-data:/var/lib/pgadmin
-```
-
-Then restart:
-
-```bash
-cd ift_coursework_2025
-docker compose -f docker-compose.yml -f team_Pearson/coursework_one/docker-compose.pearson.override.yml rm -sf pgadmin
-docker compose -f docker-compose.yml -f team_Pearson/coursework_one/docker-compose.pearson.override.yml up -d pgadmin
-```
-
-This override is team-scoped convenience; grading and CI can still run from root `docker-compose.yml` only.
-
-Docker-aligned defaults used by this project (single source: repo root `docker-compose.yml`):
-- `POSTGRES_HOST=localhost`
-- `POSTGRES_PORT=5439`
-- `POSTGRES_DB=postgres` (compose does not set `POSTGRES_DB`, default DB is `postgres`)
-- `POSTGRES_USER=postgres`
-- `POSTGRES_PASSWORD=postgres`
-- `MONGO_HOST=localhost`
-- `MONGO_PORT=27019`
-- `MONGO_DB=ift_cw` (project default; compose does not configure Mongo auth)
-- `MINIO_ENDPOINT=localhost:9000`
-- `MINIO_ACCESS_KEY=ift_bigdata`
-- `MINIO_SECRET_KEY=minio_password`
-- `MINIO_BUCKET=csreport`
-
-## Dynamic universe add/remove (without editing teacher DB files)
-This project supports dynamic universe overrides in your own schema table:
-- `systematic_equity.company_universe_overrides`
-- columns: `symbol`, `action(include|exclude)`, `is_active`, `reason`, `updated_at`
-
-`get_company_universe()` behavior:
-- base universe from teacher table (`company_static` / fallback `equity_static`)
-- apply active `exclude` overrides (remove from run universe)
-- apply active `include` overrides (add into run universe)
-
-Manage overrides:
-```bash
-cd team_Pearson/coursework_one
-
-# add a symbol into universe
 poetry run python scripts/manage_universe_overrides.py set --symbol NVDA --action include --reason "manual include"
-
-# exclude a symbol from universe
-poetry run python scripts/manage_universe_overrides.py set --symbol AAL --action exclude --reason "temporary removal"
-
-# disable an override without deleting it
-poetry run python scripts/manage_universe_overrides.py set --symbol AAL --action exclude --is-active false --reason "reactivated"
-
-# list overrides
+poetry run python scripts/manage_universe_overrides.py set --symbol AAL --action exclude --reason "temporary exclude"
 poetry run python scripts/manage_universe_overrides.py list
-
-# remove an override row
-poetry run python scripts/manage_universe_overrides.py remove --symbol AAL
 ```
 
-MinIO bucket initialization behavior from compose:
-- `minio_client_cw` runs `mc rm -r --force minio/csreport` then `mc mb minio/csreport`.
-- This means bucket `csreport` is recreated by compose bootstrap (not manually created in app setup docs).
+## Final Quality Check (Pre-submit)
 
-Optional team-scoped safety override (do not edit teacher compose):
-- Use `team_Pearson/coursework_one/docker-compose.pearson.override.yml` to keep bucket contents by default:
-  - `minio_client_cw`: remove auto-delete, keep `mc mb --ignore-existing`.
-  - `miniocw`: mount `./minio-data:/data` for persistence across container rebuilds.
-  - `minio_reset_cw` (manual profile): explicit reset service when you really need clean state.
-- Manual reset command:
-
-```bash
-cd ift_coursework_2025
-docker compose -f docker-compose.yml -f team_Pearson/coursework_one/docker-compose.pearson.override.yml --profile manual-reset run --rm minio_reset_cw
-```
-
-MinIO client compatibility note (do not modify teacher `docker-compose.yml`):
-- Some environments use a newer `minio/mc` where legacy `mc config host add` is no longer recognized.
-- If you see `mc: <ERROR> 'config' is not a recognized command`, use this one-off compatible reset command:
-
-```bash
-cd ift_coursework_2025
-docker run --rm --entrypoint /bin/sh --network ift_coursework_2025_iceberg_net minio/mc -c \
-"mc alias set minio http://miniocw:9000 ift_bigdata minio_password && \
-mc rm -r --force minio/csreport || true && \
-mc mb --ignore-existing minio/csreport && \
-mc anonymous set public minio/csreport"
-```
-
-Configuration precedence:
-- Pipeline behavior parameters (`frequency`, `backfill_years`, `company_limit`, `enabled_extractors`) use:
-  1. CLI arguments
-  2. OS env (including values loaded from `.env`)
-  3. `config/conf.yaml` defaults
-  4. built-in defaults
-- Connection/secrets (for example `POSTGRES_*`, `MONGO_*`, `MINIO_*`, API keys) use:
-  1. OS env
-  2. `.env`
-  3. `config/conf.yaml` defaults
-- `.env` is loaded by entry scripts via `modules/utils/env.py` with non-override semantics for existing OS env.
-- Alpha Vantage key resolver order:
-  1. `ALPHA_VANTAGE_API_KEY`
-  2. `ALPHA_VANTAGE_KEY`
-  3. (legacy compatibility only) `config/conf.yaml` key field if present
-- Placeholder values (`YOUR_KEY`, `YOUR_API_KEY_HERE`, empty) are treated as missing.
-
-Environment template for local runtime:
-- `team_Pearson/coursework_one/.env.example`
-
-Poetry metadata warning note:
-- `poetry check` may emit deprecation warnings for `tool.poetry.*` metadata.
-- This does not affect current execution (`poetry install`, pipeline run, tests, or grading workflow).
-- For coursework stability, we keep the current format now and can migrate to PEP 621 `[project]` metadata in a future maintenance pass.
-
-If needed, create your local env file:
-
-```bash
-cd team_Pearson/coursework_one
-cp .env.example .env
-```
-
-## CLI parameters
-- `--run-date` (required): decision date in `YYYY-MM-DD`
-- `--frequency` (required): schedule/output mode `daily|weekly|monthly|quarterly|annual`
-- `--backfill-years` (optional): rolling lookback window in years (for example `1` = previous 12 months from `run_date`)
-- `--company-limit` (optional): universe size cap, default from config
-- `--dry-run` (optional): run pipeline without final load
-- `--enabled-extractors` (optional): comma-separated extractor list, e.g. `source_a` or `source_a,source_b`
-
-Frequency semantics (unified):
-- Atomic ingestion frequency is fixed to daily collection checks (market/news daily, financial upsert by `report_date` when new filings appear).
-- `--frequency` controls scheduling window labels and derived-factor output sampling points.
-- Financial raw cadence remains encoded by `financial_observations.period_type` (`quarterly`, etc.) and is not controlled by `--frequency`.
-
-## Extractor switches
-Default extractor selection is configured in:
-- `config/conf.yaml` -> `pipeline.enabled_extractors`
-- `config/conf.yaml.example` -> `pipeline.enabled_extractors`
-
-Default is:
-```yaml
-pipeline:
-  enabled_extractors:
-    - source_a
-    - source_b
-```
-
-CLI can override config:
-```bash
-poetry run python Main.py --run-date 2026-02-14 --frequency daily --dry-run --enabled-extractors source_a,source_b
-```
-
-## Source A provider strategy
-`source_a` uses a dual-provider design:
-- Primary provider: Alpha Vantage (paid API)
-- Fallback provider: yfinance (enabled when Alpha Vantage fails)
-- Optional replay cache: MinIO raw payload reuse via `source_a.use_cache`
-
-Config keys:
-```yaml
-api:
-  alpha_vantage_key: "YOUR_KEY"
-source_a:
-  primary_source: alpha_vantage
-  enable_yfinance_fallback: true
-  use_cache: true
-```
-
-Implemented technical factors (daily):
-- `momentum_1m`: `(Price_t / Price_{t-20}) - 1`
-- `volatility_20d`: rolling 20-day standard deviation of daily returns
-- Rule: if history has fewer than 20 trading days, these observations are dropped.
-- `debt_to_equity`: daily as-of aligned to the latest available quarterly filing (stepwise series with forward-fill under a staleness limit).
-  - Quarterly update cadence for financial atomics; daily as-of output for backtest alignment.
-
-## Current status
-Current delivery focus:
-- Structured pipeline (`source_a`) is integrated end-to-end (extract -> normalize -> quality -> upsert).
-- Unstructured pipeline (`source_b`) is integrated with staged design (raw ingest to MinIO + sentiment transform).
-- Final-factor transform stage is integrated: atomic factors in Postgres are read and converted into final factors before upsert.
-
-## Mixed-frequency run examples
-```bash
-cd team_Pearson/coursework_one
-poetry run python Main.py --run-date 2026-02-14 --frequency daily --dry-run
-poetry run python Main.py --run-date 2026-02-01 --frequency monthly --dry-run
-poetry run python Main.py --run-date 2026-12-31 --frequency annual --dry-run
-poetry run python Main.py --run-date 2026-02-14 --frequency daily --dry-run --enabled-extractors source_a,source_b
-```
-
-## Auto trigger (daily only)
-Use one scheduler entry per day. Default wrapper behavior runs `daily` only:
-
-```bash
-cd team_Pearson/coursework_one
-poetry run python scripts/run_scheduled_pipeline.py
-```
-
-Pipeline orchestration command (manual or scheduler target):
-
-```bash
-cd team_Pearson/coursework_one
-poetry run python scripts/run_pipeline_and_index.py --run-date 2026-02-14 --frequency daily
-```
-
-Default database/storage targets:
-- `Main.py` direct writes:
-  - PostgreSQL tables: `systematic_equity.factor_observations`, `systematic_equity.financial_observations`, `systematic_equity.pipeline_runs`
-  - MinIO objects: `raw/source_a/...`, `raw/source_b/...`, plus Source B cursor/current-month objects
-  - MongoDB: not written by `Main.py` directly
-- MongoDB indexing (serving/search layer):
-  - runs after successful `Main.py` in `scripts/run_pipeline_and_index.py` / `scripts/run_scheduled_pipeline.py`
-  - enabled by default
-  - disable with `--no-index-mongo`
-  - best-effort: if Mongo indexing fails, core pipeline still returns success
-
-```bash
-cd team_Pearson/coursework_one
-poetry run python scripts/run_pipeline_and_index.py --run-date 2026-02-14 --frequency daily
-```
-
-Trigger rules:
-- every day: run `daily` only
-- `weekly` / `monthly` / `quarterly`: manual replay only via `--only`
-
-Dry-run plan check:
-```bash
-cd team_Pearson/coursework_one
-poetry run python scripts/run_scheduled_pipeline.py --plan-only
-```
-
-Plan check with Mongo indexing enabled by default:
-```bash
-cd team_Pearson/coursework_one
-poetry run python scripts/run_scheduled_pipeline.py --plan-only
-```
-
-Plan check with Mongo indexing disabled:
-```bash
-cd team_Pearson/coursework_one
-poetry run python scripts/run_scheduled_pipeline.py --plan-only --no-index-mongo
-```
-
-Force specific frequencies for manual replay (not part of cron default):
-```bash
-cd team_Pearson/coursework_one
-poetry run python scripts/run_scheduled_pipeline.py --run-date 2026-04-01 --only daily,weekly,monthly,quarterly
-```
-
-Install auto-update cron (run every day at 06:05 host local time by default):
-```bash
-cd team_Pearson/coursework_one
-./scripts/install_auto_update_cron.sh
-```
-
-Poetry discovery for auto-update scripts:
-- `scripts/auto_update_job.sh` auto-detects Poetry from `PATH` (`command -v poetry`).
-- Manual override is optional (only needed if Poetry is not on `PATH`):
-  `POETRY_BIN=/path/to/poetry ./scripts/auto_update_job.sh`
-
-Custom schedule example:
-```bash
-cd team_Pearson/coursework_one
-CRON_SCHEDULE="30 2 * * *" ./scripts/install_auto_update_cron.sh
-```
-
-Timezone note:
-- `cron` uses the machine local timezone by default (not UTC).
-- On DST transitions (for example London switching between GMT/BST), wall-clock run time shifts relative to UTC.
-
-Remove auto-update cron:
-```bash
-cd team_Pearson/coursework_one
-./scripts/uninstall_auto_update_cron.sh
-```
-
-## Integration contracts
-- `modules.db.get_company_universe(company_limit: int, country_allowlist: list[str] | None = None) -> list[str]`
-- `modules.input.extract_source_a(symbols, run_date, backfill_years, frequency, config=None) -> list[dict]`
-- `modules.input.extract_source_b(symbols, run_date, backfill_years, frequency, config=None) -> list[dict]`
-- `modules.output.normalize_records(records) -> list[dict]`
-- `modules.output.run_quality_checks(records) -> dict`
-- `modules.output.load_curated(records, dry_run: bool) -> int`
-- `modules.transform.compute_final_factor_records(atomic_records, run_date, backfill_years) -> list[dict]`
-- `modules.transform.build_and_load_final_factors(run_date, backfill_years, symbols=None, dry_run=False) -> int`
-
-## Extractor B staged design
-`extract_source_b` is intentionally pluggable and split into two stages:
-1. `ingest_source_b_raw(...)`: raw collection from Alpha Vantage and lake storage in MinIO.
-2. `transform_source_b_features(...)`: converts raw payloads into alternative atomic records (`news_sentiment_daily`, `news_article_count_daily`).
-
-Sentiment backend dependency (default):
-- `pysentiment2` (LM lexicon) is the default sentiment backend for Source B.
-- It is declared in `pyproject.toml` and installed via `poetry install`.
-- Runtime logs indicate the active backend:
-  - `source_b sentiment_backend=lm_lexicon` (expected default)
-  - `source_b sentiment_backend=fallback_lexicon` (only when `pysentiment2` is unavailable)
-
-Extractor B timestamp policy:
-```yaml
-source_b:
-  strict_time: false   # default: fallback missing/invalid article time to month_end and mark timestamp_inferred
-                       # true: drop rows with missing/invalid time_published
-```
-
-Final daily factors `sentiment_30d_avg` and `article_count_30d` are computed in `modules/transform/factors.py` from atomic records (daily reduction + calendar-day fill + rolling 30D window).
-
-## Search Service (MongoDB)
-This project supports a rebuildable MongoDB news-search index:
-
-- Collection: `news_articles`
-- One global article per document (deduplicated across symbols)
-- MinIO raw remains source of truth; Mongo index is derivable/idempotent
-- Scheduler/orchestrator scripts run Mongo indexing by default; disable with `--no-index-mongo`.
-
-### Start infrastructure
-From repository root:
-
-```bash
-cd ift_coursework_2025
-docker compose up -d mongo_db miniocw minio_client_cw
-```
-
-### Build / rebuild Mongo index from MinIO raw
-From `team_Pearson/coursework_one`:
-
-```bash
-poetry run python scripts/index_news_to_mongo.py --run-date 2026-02-14 --since 2026-01-01 --until 2026-03-01
-```
-
-Or run in one orchestrated command (pipeline first, then index by default):
-
-```bash
-poetry run python scripts/run_pipeline_and_index.py --run-date 2026-02-14 --frequency daily
-```
-
-Key behavior:
-- Dedup `_id` strategy:
-  - Primary: `sha256(url)`
-  - Fallback when URL is missing: `sha256(source|time_published|normalized_title)`
-- Upsert merge strategy:
-  - `UpdateOne(..., upsert=True)` + `$addToSet: {tickers: {$each: [...]}}`
-  - Ensures global uniqueness and ticker mapping without duplicates
-- Field naming note (`tickers` vs `symbol`):
-  - Mongo `news_articles` is a search/index serving layer and keeps provider-aligned field name `tickers` (array, one article can map to multiple symbols).
-  - PostgreSQL curated tables use `symbol` as the canonical key.
-  - Compatibility alias `symbols` is also written in Mongo for query convenience.
-- Run-level traceability fields in Mongo documents:
-  - `first_seen_run_date`: first run date where this article was indexed
-  - `last_seen_run_date`: latest run date where this article was seen
-  - `minio_object_keys`: deduplicated raw object key list for source traceability
-- Language fields in Mongo documents:
-  - `lang`: effective language used by queries
-  - `lang_raw`: raw provider language tag when available
-  - `lang_inferred`: inferred by `langid` when raw language is missing
-  - `lang_source`: `raw|inferred|unknown`
-- Required indexes are created automatically:
-  - text index: `title + summary`
-  - time index: `time_published`
-  - sparse unique index: `url`
-  - run index: `last_seen_run_date`
-  - run+time index: `last_seen_run_date + time_published(desc)`
-
-### Search API via CLI
-From `team_Pearson/coursework_one`:
-
-```bash
-poetry run python scripts/search_news.py --q "earnings surprise" --ticker AAPL --from 2026-01-01 --to 2026-03-01 --limit 20
-```
-
-Supported flags:
-- `--q`: full-text query (Mongo `$text`)
-- `--ticker`: ticker filter
-- `--from`, `--to`: time window
-- `--limit`: max rows
-
-Mongo defaults in these scripts:
-- default database: `ift_cw` (override with `MONGO_DB` / `config.mongo.database`)
-- collection: `news_articles`
-
-## Database verification (terminal)
-If pgAdmin is unavailable, verify the curated load via `psql`:
-
-```bash
-# total rows
-docker exec -i postgres_db_cw psql -U postgres -d postgres -c \
-"select count(*) from systematic_equity.factor_observations;"
-
-# rows by source
-docker exec -i postgres_db_cw psql -U postgres -d postgres -c \
-"select source, count(*) from systematic_equity.factor_observations group by source order by count(*) desc;"
-
-# Pipeline run audit (primary DB table)
-docker exec -i postgres_db_cw psql -U postgres -d postgres -c \
-"select run_id, run_date, status, rows_written, started_at, finished_at from systematic_equity.pipeline_runs order by started_at desc limit 20;"
-```
-
-Audit strategy:
-- Primary audit source of truth: `systematic_equity.pipeline_runs` (PostgreSQL)
-- Secondary debug mirror: `logs/pipeline_runs.jsonl` (local file)
-
-## MinIO raw verification (JSONL)
-Quick checks for Source B raw objects (`symbol x month` JSONL):
-
-```bash
-cd team_Pearson/coursework_one
-
-# Recommended one-command verifier (auto-detects mc binary path in container)
-./scripts/verify_minio.sh 2026-02-14 AAPL
-```
-
-Equivalent ad-hoc command (auto-detect `mc` path):
-
-```bash
-docker exec -it minio_client_cw sh -lc '
-MC_BIN="$(command -v mc || echo /usr/bin/mc)";
-$MC_BIN alias set cw http://miniocw:9000 ift_bigdata minio_password >/dev/null &&
-$MC_BIN ls --recursive cw/csreport/raw/source_b/news/run_date=2026-02-14/year=2026/month=02/
-'
-```
-
-## Pre-submit validation checklist
 Run from `team_Pearson/coursework_one`:
 
 ```bash
 poetry run pytest -q
-# coverage threshold is enforced by pytest config (>=80%)
 poetry run pytest
 poetry run flake8 .
 poetry run bandit -r modules Main.py
-# primary safety command (works in current coursework environment)
 VENV_PATH=$(poetry env info -p) && HOME=/tmp "$VENV_PATH/bin/safety" check -r poetry.lock
 cd docs/sphinx && poetry run make html
+cd ../..
+poetry run python scripts/validate_pipeline_data.py --tolerance 1e-6
 ```
 
-Bandit / Safety quick run:
+Notes:
+- `pytest` coverage threshold is enforced by config (`>=80%`).
+- `safety check` scans `poetry.lock` without interactive login in this workflow.
+- `safety scan` is the newer command but requires Safety account login/registration (interactive prompt).
+- If you need non-interactive coursework checks, use `check`.
+
+## Common Pitfalls
+
+1. `Poetry could not find pyproject.toml`
+- Cause: running `poetry` in repo root.
+- Fix: `cd team_Pearson/coursework_one` first.
+
+2. MinIO objects unexpectedly missing
+- `minio_client_cw` bootstrap recreates bucket `csreport`.
+- Re-running/restarting it can wipe previously written objects.
+
+3. Docker service not reachable
+- Ensure Docker Desktop is running.
+- Check containers:
 
 ```bash
-cd team_Pearson/coursework_one
-poetry run flake8 .
-poetry run bandit -r modules Main.py
-VENV_PATH=$(poetry env info -p) && HOME=/tmp "$VENV_PATH/bin/safety" check -r poetry.lock
+docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
 ```
 
-Safety CLI note:
-- `safety check` is deprecated in Safety v3 and may show a warning.
-- If your environment supports it, you can use:
-  `VENV_PATH=$(poetry env info -p) && HOME=/tmp "$VENV_PATH/bin/safety" scan -r poetry.lock`
+## Documentation Site
 
-Security vulnerability response process:
-- Run `flake8`, `bandit`, and `safety` before merge/release (and after dependency changes).
-- If any vulnerability is reported, open an issue immediately with severity, affected package/module, and scan output.
-- For dependency CVEs, patch by updating/removing the package via Poetry (`poetry add ...` / `poetry remove ...`) and refresh lockfile.
-- For code-level findings, patch in code and add/adjust tests to prevent regression.
-- Re-run `poetry run flake8 .`, `poetry run bandit -r modules Main.py`, and `safety` check; merge only after scans are clean.
-- Record remediation summary in PR/commit notes for audit traceability.
+Build and open Sphinx docs:
+
+```bash
+cd docs/sphinx
+poetry run make html
+# output: docs/sphinx/build/html/index.html
+```
+
+## Ownership Rule
+
+All coursework deliverables and changes should remain under:
+- `team_Pearson/coursework_one/`
