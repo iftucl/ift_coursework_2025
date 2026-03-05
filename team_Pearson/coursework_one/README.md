@@ -5,7 +5,7 @@ End-to-end data pipeline for structured factors (`source_a`) and news-derived fa
 - MinIO as raw lake/replay layer
 - MongoDB as supplementary news search/index layer
 
-## Quick Run
+## 1. Quick Run
 
 Run in this exact order:
 
@@ -32,7 +32,7 @@ docker exec -i postgres_db_cw psql -U postgres -d postgres -c \
 "select run_id, run_date, status, rows_written from systematic_equity.pipeline_runs order by started_at desc limit 5;"
 ```
 
-## What This Repo Runs
+## 2. What This Repo Runs
 
 Main pipeline stages (`Main.py`):
 1. Scheduling / run context
@@ -47,7 +47,7 @@ Main pipeline stages (`Main.py`):
 Wrapper script (`scripts/run_pipeline_and_index.py`):
 - Runs `Main.py` only; Mongo indexing is handled inside `Main.py` (enabled by default, disable with `--no-index-mongo`).
 
-## Storage Responsibilities
+## 3. Storage Responsibilities
 
 | Layer | Role | Example Datasets |
 |---|---|---|
@@ -55,7 +55,7 @@ Wrapper script (`scripts/run_pipeline_and_index.py`):
 | MinIO | Raw/replay lake objects from extractors | `raw/source_a/...`, `raw/source_b/...` |
 | MongoDB | Rebuildable serving/search index for news | `ift_cw.news_articles` |
 
-## Project Layout
+## 4. Project Layout
 
 ```text
 team_Pearson/coursework_one/
@@ -84,7 +84,7 @@ team_Pearson/coursework_one/
 └── docs/               # Sphinx docs source at docs/sphinx/source, HTML output at docs/sphinx/build/html
 ```
 
-## Prerequisites
+## 5. Prerequisites
 
 - Python `3.11`
 - Poetry
@@ -95,7 +95,7 @@ Important:
 - Run `docker compose ...` in repository root, not inside `coursework_one`.
 - Run `poetry ...` inside `team_Pearson/coursework_one` (where `pyproject.toml` is).
 
-## Environment Setup
+## 6. Environment Setup
 
 ```bash
 cd team_Pearson/coursework_one
@@ -110,7 +110,7 @@ Defaults in `.env.example` are aligned with root compose:
 - MongoDB `localhost:27019`
 - MinIO `localhost:9000`
 
-## 10-Minute Runbook (First Successful Run)
+## 7. 10-Minute Runbook (First Successful Run)
 
 ### 1) Start infra (repo root)
 
@@ -149,7 +149,7 @@ docker exec -i postgres_db_cw psql -U postgres -d postgres -c \
 "select count(*) from systematic_equity.factor_observations;"
 ```
 
-## Core CLI Commands
+## 8. Core CLI Commands
 
 ### Main pipeline
 
@@ -181,7 +181,7 @@ poetry run python scripts/run_scheduled_pipeline.py --plan-only
 poetry run python scripts/run_scheduled_pipeline.py --run-date 2026-03-05 --only daily,weekly,monthly,quarterly
 ```
 
-## Mongo News Search Layer
+## 9. Mongo News Search Layer
 
 Role:
 - MinIO raw is source of truth
@@ -216,7 +216,7 @@ poetry run python scripts/search_news.py --q "earnings surprise" --symbol AAPL -
 - run: `last_seen_run_date`
 - run+time: `last_seen_run_date + time_published(desc)`
 
-## PostgreSQL Schema Highlights
+## 10. PostgreSQL Schema Highlights
 
 Main tables from `sql/init.sql`:
 - `systematic_equity.factor_observations`
@@ -233,7 +233,7 @@ Main tables from `sql/init.sql`:
   - `(symbol, factor_name, observation_date)`
   - `(factor_name, observation_date)`
 
-## Database Query Examples (AAP)
+## 11. Database Query Examples (AAP)
 
 ### PostgreSQL (factors)
 
@@ -263,7 +263,7 @@ db.news_articles.find(
 ).sort({ time_published: -1 }).limit(20)
 ```
 
-## Data and Ops Utilities
+## 12. Data and Ops Utilities
 
 ### Validate loaded data
 
@@ -285,7 +285,7 @@ poetry run python scripts/manage_universe_overrides.py set --symbol AAL --action
 poetry run python scripts/manage_universe_overrides.py list
 ```
 
-## Final Quality Check (Pre-submit)
+## 13. Final Quality Check (Pre-submit)
 
 Run from `team_Pearson/coursework_one`:
 
@@ -306,7 +306,7 @@ Notes:
 - `safety scan` is the newer command but requires Safety account login/registration (interactive prompt).
 - If you need non-interactive coursework checks, use `check`.
 
-## Common Pitfalls
+## 14. Common Pitfalls
 
 1. `Poetry could not find pyproject.toml`
 - Cause: running `poetry` in repo root.
@@ -324,7 +324,7 @@ Notes:
 docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
 ```
 
-## Documentation Site
+## 15. Documentation Site
 
 Build and open Sphinx docs:
 
@@ -334,7 +334,7 @@ poetry run make html
 # output: docs/sphinx/build/html/index.html
 ```
 
-## Ownership Rule
+## 16. Ownership Rule
 
 All coursework deliverables and changes should remain under:
 - `team_Pearson/coursework_one/`
