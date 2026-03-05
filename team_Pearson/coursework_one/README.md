@@ -203,7 +203,7 @@ poetry run python scripts/index_news_to_mongo.py --run-date 2026-03-05 --since 2
 ### Search indexed news
 
 ```bash
-poetry run python scripts/search_news.py --q "earnings surprise" --symbol AAPL --from 2026-01-01 --to 2026-03-05 --limit 20
+poetry run python scripts/search_news.py --q "earnings surprise" --symbol AAP --from 2026-01-01 --to 2026-03-05 --limit 20
 ```
 
 ### Mongo index set created by script
@@ -274,13 +274,13 @@ poetry run python scripts/validate_pipeline_data.py --tolerance 1e-6
 ### Verify MinIO raw objects
 
 ```bash
-./scripts/verify_minio.sh 2026-03-05 AAPL
+./scripts/verify_minio.sh 2026-03-05 AAP
 ```
 
 ### Manage dynamic universe overrides
 
 ```bash
-poetry run python scripts/manage_universe_overrides.py set --symbol NVDA --action include --reason "manual include"
+poetry run python scripts/manage_universe_overrides.py set --symbol AAP --action include --reason "manual include"
 poetry run python scripts/manage_universe_overrides.py set --symbol AAL --action exclude --reason "temporary exclude"
 poetry run python scripts/manage_universe_overrides.py list
 ```
