@@ -316,14 +316,6 @@ Notes:
 - `minio_client_cw` bootstrap recreates bucket `csreport`.
 - Re-running/restarting it can wipe previously written objects.
 
-3. Docker service not reachable
-- Ensure Docker Desktop is running.
-- Check containers:
-
-```bash
-docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
-```
-
 ## 15. Documentation Site
 
 Build and open Sphinx docs:
