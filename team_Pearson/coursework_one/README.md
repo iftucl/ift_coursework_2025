@@ -333,8 +333,3 @@ cd docs/sphinx
 poetry run make html
 # output: docs/sphinx/build/html/index.html
 ```
-
-## 16. Ownership Rule
-
-All coursework deliverables and changes should remain under:
-- `team_Pearson/coursework_one/`
