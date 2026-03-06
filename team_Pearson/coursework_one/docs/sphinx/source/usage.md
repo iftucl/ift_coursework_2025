@@ -53,7 +53,13 @@ Notes:
 ```bash
 poetry run pytest -q
 poetry run bandit -r modules Main.py scripts
-VENV_PATH=$(poetry env info -p) && HOME=/tmp "$VENV_PATH/bin/safety" check -r poetry.lock
+poetry run safety scan -r poetry.lock
+```
+
+If `safety scan` is run for the first time, authenticate once:
+
+```bash
+poetry run safety auth login --headless
 ```
 
 ## 3. Typical Run Sequence

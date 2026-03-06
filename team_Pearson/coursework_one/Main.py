@@ -190,6 +190,23 @@ def _append_note(notes: str, item: str) -> str:
     return item if not notes else f"{notes}; {item}"
 
 
+def _summary_with_limit(items: List[Dict[str, str]], limit: int = 20) -> str:
+    total = len(items)
+    if total == 0:
+        return json.dumps([], ensure_ascii=False)
+    if total <= limit:
+        return json.dumps(items, ensure_ascii=False)
+    return json.dumps(
+        {
+            "count": total,
+            "limit": limit,
+            "sample": items[:limit],
+            "truncated": True,
+        },
+        ensure_ascii=False,
+    )
+
+
 def _log_stage_event(
     *,
     run_id: str,
@@ -326,9 +343,19 @@ def collect_raw_records(
     backfill_years: int,
     enabled_extractors: Optional[List[str]] = None,
     config: Optional[Dict[str, Any]] = None,
+    source_a_failed_symbols_out: Optional[List[Dict[str, str]]] = None,
     extractor_errors_out: Optional[List[Dict[str, str]]] = None,
+    source_b_failed_months_out: Optional[List[Dict[str, str]]] = None,
 ) -> List[Dict[str, Any]]:
     """Merge records from the currently integrated source modules.
+
+    Parameters:
+    source_a_failed_symbols_out: optional mutable list used to collect
+    per-symbol Source A failures.
+    extractor_errors_out: optional mutable list used to collect extractor-level
+    exceptions.
+    source_b_failed_months_out: optional mutable list used to collect Source B
+    per-(symbol, month) failures.
 
     In CI/unit tests, set env var `CW1_TEST_MODE=1` to bypass external extractors.
     """
@@ -358,7 +385,14 @@ def collect_raw_records(
             from modules.input.extract_source_a import extract_source_a
 
             records.extend(
-                extract_source_a(symbols, run_date, backfill_years, frequency, config=config)
+                extract_source_a(
+                    symbols,
+                    run_date,
+                    backfill_years,
+                    frequency,
+                    config=config,
+                    failed_symbols=source_a_failed_symbols_out,
+                )
             )
         except Exception as exc:
             err = f"{exc!r}"
@@ -373,7 +407,14 @@ def collect_raw_records(
             from modules.input.extract_source_b import extract_source_b
 
             records.extend(
-                extract_source_b(symbols, run_date, backfill_years, frequency, config=config)
+                extract_source_b(
+                    symbols,
+                    run_date,
+                    backfill_years,
+                    frequency,
+                    config=config,
+                    failed_months_out=source_b_failed_months_out,
+                )
             )
         except Exception as exc:
             err = f"{exc!r}"
@@ -606,6 +647,8 @@ def run_pipeline_stage(ctx: RunContext, state: PipelineState) -> None:
 
         t0 = time.monotonic()
         extractor_errors: List[Dict[str, str]] = []
+        source_a_failed_symbols: List[Dict[str, str]] = []
+        source_b_failed_months: List[Dict[str, str]] = []
         logger.info(
             "extract_config run_id=%s atomic_collection_frequency=daily "
             "output_sampling_frequency=%s",
@@ -619,21 +662,50 @@ def run_pipeline_stage(ctx: RunContext, state: PipelineState) -> None:
             ctx.backfill_years,
             enabled_extractors=ctx.enabled_extractors,
             config=ctx.cfg,
+            source_a_failed_symbols_out=source_a_failed_symbols,
             extractor_errors_out=extractor_errors,
+            source_b_failed_months_out=source_b_failed_months,
         )
+        if source_a_failed_symbols or source_b_failed_months:
+            state.notes = _append_note(state.notes, "pipeline_extractor_degraded=true")
+            logger.warning(
+                "extractor_degraded run_id=%s source_a_count=%s source_b_count=%s",
+                ctx.run_id,
+                len(source_a_failed_symbols),
+                len(source_b_failed_months),
+            )
+            state.notes = _append_note(
+                state.notes,
+                f"pipeline_extractor_degraded_source_a_count={len(source_a_failed_symbols)}",
+            )
+            state.notes = _append_note(
+                state.notes,
+                f"pipeline_extractor_degraded_source_b_count={len(source_b_failed_months)}",
+            )
+
+        if source_a_failed_symbols:
+            state.notes = _append_note(
+                state.notes,
+                f"source_a_failed_symbols={_summary_with_limit(source_a_failed_symbols)}",
+            )
+        if source_b_failed_months:
+            state.notes = _append_note(
+                state.notes,
+                f"source_b_failed_months={_summary_with_limit(source_b_failed_months)}",
+            )
         if extractor_errors:
             logger.warning(
                 "extractor_warnings run_id=%s error_count=%s details=%s",
                 ctx.run_id,
                 len(extractor_errors),
-                json.dumps(extractor_errors, ensure_ascii=False),
+                _summary_with_limit(extractor_errors, limit=10),
             )
             state.notes = _append_note(
                 state.notes, f"extractor_error_count={len(extractor_errors)}"
             )
             state.notes = _append_note(
                 state.notes,
-                f"extractor_errors={json.dumps(extractor_errors, ensure_ascii=False)}",
+                f"extractor_errors={_summary_with_limit(extractor_errors, limit=10)}",
             )
 
         if universe and not raw and len(extractor_errors) >= len(set(ctx.enabled_extractors)):

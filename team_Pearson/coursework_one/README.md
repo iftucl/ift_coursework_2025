@@ -294,7 +294,7 @@ poetry run pytest -q
 poetry run pytest
 poetry run flake8 .
 poetry run bandit -r modules Main.py
-VENV_PATH=$(poetry env info -p) && HOME=/tmp "$VENV_PATH/bin/safety" check -r poetry.lock
+poetry run safety scan -r poetry.lock
 cd docs/sphinx && poetry run make html
 cd ../..
 poetry run python scripts/validate_pipeline_data.py --tolerance 1e-6
@@ -302,9 +302,9 @@ poetry run python scripts/validate_pipeline_data.py --tolerance 1e-6
 
 Notes:
 - `pytest` coverage threshold is enforced by config (`>=80%`).
-- In this workflow, `safety check` verifies `poetry.lock` without interactive login.
-- `safety scan` is the newer command but requires Safety account login/registration (interactive prompt).
-- If you need non-interactive coursework checks, use `check`.
+- `safety check` is deprecated and may fail in newer environments.
+- Use `safety scan` for dependency vulnerability checks on `poetry.lock`.
+- First run may require one-time authentication (for example: `poetry run safety auth login --headless`).
 
 ## 14. Common Pitfalls
 

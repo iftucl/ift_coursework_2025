@@ -943,6 +943,7 @@ def extract_source_a(
     backfill_years: int,
     frequency: str,
     config: Dict[str, Any] | None = None,
+    failed_symbols: Optional[List[Dict[str, str]]] = None,
 ) -> List[Dict[str, Any]]:
     """Extract Source A records for a symbol list.
 
@@ -958,6 +959,8 @@ def extract_source_a(
         Scheduling frequency label (daily/weekly/monthly/quarterly/annual).
     config:
         Optional in-memory config. If omitted, config is loaded from file.
+    failed_symbols:
+        Optional collector list to record failed symbols and reasons.
 
     Returns
     -------
@@ -1071,6 +1074,8 @@ def extract_source_a(
             records.extend(symbol_records)
         except Exception as exc:
             logger.error("source_a failed for %s: %r", symbol, exc, exc_info=True)
+            if failed_symbols is not None:
+                failed_symbols.append({"symbol": symbol, "reason": f"{exc!r}"})
 
     return records
 

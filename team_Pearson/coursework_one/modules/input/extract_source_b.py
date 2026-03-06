@@ -680,6 +680,7 @@ def ingest_source_b_raw(
     backfill_years: int,
     frequency: str,
     config: Optional[Dict[str, Any]] = None,
+    failed_months_out: Optional[List[Dict[str, str]]] = None,
 ) -> List[Dict[str, Any]]:
     """Ingest raw Source B payloads from Alpha Vantage news endpoint."""
     _ = frequency  # Source B extraction cadence is independent from output sampling label.
@@ -752,6 +753,14 @@ def ingest_source_b_raw(
                 time.sleep(ALPHA_VANTAGE_THROTTLE_SECONDS)
             except Exception as exc:
                 logger.warning("source_b fetch failed for %s %s: %r", symbol, month_start, exc)
+                if failed_months_out is not None:
+                    failed_months_out.append(
+                        {
+                            "symbol": symbol,
+                            "month_start": str(month_start),
+                            "reason": f"{exc!r}",
+                        }
+                    )
 
     return raw_payloads
 
@@ -881,7 +890,15 @@ def extract_source_b(
     backfill_years: int,
     frequency: str,
     config: Optional[Dict[str, Any]] = None,
+    failed_months_out: Optional[List[Dict[str, str]]] = None,
 ) -> List[Dict[str, Any]]:
     """Run Source B end-to-end (ingest + transform)."""
-    raw_payloads = ingest_source_b_raw(symbols, run_date, backfill_years, frequency, config=config)
+    raw_payloads = ingest_source_b_raw(
+        symbols,
+        run_date,
+        backfill_years,
+        frequency,
+        config=config,
+        failed_months_out=failed_months_out,
+    )
     return transform_source_b_features(raw_payloads, symbols, run_date, frequency, config=config)
