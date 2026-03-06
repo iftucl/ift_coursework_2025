@@ -90,6 +90,37 @@ Mongo responsibility split:
   - `scripts/run_scheduled_pipeline.py`
 - This keeps core factor loading independent from search-index availability.
 
+### 3.4 Data lineage
+
+Two lineage paths run in parallel with different ownership:
+
+- Analytical source-of-truth lineage (SQL):
+  - `source_a/source_b -> normalize/quality -> PostgreSQL`
+  - final truth tables remain `factor_observations` and `financial_observations`.
+
+- Search-serving lineage (Mongo):
+  - `source_b raw JSONL in MinIO -> Main.py post-success Mongo stage -> ift_cw.news_articles`
+  - this stage is default-enabled and best-effort.
+
+Field-level lineage (source_b to Mongo):
+
+- raw article records are normalized by `scripts/index_news_to_mongo.py`.
+- canonical symbol field in Mongo is `symbols`.
+- query/index path is aligned to `symbols`, `time_published`, and text index on `title + summary`.
+
+Auditability hooks:
+
+- run-level trace: `run_id` and stage events in pipeline logs.
+- raw object trace: MinIO object keys by `run_date/year/month/symbol`.
+- document trace: Mongo `minio_object_keys` references source raw objects.
+
+Trigger and control rules:
+
+- `Main.py` triggers Mongo indexing only after core pipeline status is `success`.
+- `--dry-run` skips Mongo indexing.
+- `--no-index-mongo` disables Mongo indexing explicitly.
+- If Mongo indexing fails, run status stays successful for SQL core load and a warning is recorded.
+
 ## 4. Metric Definitions
 
 ### 4.1 Atomic metrics

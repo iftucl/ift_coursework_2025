@@ -53,6 +53,8 @@ Constraints and indexes:
 - Unique key: `UNIQUE(symbol, observation_date, factor_name)` (`uniq_observation`)
 - Index: `idx_factor_obs_symbol` on `symbol`
 - Index: `idx_factor_obs_observation_date` on `observation_date`
+- Index: `idx_factor_obs_symbol_factor_date` on `(symbol, factor_name, observation_date)`
+- Index: `idx_factor_obs_factor_date` on `(factor_name, observation_date)`
 
 Current atomic factors (input/ingest stage):
 - `adjusted_close_price`
@@ -139,6 +141,11 @@ This mirror is for local troubleshooting only; PostgreSQL `systematic_equity.pip
 
 News search/index document model built by `scripts/index_news_to_mongo.py`.
 
+Default write path:
+- `Main.py` triggers this Mongo indexing stage by default after a successful core run.
+- Stage can be disabled with `--no-index-mongo`.
+- Stage is best-effort: indexing failures are warning-only and do not invalidate SQL core load success.
+
 | Field Name | Type | Description | Notes |
 | --- | --- | --- | --- |
 | `_id` | STRING | Global article identifier | URL hash primary; fallback hash of source+time+title |
@@ -147,13 +154,22 @@ News search/index document model built by `scripts/index_news_to_mongo.py`.
 | `url` | STRING | Article URL | Sparse unique index |
 | `time_published` | DATETIME | Canonical publish time | Indexed |
 | `published_at` | DATETIME | Compatibility alias of `time_published` | Same value as canonical field |
-| `tickers` | ARRAY\<STRING\> | Canonical mapped symbols for this article | Array because one article can map to multiple symbols |
-| `symbols` | ARRAY\<STRING\> | Compatibility alias of `tickers` | Same array values |
+| `symbols` | ARRAY\<STRING\> | Canonical mapped symbols for this article | Array because one article can map to multiple symbols |
+| `tickers` | ARRAY\<STRING\> | Compatibility alias of `symbols` | Same array values |
 | `source` | STRING | News provider/source | Optional |
 | `first_seen_run_date` | STRING | First run date this article was indexed | Traceability |
 | `last_seen_run_date` | STRING | Latest run date this article was seen | Traceability |
 | `minio_object_keys` | ARRAY\<STRING\> | Raw object lineage pointers | Traceability |
 
 Field naming rule:
-- Mongo news docs intentionally use array fields `tickers`/`symbols` instead of singular `symbol`.
+- Mongo news docs intentionally use array fields `symbols`/`tickers` instead of singular `symbol`.
+- Canonical query/index field is `symbols`; `tickers` is retained for backward compatibility.
 - Reason: one news article may reference multiple companies; singular `symbol` would lose this cardinality.
+
+Current Mongo index set (from `scripts/index_news_to_mongo.py`):
+- text index: `title + summary`
+- time index: `time_published`
+- symbol index: `symbols`
+- symbol+time index: `(symbols, time_published DESC)`
+- sparse unique index: `url`
+- run tracking indexes: `last_seen_run_date`, `(last_seen_run_date, time_published DESC)`

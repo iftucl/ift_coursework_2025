@@ -46,6 +46,12 @@ This document describes the implemented end-to-end data flow from source APIs to
 - Primary run audit written to PostgreSQL `systematic_equity.pipeline_runs`.
 - Secondary local mirror written to `logs/pipeline_runs.jsonl`.
 
+7. Mongo index stage (default, best-effort):
+- Triggered by `Main.py` after core pipeline status is `success`.
+- Builds/updates Mongo search collection `ift_cw.news_articles` by running `scripts/index_news_to_mongo.py`.
+- Disable explicitly with `--no-index-mongo`; `--dry-run` skips this stage.
+- Failure mode is warning-only (core SQL pipeline success state is preserved).
+
 ## 2. Factor-Level Lineage
 
 | Final Factor | Atomic Inputs | Core Rule | Output |
@@ -76,6 +82,16 @@ PostgreSQL curated layer:
   - symbol index
   - date indexes (`observation_date` / `report_date`)
   - unique business keys by table
+
+Mongo serving/index layer:
+- Collection: `ift_cw.news_articles`
+- Canonical symbol field: `symbols`
+- Compatibility alias: `tickers`
+- Primary search/index path:
+  - text index on `title + summary`
+  - filter/sort via `symbols` and `time_published`
+- Document-level raw trace:
+  - `minio_object_keys` links each indexed document back to MinIO source objects
 
 ## 4. Reproducibility Notes
 
