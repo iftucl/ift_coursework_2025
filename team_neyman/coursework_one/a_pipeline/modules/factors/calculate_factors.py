@@ -102,18 +102,17 @@ def calculate_price_to_weeks_high(data: pd.DataFrame, days: int=252):
     rolling_52w_high = data.groupby('symbol')['high_price'].transform(lambda x: x.rolling(window=days).max())
     return (data['close_price'] / rolling_52w_high).round(4)
 
-def calculate_ma_slope(data: pd.DataFrame, ma_days: int, window_days: int):
+def calculate_ma_roc(data: pd.DataFrame, ma_days: int, window_days: int):
     if f'ma{ma_days}' not in data.columns:
         data[f'ma{ma_days}'] = calculate_sma(data, days=ma_days)
     lookback_ma = data.groupby('symbol')[f'ma{ma_days}'].shift(window_days)
-    ma_slope = (data[f'ma{ma_days}'] / lookback_ma) - 1
-    return ma_slope.round(6)
-
+    ma_roc = (data[f'ma{ma_days}'] / lookback_ma) - 1
+    return ma_roc.round(6)
 
 def calculate_lagged_momentum(data: pd.DataFrame, total_months: int, lag_months: int=1):
     price_start = data.groupby('symbol')['close_price'].shift(total_months*21)
     price_end = data.groupby('symbol')['close_price'].shift(lag_months*21)
-    return ((price_end / price_start) - 1).round(6)
+    return np.log(price_end / price_start).round(6)
 
 def calculate_risk_adj_momentum(data: pd.DataFrame, momentum_months: int, vol_days: int):
     if 'momentum' not in data.columns:
@@ -197,13 +196,13 @@ def calculate_bollingner(data: pd.DataFrame, days: int = 20, num_std: int = 2):
     
     return percent_b.round(6)
 
-def get_latest_indicators():
-    latest_ohlcv = postgres.get_latest_data("daily_ohlcv", columns=["close_price"])
-    latest_liquidity = postgres.get_latest_data("liquidity_factors", columns=["adv_20d", "addv_20d"])
-    latest_trend = postgres.get_latest_data("trend_factors", columns=["ma200", "ma200_20d_slope"])
-    latest_momentum = postgres.get_latest_data("momentum_factors", columns=["risk_adj_ret_6m"])
-    latest_risk = postgres.get_latest_data("risk_factors", columns=["vol_60d", "max_drawdown_1y", "historical_var_95_1d"])
-    latest_eps = postgres.get_latest_data("eps_history", date_col="period_end_date")
+def get_latest_indicators(symbols: list):
+    latest_ohlcv = postgres.get_latest_data("daily_ohlcv", columns=["close_price"], symbols=symbols)
+    latest_liquidity = postgres.get_latest_data("liquidity_factors", columns=["adv_20d", "addv_20d"], symbols=symbols)
+    latest_trend = postgres.get_latest_data("trend_factors", columns=["ma200", "ma200_20d_roc"], symbols=symbols)
+    latest_momentum = postgres.get_latest_data("momentum_factors", columns=["risk_adj_ret_6m"], symbols=symbols)
+    latest_risk = postgres.get_latest_data("risk_factors", columns=["vol_60d", "max_drawdown_1y", "historical_var_95_1d"], symbols=symbols)
+    latest_eps_estimate = postgres.get_latest_data("eps_estimate", columns=["period", "period_end_date", "consensus_eps"], date_col="estimate_date", distinct_cols=["symbol", "period"], symbols=symbols)
 
     # Put the factor tables in a list so we can loop through them
     factor_dfs = [latest_liquidity, latest_trend, latest_momentum, latest_risk]
@@ -214,7 +213,7 @@ def get_latest_indicators():
             df.drop(columns=['price_date'], inplace=True)
 
     # Compile the final list of DataFrames to merge
-    all_dfs = [latest_ohlcv] + factor_dfs + [latest_eps]
+    all_dfs = [latest_ohlcv] + factor_dfs + [latest_eps_estimate]
     
     # Filter out any None or empty DataFrames just in case a database table is completely empty
     valid_dfs = [df for df in all_dfs if df is not None and not df.empty]

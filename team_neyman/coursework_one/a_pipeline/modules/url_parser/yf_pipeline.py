@@ -132,7 +132,7 @@ def calculate_trend_data(ticker_list: list, start_date=None):
     data['donchian_high_55'] = calculate_factors.calculate_donchian_high(data, days=55)
     data['donchian_high_120'] = calculate_factors.calculate_donchian_high(data, days=120)
     data['price_to_52w_high'] = calculate_factors.calculate_price_to_weeks_high(data, days=252)
-    data['ma200_20d_slope'] = calculate_factors.calculate_ma_slope(data, ma_days=200, window_days=20)
+    data['ma200_20d_roc'] = calculate_factors.calculate_ma_roc(data, ma_days=200, window_days=20)
 
     if start_date is not None:
         start_date = pd.to_datetime(start_date)
@@ -178,8 +178,8 @@ def calculate_risk_data(ticker_list: list, start_date=None):
     data['downside_vol_60d'] = calculate_factors.calculate_downside_volitility(data, days=60)
     data['max_drawdown_6m'] = calculate_factors.calculate_maximum_drawdown(data, days=126)
     data['max_drawdown_1y'] = calculate_factors.calculate_maximum_drawdown(data, days=252)
-    data['historical_var_95_1d'] = calculate_factors.calculate_historical_var(data)
-    data['historical_cvar_95_1d'] = calculate_factors.calculate_historical_cvar(data)
+    data['historical_var_95_1m'] = calculate_factors.calculate_historical_var(data, days=20)
+    data['historical_cvar_95_1m'] = calculate_factors.calculate_historical_cvar(data, days=20)
     data['worst_day_ret_1y'] = calculate_factors.calculate_worst_day_return(data)
     data['worst_week_ret_1y'] = calculate_factors.calculate_worst_week_return(data)
 

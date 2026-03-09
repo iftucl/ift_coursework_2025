@@ -22,25 +22,37 @@ def get_table(name: str, columns: list = None, schema: str = 'systematic_equity'
         return None
 
 # Get the dataset with the latest date for each company in a specific table
-def get_latest_data(table_name: str, columns: list = None, date_col: str = 'price_date', schema: str = 'systematic_equity'):
+def get_latest_data(table_name: str, columns: list = None, symbols: list = None, date_col: str = 'price_date', distinct_cols: list = None, schema: str = 'systematic_equity'):
+    if distinct_cols is None:
+        distinct_cols = ["symbol"]
+    
     if columns is None or len(columns) == 0:
         col_str = "*"
     else:
         safe_cols = set(columns)
-        safe_cols.update(["symbol", date_col])
+        safe_cols.update(distinct_cols)
+        safe_cols.add(date_col)
         col_str = ", ".join([f'"{col}"' for col in safe_cols])
 
+    distinct_str = ", ".join([f'"{col}"' for col in distinct_cols])
+
     query = f"""
-        SELECT DISTINCT ON (symbol) {col_str}
+        SELECT DISTINCT ON ({distinct_str}) {col_str}
         FROM "{schema}"."{table_name}"
-        ORDER BY symbol ASC, {date_col} DESC;
     """
+    params = {}
     
+    if symbols:
+        query += "\nWHERE symbol = ANY(:symbols)"
+        params["symbols"] = list(symbols)
+
+    order_by_prefix = ", ".join([f'"{col}" ASC' for col in distinct_cols])
+    query += f"\nORDER BY {order_by_prefix}, \"{date_col}\" DESC;"
     try:
         with engine.connect() as conn:
-            df = pd.read_sql(text(query), conn)
+            df = pd.read_sql(text(query), conn, params=params)
         if df.empty:
-            print(f"Warning: The table '{table_name}' is empty.")
+            print(f"Warning: The table '{table_name}' is empty or no symbols matched.")
             return pd.DataFrame()  
         return df
     except Exception as e:
@@ -83,16 +95,68 @@ def get_latest_date(table_name: str, schema: str = 'systematic_equity'):
         return None
 
 # Adding a new column to existing table 
-def add_new_column(column_name: str, column_type: str, table_name: str, schema: str = 'systematic_equity'):
-    query = f"""
+def add_new_column(df: pd.DataFrame, column_name: str, column_type: str, table_name: str, schema: str = 'systematic_equity'):
+    alter_query = f"""
     ALTER TABLE "{schema}"."{table_name}" 
-    ADD COLUMN IF NOT EXIST "{column_name}" {column_type};
+    ADD COLUMN IF NOT EXISTS "{column_name}" {column_type};
+    """
+    
+    try:
+        with engine.begin() as conn:
+            conn.execute(text(alter_query))
+        print(f"Successfully ensured column '{column_name}' exists.")
+    except Exception as e:
+        print(f"Database Error during ALTER TABLE: {e}")
+
+
+    temp_table = f"temp_{table_name}_update"
+    if table_name == "eps_history":
+        upload_df = df[['symbol', 'period_end_date', column_name]]
+    else:
+        upload_df = df[['symbol', 'price_date', column_name]]
+    
+    try:
+        upload_df.to_sql(temp_table, engine, schema=schema, if_exists='replace', index=False)
+        
+        update_query = f"""
+        UPDATE "{schema}"."{table_name}" AS main
+        SET "{column_name}" = temp."{column_name}"
+        FROM "{schema}"."{temp_table}" AS temp
+        WHERE main.symbol = temp.symbol 
+          AND main.price_date = temp.price_date;
+        """
+        
+        with engine.begin() as conn:
+            conn.execute(text(update_query))
+            conn.execute(text(f'DROP TABLE "{schema}"."{temp_table}";'))
+            
+        print(f"Successfully populated '{column_name}' with data!")
+        
+    except Exception as e:
+        print(f"Database Error during data upload: {e}")
+
+def del_table(table_name: str, schema: str = 'systematic_equity'):
+    query = f"""
+    DROP TABLE IF EXISTS "{schema}"."{table_name}";
     """
     
     try:
         with engine.begin() as conn:
             conn.execute(text(query))
-        print("Successfully added new column!")
+        print(f"Successfully permanently deleted table: '{schema}.{table_name}'")
+    except Exception as e:
+        print(f"Database Error: {e}")
+
+def del_column(column_name: str, table_name: str, schema: str = 'systematic_equity'):
+    query = f"""
+    ALTER TABLE "{schema}"."{table_name}" 
+    DROP COLUMN IF EXISTS "{column_name}";
+    """
+    
+    try:
+        with engine.begin() as conn:
+            conn.execute(text(query))
+        print(f"Successfully deleted column '{column_name}' from '{schema}.{table_name}'.")
     except Exception as e:
         print(f"Database Error: {e}")
     
@@ -343,7 +407,7 @@ def create_trend_table():
         donchian_high_55 NUMERIC(14, 4),
         donchian_high_120 NUMERIC(14, 4),
         price_to_52w_high NUMERIC(6, 4),
-        ma200_20d_slope NUMERIC(10, 6),
+        ma200_20d_roc NUMERIC(10, 6),
         UNIQUE (symbol, price_date)
     );
 
@@ -364,8 +428,8 @@ def update_trend_data(data: pd.DataFrame):
     data.to_sql(temp_table, engine, schema='systematic_equity', if_exists='replace', index=False)
     query = """
     INSERT INTO systematic_equity.trend_factors (symbol, price_date, ma200, ma150, ma100, adx14, donchian_high_55, donchian_high_120,
-    price_to_52w_high, ma200_20d_slope)
-    SELECT symbol, price_date, ma200, ma150, ma100, adx14, donchian_high_55, donchian_high_120, price_to_52w_high, ma200_20d_slope 
+    price_to_52w_high, ma200_20d_roc)
+    SELECT symbol, price_date, ma200, ma150, ma100, adx14, donchian_high_55, donchian_high_120, price_to_52w_high, ma200_20d_roc 
     FROM systematic_equity.temp_trend
     ON CONFLICT (symbol, price_date) 
     DO UPDATE SET 
@@ -376,7 +440,7 @@ def update_trend_data(data: pd.DataFrame):
         donchian_high_55 = EXCLUDED.donchian_high_55,
         donchian_high_120 = EXCLUDED.donchian_high_120,
         price_to_52w_high = EXCLUDED.price_to_52w_high,
-        ma200_20d_slope = EXCLUDED.ma200_20d_slope;
+        ma200_20d_roc = EXCLUDED.ma200_20d_roc;
     """
     try:
         with engine.begin() as conn:
@@ -608,3 +672,59 @@ def update_eps_history(data: pd.DataFrame):
     except Exception as e:
         print(f"Database Error: {e}")
 
+def create_eps_estimate_table():
+    query = """
+    CREATE TABLE IF NOT EXISTS systematic_equity.eps_estimate (
+        id SERIAL PRIMARY KEY,
+        estimate_date DATE NOT NULL, 
+        symbol VARCHAR(10) NOT NULL,
+        period VARCHAR(64) NOT NULL,
+        period_end_date DATE NOT NULL,
+        consensus_eps NUMERIC(7, 2),
+        recent_eps NUMERIC(7, 2),
+        estimate_count INT,
+        estimate_high NUMERIC(7, 2),
+        estimate_low NUMERIC(7, 2),
+        year_ago_eps NUMERIC(7, 2),
+        UNIQUE (estimate_date, symbol, period_end_date)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_eps_estimate_symbol_date 
+    ON systematic_equity.eps_estimate (estimate_date, symbol, period_end_date DESC);
+    """
+    try:
+        with engine.connect() as conn:
+            conn.execute(text(query))
+            conn.commit()
+            print("EPS estimate table and Index created successfully.")
+    except Exception as e:
+        print(f"Database Error: {e}")
+
+# Update new data to eps_estimate table
+def update_eps_estimate(data: pd.DataFrame):
+    temp_table = 'temp_eps_estimate'
+    data.to_sql(temp_table, engine, schema='systematic_equity', if_exists='replace', index=False)
+    query = """
+    INSERT INTO systematic_equity.eps_estimate (
+        estimate_date, symbol, period, period_end_date, consensus_eps, recent_eps, 
+        estimate_count, estimate_high, estimate_low, year_ago_eps)
+    SELECT 
+        estimate_date, symbol, period, period_end_date, consensus_eps, recent_eps, 
+        estimate_count, estimate_high, estimate_low, year_ago_eps
+    FROM systematic_equity.temp_eps_estimate
+    ON CONFLICT (estimate_date, symbol, period_end_date) 
+    DO UPDATE SET 
+        consensus_eps = EXCLUDED.consensus_eps,
+        recent_eps = EXCLUDED.recent_eps,
+        estimate_count = EXCLUDED.estimate_count,
+        estimate_high = EXCLUDED.estimate_high,
+        estimate_low = EXCLUDED.estimate_low,
+        year_ago_eps = EXCLUDED.year_ago_eps;
+    """
+    try:
+        with engine.begin() as conn:
+            conn.execute(text(query))
+            conn.execute(text(f"DROP TABLE systematic_equity.{temp_table};"))
+        print("EPS estimate table updated successfully.")
+    except Exception as e:
+        print(f"Database Error: {e}")

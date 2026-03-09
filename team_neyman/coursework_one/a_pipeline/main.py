@@ -1,15 +1,35 @@
 import time
+import pandas as pd
 from datetime import datetime, timedelta
 from modules.db_loader import postgres
 from modules.url_parser import yf_pipeline, dolthub_pipeline
+from modules.factors import calculate_factors
 
 if __name__ == '__main__':
     # Update latest data
     yf_pipeline.update_ohlcv_batch()
-    postgres.add_new_column("ma200_20d_slope", "NUMERIC(10, 6)", "trend_factors")
     yf_pipeline.update_factors()
     dolthub_pipeline.setup_dolt_database()
 
     # Get the factors needed
+    target_sectors = ['consumer staples', 'utilities', 'health care']
+    target_companies = postgres.get_companies_by_sector(target_sectors)
+    latest_indicators = calculate_factors.get_latest_indicators(list(target_companies['symbol']))
+    target_df = pd.merge(
+        latest_indicators, 
+        target_companies[['symbol', 'gics_sector']],
+        on='symbol', 
+        how='inner' 
+    )
 
     # Choose the companies
+    # 1. Liquidity Filter
+    adv_cutoff = target_df['adv_20d'].quantile(0.15)
+    addv_cutoff = target_df['addv_20d'].quantile(0.15)
+    liquidity_mask = (target_df['adv_20d'] > adv_cutoff) & (target_df['addv_20d'] > addv_cutoff)
+    target_df = target_df[liquidity_mask]
+    # 2. (Option A) Sequential Filter
+    trend_mask = (target_df['close_price'] > target_df['ma200']) & (target_df['ma200_20d_slope'] > 0)
+    target_df = target_df[trend_mask]
+    
+    

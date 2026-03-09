@@ -6,10 +6,7 @@ from pathlib import Path
 from modules.db_loader import postgres
 
 # Get eps_history data from dolthub and update to postgreSQL
-def update_earnings_data(repo_path):
-    # Get new data from dolthub
-    subprocess.run(["dolt", "pull"], cwd=repo_path)
-    
+def update_eps_history_data(repo_path):
     query = """
     SELECT *
     FROM eps_history 
@@ -41,6 +38,45 @@ def update_earnings_data(repo_path):
     
     postgres.update_eps_history(new_data)
 
+def update_eps_estimate_data(repo_path):
+    query = """
+    SELECT *
+    FROM eps_estimate 
+    """
+
+    result = subprocess.run(
+        ["dolt", "sql", "-q", query, "-r", "csv"], 
+        cwd=repo_path, 
+        capture_output=True, text=True
+    )
+
+    if result.returncode != 0:
+        print(f"Dolt SQL Error: {result.stderr}")
+        
+    if not result.stdout.strip():
+        print("Warning: No data returned from Dolt.")
+    
+    new_data = pd.read_csv(io.StringIO(result.stdout))
+
+    # Update data to postgreSQL
+    rename_map = {
+        'date': 'estimate_date',
+        'act_symbol': 'symbol',
+        'period': 'period',
+        'period_end_date': 'period_end_date',       
+        'consensus': 'consensus_eps',    
+        'recent': 'recent_eps',
+        'count': 'estimate_count',
+        'high': 'estimate_high',
+        'low': 'estimate_low',
+        'year_ago': 'year_ago_eps'
+    }
+    new_data = new_data.rename(columns=rename_map)
+    new_data['estimate_date'] = pd.to_datetime(new_data['estimate_date'])
+    new_data['period_end_date'] = pd.to_datetime(new_data['period_end_date'])
+    
+    postgres.update_eps_estimate(new_data)
+
 # Initiate dolthub
 def setup_dolt_database():
     # Providing identity to dolthub for fetching data
@@ -53,13 +89,17 @@ def setup_dolt_database():
     project_root = current_dir.parents[2]
     data_dir = project_root / 'data' / 'earnings'
     
-    data_dir_str = str(data_dir)
+    #data_dir_str = str(data_dir)
     
     # Check if the database already exists
-    if os.path.exists(os.path.join(data_dir_str, '.dolt')):
-        print(f"Dolt database found at {data_dir_str}. Running 'dolt pull' ...")
+    if os.path.exists(os.path.join(data_dir, '.dolt')):
+        print(f"Dolt database found at {data_dir}. Running 'dolt pull' ...")
+        # Get new data from dolthub
+        subprocess.run(["dolt", "pull"], cwd=data_dir)
         postgres.create_eps_history_table()
-        update_earnings_data(data_dir_str)
+        update_eps_history_data(data_dir)
+        postgres.create_eps_estimate_table()
+        update_eps_estimate_data(data_dir)
         return
 
     # If it doesn't exist, create the folder and clone it
@@ -73,7 +113,9 @@ def setup_dolt_database():
     print("Dolt database successfully cloned to /data/earnings!")
 
     postgres.create_eps_history_table()
-    update_earnings_data(data_dir_str)
+    update_eps_history_data(data_dir)
+    postgres.create_eps_estimate_table()
+    update_eps_estimate_data(data_dir)
 
 
     
