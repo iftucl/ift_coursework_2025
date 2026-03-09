@@ -22,7 +22,7 @@ def get_table(name: str, columns: list = None, schema: str = 'systematic_equity'
         return None
 
 # Get the dataset with the latest date for each company in a specific table
-def get_latest_data(table_name: str, columns: list = None, symbols: list = None, date_col: str = 'price_date', distinct_cols: list = None, schema: str = 'systematic_equity'):
+def get_latest_data(table_name: str, columns: list = None, symbols: list = None, periods: list = None, date_col: str = 'price_date', distinct_cols: list = None, schema: str = 'systematic_equity'):
     if distinct_cols is None:
         distinct_cols = ["symbol"]
     
@@ -40,11 +40,20 @@ def get_latest_data(table_name: str, columns: list = None, symbols: list = None,
         SELECT DISTINCT ON ({distinct_str}) {col_str}
         FROM "{schema}"."{table_name}"
     """
+    
+    where_clauses = []
     params = {}
     
     if symbols:
-        query += "\nWHERE symbol = ANY(:symbols)"
+        where_clauses.append("symbol = ANY(:symbols)")
         params["symbols"] = list(symbols)
+
+    if periods:
+        where_clauses.append("period = ANY(:periods)")
+        params["periods"] = list(periods)
+
+    if where_clauses:
+        query += "\nWHERE " + " AND ".join(where_clauses)
 
     order_by_prefix = ", ".join([f'"{col}" ASC' for col in distinct_cols])
     query += f"\nORDER BY {order_by_prefix}, \"{date_col}\" DESC;"
@@ -167,7 +176,7 @@ def get_company_static():
     FROM systematic_equity.company_static
     """
     try:
-        df = pd.read_sql(query, engine)
+        df = pd.read_sql(text(query), engine)
         return df
     except Exception as e:
         print(f"Database Error: {e}")
@@ -178,11 +187,13 @@ def get_companies_by_sector(sector_list: list):
     query = """
     SELECT * 
     FROM systematic_equity.company_static
-    WHERE gics_sector IN :sectors;
+    WHERE gics_sector = ANY(:sectors);
     """
     try:
-        params = {"sectors": tuple(sector_list)}
-        df = pd.read_sql(query, engine, params = params)
+        params = {"sectors": list(sector_list)}
+        df = pd.read_sql(text(query), engine, params = params)
+        if df is not None and not df.empty and 'symbol' in df.columns:
+            df['symbol'] = df['symbol'].str.strip()
         return df
     except Exception as e:
         print(f"Database Error: {e}")
@@ -193,11 +204,13 @@ def get_companies_by_industry(industry_list: list):
     query = """
     SELECT * 
     FROM systematic_equity.company_static
-    WHERE gics_industry IN :industries;
+    WHERE gics_industry = ANY(:industries);
     """
     try:
-        params = {"industries": tuple(industry_list)}
-        df = pd.read_sql(query, engine, params = params)
+        params = {"industries": list(industry_list)}
+        df = pd.read_sql(text(query), engine, params = params)
+        if df is not None and not df.empty and 'symbol' in df.columns:
+            df['symbol'] = df['symbol'].str.strip()
         return df
     except Exception as e:
         print(f"Database Error: {e}")
@@ -211,7 +224,7 @@ def get_all_sectors():
     ORDER BY gics_sector ASC;
     """
     try:
-        df = pd.read_sql(query, engine)
+        df = pd.read_sql(text(query), engine)
         return df['gics_sector'].tolist()
     except Exception as e:
         print(f"Database Error: {e}")
@@ -225,7 +238,7 @@ def get_all_industries():
     ORDER BY gics_industry ASC;
     """
     try:
-        df = pd.read_sql(query, engine)
+        df = pd.read_sql(text(query), engine)
         return df['gics_industry'].tolist()
     except Exception as e:
         print(f"Database Error: {e}")
@@ -527,8 +540,8 @@ def create_risk_table():
         downside_vol_60d NUMERIC(10, 6),
         max_drawdown_6m NUMERIC(10, 6),
         max_drawdown_1y NUMERIC(10, 6),
-        historical_var_95_1d NUMERIC(20, 4),
-        historical_cvar_95_1d NUMERIC(20, 4),
+        historical_var_95_1m NUMERIC(20, 4),
+        historical_cvar_95_1m NUMERIC(20, 4),
         worst_day_ret_1y NUMERIC(10, 6),
         worst_week_ret_1y NUMERIC(10, 6),
         UNIQUE (symbol, price_date)
@@ -551,9 +564,9 @@ def update_risk_data(data: pd.DataFrame):
     data.to_sql(temp_table, engine, schema='systematic_equity', if_exists='replace', index=False)
     query = """
     INSERT INTO systematic_equity.risk_factors (symbol, price_date, vol_20d, vol_60d, vol_120d, downside_vol_60d, max_drawdown_6m,
-    max_drawdown_1y, historical_var_95_1d, historical_cvar_95_1d, worst_day_ret_1y, worst_week_ret_1y)
+    max_drawdown_1y, historical_var_95_1m, historical_cvar_95_1m, worst_day_ret_1y, worst_week_ret_1y)
     SELECT symbol, price_date, vol_20d, vol_60d, vol_120d, downside_vol_60d, max_drawdown_6m,
-    max_drawdown_1y, historical_var_95_1d, historical_cvar_95_1d, worst_day_ret_1y, worst_week_ret_1y
+    max_drawdown_1y, historical_var_95_1m, historical_cvar_95_1m, worst_day_ret_1y, worst_week_ret_1y
     FROM systematic_equity.temp_risk
     ON CONFLICT (symbol, price_date) 
     DO UPDATE SET 
@@ -563,8 +576,8 @@ def update_risk_data(data: pd.DataFrame):
         downside_vol_60d = EXCLUDED.downside_vol_60d,
         max_drawdown_6m = EXCLUDED.max_drawdown_6m,
         max_drawdown_1y = EXCLUDED.max_drawdown_1y,
-        historical_var_95_1d = EXCLUDED.historical_var_95_1d,
-        historical_cvar_95_1d = EXCLUDED.historical_cvar_95_1d,
+        historical_var_95_1m = EXCLUDED.historical_var_95_1m,
+        historical_cvar_95_1m = EXCLUDED.historical_cvar_95_1m,
         worst_day_ret_1y = EXCLUDED.worst_day_ret_1y,
         worst_week_ret_1y = EXCLUDED.worst_week_ret_1y;
     """
@@ -702,8 +715,12 @@ def create_eps_estimate_table():
 
 # Update new data to eps_estimate table
 def update_eps_estimate(data: pd.DataFrame):
+    clean_data = data.drop_duplicates(
+        subset=['estimate_date', 'symbol', 'period_end_date'], 
+        keep='last'
+    )
     temp_table = 'temp_eps_estimate'
-    data.to_sql(temp_table, engine, schema='systematic_equity', if_exists='replace', index=False)
+    clean_data.to_sql(temp_table, engine, schema='systematic_equity', if_exists='replace', index=False)
     query = """
     INSERT INTO systematic_equity.eps_estimate (
         estimate_date, symbol, period, period_end_date, consensus_eps, recent_eps, 

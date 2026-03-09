@@ -1,0 +1,56 @@
+Total companies count: 139
+
+Liquidity mask count: 103
+
+Trend mask count: 89
+
+Earnings mask count: 108
+forward_earning_yields
+count    109.000000
+mean       0.061957
+std        0.036561
+min       -0.150636
+25%        0.047540
+50%        0.054596
+75%        0.069994
+max        0.235075
+
+Momentum mask count: 84
+momentum_score
+count    139.000000
+mean       0.503597
+std        0.259049
+min        0.023381
+25%        0.266547
+50%        0.495683
+75%        0.739388
+max        0.947842
+
+Risk mask count: 14
+vol_60d
+count    139.000000
+mean       0.018198
+std        0.008605
+min        0.001623
+25%        0.013050
+50%        0.015917
+75%        0.020219
+max        0.071412
+max_drawdown_1y
+count    139.000000
+mean      -0.279940
+std        0.153029
+min       -0.732240
+25%       -0.358469
+50%       -0.249693
+75%       -0.155867
+max       -0.071994
+var_pct
+count    139.000000
+mean       0.117679
+std        0.082577
+min        0.034289
+25%        0.064104
+50%        0.091618
+75%        0.137070
+max        0.574309

@@ -196,13 +196,54 @@ def calculate_bollingner(data: pd.DataFrame, days: int = 20, num_std: int = 2):
     
     return percent_b.round(6)
 
+def calculate_ntm_eps(data: pd.DataFrame):
+    if data is not None and not data.empty:
+        eps_pivot = data.pivot(
+            index='symbol',
+            columns='period',
+            values=['period_end_date', 'consensus_eps']
+        )
+        
+        eps_pivot.columns = [f"{col[1].lower().replace(' ', '_')}_{col[0]}" for col in eps_pivot.columns]
+        eps_pivot.reset_index(inplace=True)
+
+        required_cols = ['current_year_period_end_date', 'current_year_consensus_eps', 'next_year_consensus_eps']
+        for col in required_cols:
+            if col not in eps_pivot.columns:
+                eps_pivot[col] = pd.NA
+
+        eps_pivot['current_year_period_end_date'] = pd.to_datetime(eps_pivot['current_year_period_end_date'])
+        today = pd.Timestamp.today().normalize()
+        
+        days_left_fy1 = (eps_pivot['current_year_period_end_date'] - today).dt.days
+        days_left_fy1 = days_left_fy1.clip(lower=0, upper=365) 
+
+        weight_fy1 = days_left_fy1 / 365.0
+        weight_fy2 = 1.0 - weight_fy1
+        
+        eps_pivot['current_year_consensus_eps'] = pd.to_numeric(eps_pivot['current_year_consensus_eps'], errors='coerce')
+        eps_pivot['next_year_consensus_eps'] = pd.to_numeric(eps_pivot['next_year_consensus_eps'], errors='coerce')
+        
+        eps_pivot['ntm_eps'] = (
+            (eps_pivot['current_year_consensus_eps'] * weight_fy1) + 
+            (eps_pivot['next_year_consensus_eps'] * weight_fy2)
+        ).round(2)
+
+        return eps_pivot[['symbol', 'ntm_eps']]
+    else:
+        return pd.DataFrame(columns=['symbol', 'ntm_eps'])
+
 def get_latest_indicators(symbols: list):
     latest_ohlcv = postgres.get_latest_data("daily_ohlcv", columns=["close_price"], symbols=symbols)
     latest_liquidity = postgres.get_latest_data("liquidity_factors", columns=["adv_20d", "addv_20d"], symbols=symbols)
     latest_trend = postgres.get_latest_data("trend_factors", columns=["ma200", "ma200_20d_roc"], symbols=symbols)
-    latest_momentum = postgres.get_latest_data("momentum_factors", columns=["risk_adj_ret_6m"], symbols=symbols)
-    latest_risk = postgres.get_latest_data("risk_factors", columns=["vol_60d", "max_drawdown_1y", "historical_var_95_1d"], symbols=symbols)
-    latest_eps_estimate = postgres.get_latest_data("eps_estimate", columns=["period", "period_end_date", "consensus_eps"], date_col="estimate_date", distinct_cols=["symbol", "period"], symbols=symbols)
+    latest_momentum = postgres.get_latest_data("momentum_factors", columns=["risk_adj_mom_12m", "positive_ret_pct_60d"], symbols=symbols)
+    latest_risk = postgres.get_latest_data("risk_factors", columns=["vol_60d", "max_drawdown_1y", "historical_var_95_1m"], symbols=symbols)
+    
+    latest_eps_estimate = postgres.get_latest_data("eps_estimate", columns=["period", "period_end_date", "consensus_eps"], 
+                                                   date_col="estimate_date", distinct_cols=["symbol", "period"], 
+                                                   periods = ["Current Year", "Next Year"], symbols=symbols)
+    latest_ntm_eps = calculate_ntm_eps(latest_eps_estimate)
 
     # Put the factor tables in a list so we can loop through them
     factor_dfs = [latest_liquidity, latest_trend, latest_momentum, latest_risk]
@@ -213,7 +254,7 @@ def get_latest_indicators(symbols: list):
             df.drop(columns=['price_date'], inplace=True)
 
     # Compile the final list of DataFrames to merge
-    all_dfs = [latest_ohlcv] + factor_dfs + [latest_eps_estimate]
+    all_dfs = [latest_ohlcv] + factor_dfs + [latest_ntm_eps]
     
     # Filter out any None or empty DataFrames just in case a database table is completely empty
     valid_dfs = [df for df in all_dfs if df is not None and not df.empty]
@@ -230,5 +271,10 @@ def get_latest_indicators(symbols: list):
     print(f"Successfully merged indicators for {len(final_merged_df)} symbols.")
 
     final_merged_df['price_above_ma200'] = final_merged_df['close_price'] > final_merged_df['ma200']
+    final_merged_df['forward_earning_yields'] = final_merged_df['ntm_eps'] / final_merged_df['close_price']
+    final_merged_df['rar_rank'] = final_merged_df['risk_adj_mom_12m'].rank(ascending=True, pct=True, na_option='keep')
+    final_merged_df['stability_rank'] = final_merged_df['positive_ret_pct_60d'].rank(ascending=True, pct=True, na_option='keep')
+    final_merged_df['momentum_score'] = 0.7 * final_merged_df['rar_rank'] + 0.3 * final_merged_df['stability_rank']
+    final_merged_df['var_pct'] = final_merged_df['historical_var_95_1m'] / 10000
 
     return final_merged_df
