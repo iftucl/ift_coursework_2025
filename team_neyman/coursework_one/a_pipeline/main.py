@@ -12,7 +12,7 @@ if __name__ == '__main__':
     dolthub_pipeline.setup_dolt_database()
 
     # Get the factors needed
-    target_sectors = ['consumer staples', 'utilities', 'health care']
+    target_sectors = ['Consumer Staples', 'Utilities', 'Health Care']
     target_companies = postgres.get_companies_by_sector(target_sectors)
     latest_indicators = calculate_factors.get_latest_indicators(list(target_companies['symbol']))
     target_df = pd.merge(
@@ -40,6 +40,7 @@ if __name__ == '__main__':
     momentum_mask = target_df['momentum_score'] >= 0.4
     target_df = target_df[momentum_mask]
     print(f"Momentum mask count: {target_df.count}")
+    # 3. Risk Filter
     risk_mask = (target_df['vol_60d'] < 0.3) & (target_df['max_drawdown_1y'] > -0.35) & (target_df['var_pct'] < 0.05)
     target_df = target_df[risk_mask]
     print(f"Risk mask count: {target_df.count}")
