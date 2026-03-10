@@ -1,8 +1,8 @@
-from modules.url_parser import dolthub_pipeline, yf_pipeline
 from modules.db_loader import postgres
-from modules.factors import calculate_factors
+from modules.url_parser import dolthub_pipeline, yf_pipeline
 
-if __name__ == '__main__':
+# Rebuild the database
+if __name__ == "__main__":
     postgres.del_table("liquidity_factors")
     postgres.del_table("trend_factors")
     postgres.del_table("momentum_factors")
