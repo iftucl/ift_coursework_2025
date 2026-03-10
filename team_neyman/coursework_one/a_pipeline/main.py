@@ -7,10 +7,11 @@ from modules.factors import calculate_factors
 
 if __name__ == '__main__':
     # Update latest data
+    """
     yf_pipeline.update_ohlcv_batch()
     yf_pipeline.update_factors()
     dolthub_pipeline.setup_dolt_database()
-
+    """
     # Get the factors needed
     target_sectors = ['Consumer Staples', 'Utilities', 'Health Care']
     target_companies = postgres.get_companies_by_sector(target_sectors)
@@ -21,7 +22,7 @@ if __name__ == '__main__':
         on='symbol', 
         how='inner' 
     )
-    print(f"Companies count: {target_df.count}")
+    print(f"Total companies count: {len(target_df)}")
 
     # Choose the companies
     # 1. Liquidity Filter
@@ -29,18 +30,18 @@ if __name__ == '__main__':
     addv_cutoff = target_df['addv_20d'].quantile(0.15)
     liquidity_mask = (target_df['adv_20d'] > adv_cutoff) & (target_df['addv_20d'] > addv_cutoff)
     target_df = target_df[liquidity_mask]
-    print(f"Liquidity mask count: {target_df.count}")
+    print(f"Liquidity mask count: {len(target_df)}")
     # 2. (Option A) Sequential Filter
     trend_mask = (target_df['close_price'] > target_df['ma200']) & (target_df['ma200_20d_roc'] > 0)
     target_df = target_df[trend_mask]
-    print(f"Trend mask count: {target_df.count}")
+    print(f"Trend mask count: {len(target_df)}")
     earnings_mask = target_df['forward_earning_yields'] > 0
     target_df = target_df[earnings_mask]
-    print(f"Earnings mask count: {target_df.count}")
+    print(f"Earnings mask count: {len(target_df)}")
     momentum_mask = target_df['momentum_score'] >= 0.4
     target_df = target_df[momentum_mask]
-    print(f"Momentum mask count: {target_df.count}")
+    print(f"Momentum mask count: {len(target_df)}")
     # 3. Risk Filter
-    risk_mask = (target_df['vol_60d'] < 0.3) & (target_df['max_drawdown_1y'] > -0.35) & (target_df['var_pct'] < 0.05)
+    risk_mask = (target_df['vol_60d'] < 0.3) & (target_df['max_drawdown_1y'] > -0.5) & (target_df['var_pct'] < 0.15)
     target_df = target_df[risk_mask]
-    print(f"Risk mask count: {target_df.count}")
+    print(f"Risk mask count: {len(target_df)}")

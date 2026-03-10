@@ -1,3 +1,14 @@
+Successfully merged indicators for 139 symbols.
+Total companies count: 139
+Liquidity mask count: 103
+Trend mask count: 70
+Earnings mask count: 57
+Momentum mask count: 47
+Risk mask count: 40
+
+
+------------------------------------------------------------------
+
 Total companies count: 139
 
 Liquidity mask count: 103
@@ -26,16 +37,15 @@ min        0.023381
 75%        0.739388
 max        0.947842
 
-Risk mask count: 14
-vol_60d
+Risk mask count: 89
 count    139.000000
-mean       0.018198
-std        0.008605
-min        0.001623
-25%        0.013050
-50%        0.015917
-75%        0.020219
-max        0.071412
+mean       0.288885
+std        0.136598
+min        0.025764
+25%        0.207170
+50%        0.252675
+75%        0.320967
+max        1.133630
 max_drawdown_1y
 count    139.000000
 mean      -0.279940
@@ -54,3 +64,4 @@ min        0.034289
 50%        0.091618
 75%        0.137070
 max        0.574309
+

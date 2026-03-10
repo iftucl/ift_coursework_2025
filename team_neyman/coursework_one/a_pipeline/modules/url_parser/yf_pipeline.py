@@ -172,9 +172,9 @@ def calculate_risk_data(ticker_list: list, start_date=None):
     else:
         data = postgres.get_ohlcv_data(ticker_list)
 
-    data['vol_20d'] = calculate_factors.calculate_volatility(data, days=20)
-    data['vol_60d'] = calculate_factors.calculate_volatility(data, days=60)
-    data['vol_120d'] = calculate_factors.calculate_volatility(data, days=120)
+    data['vol_20d'] = calculate_factors.calculate_annualized_volatility(data, days=20)
+    data['vol_60d'] = calculate_factors.calculate_annualized_volatility(data, days=60)
+    data['vol_120d'] = calculate_factors.calculate_annualized_volatility(data, days=120)
     data['downside_vol_60d'] = calculate_factors.calculate_downside_volitility(data, days=60)
     data['max_drawdown_6m'] = calculate_factors.calculate_maximum_drawdown(data, days=126)
     data['max_drawdown_1y'] = calculate_factors.calculate_maximum_drawdown(data, days=252)

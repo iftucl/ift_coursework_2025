@@ -42,9 +42,10 @@ if __name__ == '__main__':
     print(f"Momentum mask count: {len(momentum_df)}")
     print(target_df['momentum_score'].describe())
 
-    risk_mask = (target_df['vol_60d'] < 0.3) & (target_df['max_drawdown_1y'] > -0.35) & (target_df['var_pct'] < 0.05)
+    risk_mask = (target_df['vol_60d'] < 0.3) & (target_df['max_drawdown_1y'] > -0.50) & (target_df['var_pct'] < 0.15)
     risk_df = target_df[risk_mask]
     print(f"Risk mask count: {len(risk_df)}")
     print(target_df['vol_60d'].describe())
     print(target_df['max_drawdown_1y'].describe())
     print(target_df['var_pct'].describe())
+    
