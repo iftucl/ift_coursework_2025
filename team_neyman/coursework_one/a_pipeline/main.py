@@ -1,9 +1,42 @@
 import pandas as pd
+import argparse
+from datetime import datetime, timedelta
 from modules.db_loader import postgres
 from modules.factors import calculate_factors
 from modules.url_parser import dolthub_pipeline, yf_pipeline
 
+
+def main():
+    parser = argparse.ArgumentParser(description="IFT Coursework Team Neyman")
+
+    parser.add_argument(
+        "--date",
+        type=str,
+        help="The specific date to run (YYYY-MM-DD). Defaults to yesterday.",
+    )
+
+    parser.add_argument(
+        "--frequency",
+        choices=["daily", "weekly", "monthly"],
+        default="daily",
+        help="How much data to process (daily, weekly, or monthly)",
+    )
+
+    args = parser.parse_args()
+
+    run_date = (
+        args.date if args.date else (datetime.now() - timedelta(1)).strftime("%Y-%m-%d")
+    )
+
+    print(f"Starting {args.frequency} run for date: {run_date}")
+
+    # Pass these parameters into your factor calculation functions
+    # run_pipeline(date=run_date, freq=args.frequency)
+
+
 if __name__ == "__main__":
+    main()
+
     # Update latest data
     yf_pipeline.update_ohlcv_batch()
     yf_pipeline.update_factors()
