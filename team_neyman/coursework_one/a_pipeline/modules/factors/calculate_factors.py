@@ -422,30 +422,38 @@ def calculate_ntm_eps(data: pd.DataFrame):
         return pd.DataFrame(columns=["symbol", "ntm_eps"])
 
 
-def get_latest_indicators(symbols: list):
+def get_latest_indicators(symbols: list, as_of_date: str):
     """
     Fetch the latest target indicators used for trading stretagies to form a portfolio.
     Process raw data with symbol as the key into an intergrated dataframe.
     Calculate and add new columns for strategies execution.
     """
     latest_ohlcv = postgres.get_latest_data(
-        "daily_ohlcv", columns=["close_price"], symbols=symbols
+        "daily_ohlcv", columns=["close_price"], symbols=symbols, as_of_date=as_of_date
     )
     latest_liquidity = postgres.get_latest_data(
-        "liquidity_factors", columns=["adv_20d", "addv_20d"], symbols=symbols
+        "liquidity_factors",
+        columns=["adv_20d", "addv_20d"],
+        symbols=symbols,
+        as_of_date=as_of_date,
     )
     latest_trend = postgres.get_latest_data(
-        "trend_factors", columns=["ma200", "ma200_20d_roc"], symbols=symbols
+        "trend_factors",
+        columns=["ma200", "ma200_20d_roc"],
+        symbols=symbols,
+        as_of_date=as_of_date,
     )
     latest_momentum = postgres.get_latest_data(
         "momentum_factors",
         columns=["risk_adj_mom_12m", "positive_ret_pct_60d"],
         symbols=symbols,
+        as_of_date=as_of_date,
     )
     latest_risk = postgres.get_latest_data(
         "risk_factors",
         columns=["vol_60d", "max_drawdown_1y", "historical_var_95_1m"],
         symbols=symbols,
+        as_of_date=as_of_date,
     )
 
     latest_eps_estimate = postgres.get_latest_data(
@@ -455,6 +463,7 @@ def get_latest_indicators(symbols: list):
         distinct_cols=["symbol", "period"],
         periods=["Current Year", "Next Year"],
         symbols=symbols,
+        as_of_date=as_of_date,
     )
     latest_ntm_eps = calculate_ntm_eps(latest_eps_estimate)
 

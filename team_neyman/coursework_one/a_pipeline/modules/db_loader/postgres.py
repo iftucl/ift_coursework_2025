@@ -40,6 +40,7 @@ def get_latest_data(
     columns: list = None,
     symbols: list = None,
     periods: list = None,
+    as_of_date: str = None,
     date_col: str = "price_date",
     distinct_cols: list = None,
     schema: str = "systematic_equity",
@@ -47,15 +48,17 @@ def get_latest_data(
     """
     Retrieves the most recent records from a specified database table, grouped by defined unique columns.
 
-    This function utilizes PostgreSQL's DISTINCT ON capability to fetch the latest row
-    (sorted descending by date_col) for each unique group (defined by distinct_cols).
-    It also supports pushing down filters (symbols, periods) directly to the database.
+    This function utilizes PostgreSQL's 'DISTINCT ON' capability to fetch the latest row
+    for each unique group (e.g., symbol), constrained by an optional 'as_of_date'.
+    This is critical for point-in-time backtesting to avoid look-ahead bias.
 
     Args:
         table_name (str): The name of the database table to query.
         columns (list, optional): Specific columns to retrieve. Defaults to None (fetches all columns).
         symbols (list, optional): A list of ticker symbols to filter by. Defaults to None.
         periods (list, optional): A list of fiscal periods (e.g., ["Current Year"]) to filter by. Defaults to None.
+        as_of_date (str, optional): The cutoff date (YYYY-MM-DD). Only data on or
+                                    BEFORE this date is considered. Defaults to None.
         date_col (str, optional): The date column used to determine the "latest" record. Defaults to 'price_date'.
         distinct_cols (list, optional): The columns to group by for the DISTINCT ON clause. Defaults to ["symbol"].
         schema (str, optional): The database schema name. Defaults to 'systematic_equity'.
@@ -93,6 +96,10 @@ def get_latest_data(
     if periods:
         where_clauses.append("period = ANY(:periods)")
         params["periods"] = list(periods)
+
+    if as_of_date:
+        where_clauses.append(f'"{date_col}" <= :as_of_date')
+        params["as_of_date"] = as_of_date
 
     if where_clauses:
         query += "\nWHERE " + " AND ".join(where_clauses)
