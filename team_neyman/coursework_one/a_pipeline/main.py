@@ -1,9 +1,9 @@
 import pandas as pd
 import argparse
 from datetime import datetime, timedelta
-from modules.db_loader import postgres
-from modules.factors import calculate_factors
-from modules.url_parser import dolthub_pipeline, yf_pipeline
+from a_pipeline.modules.db_loader import postgres
+from a_pipeline.modules.factors import calculate_factors
+from a_pipeline.modules.url_parser import dolthub_pipeline, yf_pipeline
 
 
 def update_database():

@@ -4,8 +4,8 @@ from datetime import datetime, timedelta
 import numpy as np
 import pandas as pd
 import yfinance as yf
-from modules.db_loader import postgres
-from modules.factors import calculate_factors
+from a_pipeline.modules.db_loader import postgres
+from a_pipeline.modules.factors import calculate_factors
 
 
 def fetch_ohlcv_data(ticker_list: list, start_date=None, end_date=None):
@@ -90,7 +90,7 @@ def update_ohlcv_batch():
     # Create OHLCV table if there's no one
     postgres.create_ohlcv_table()
 
-    df_companies = postgres.get_company_static()
+    df_companies = postgres.get_table(name="company_static")
     ticker_list = [symbol.strip() for symbol in df_companies["symbol"].tolist()]
 
     # Fetch data from the latest data date minus 20 days
@@ -264,7 +264,7 @@ def update_factors():
     postgres.create_risk_table()
     postgres.create_mean_reversion_table()
 
-    df_companies = postgres.get_company_static()
+    df_companies = postgres.get_table(name="company_static")
     if df_companies is None or df_companies.empty:
         print("Error: Could not retrieve company list.")
         return

@@ -2,7 +2,7 @@ from functools import reduce
 
 import numpy as np
 import pandas as pd
-from modules.db_loader import postgres
+from a_pipeline.modules.db_loader import postgres
 
 
 def calculate_return(data: pd.DataFrame, days: int = 1):
@@ -164,6 +164,7 @@ def calculate_adx(data: pd.DataFrame, days: int = 14):
         data.groupby("symbol", group_keys=False)
         .apply(_compute_adx_per_symbol, include_groups=False)
         .round(2)
+        .squeeze()
     )
 
 

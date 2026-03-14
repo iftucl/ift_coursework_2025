@@ -4,7 +4,7 @@ import subprocess
 from pathlib import Path
 
 import pandas as pd
-from modules.db_loader import postgres
+from a_pipeline.modules.db_loader import postgres
 
 
 def update_eps_history_data(repo_path):

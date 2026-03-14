@@ -2,6 +2,10 @@
 
 All notable changes to the **Team Neyman Coursework** will be documented in this file.
 
+## 2026-03-13
+### Changed
+- Adjusted `main.py` logic to include arguments.
+
 ## 2026-03-10
 ### Added
 - Integrated **APScheduler** for automated daily execution.
