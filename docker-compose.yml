@@ -96,7 +96,7 @@ services:
       volumes:
         - ./team_neyman/coursework_one:/app  # This "links" your Windows folder to the Docker folder
       environment:
-        - PYTHONPATH=/app/a_pipeline
+        - PYTHONPATH=/app
       networks:
         - iceberg_net
       depends_on:

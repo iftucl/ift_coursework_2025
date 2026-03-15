@@ -1,9 +1,29 @@
 import pandas as pd
 import argparse
+import time
+import sys
+from pathlib import Path
 from datetime import datetime, timedelta
-from a_pipeline.modules.db_loader import postgres
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+sys.path.append(str(BASE_DIR))
+
+from a_pipeline.modules.db_loader import postgres, minio
 from a_pipeline.modules.factors import calculate_factors
 from a_pipeline.modules.url_parser import dolthub_pipeline, yf_pipeline
+
+
+def wait_for_postgres():
+    print("Checking database connection...")
+    retries = 5
+    while retries > 0:
+        if postgres.check_connection():
+            print("Database connected!")
+            return True
+        print(f"Waiting for database... ({retries} retries left)")
+        time.sleep(5)
+        retries -= 1
+    raise ConnectionError("Could not connect to PostgreSQL container.")
 
 
 def update_database():
@@ -35,28 +55,25 @@ def apply_filter(target_df: pd.DataFrame):
     liquidity_mask = (target_df["adv_20d"] > adv_cutoff) & (
         target_df["addv_20d"] > addv_cutoff
     )
-    target_df = target_df[liquidity_mask]
-    print(f"Liquidity mask count: {len(target_df)}")
+    df = target_df[liquidity_mask].copy()
+    print(f"Liquidity mask count: {len(df)}")
     # 2. (Option A) Sequential Filter
-    trend_mask = (target_df["close_price"] > target_df["ma200"]) & (
-        target_df["ma200_20d_roc"] > 0
-    )
-    target_df = target_df[trend_mask]
-    print(f"Trend mask count: {len(target_df)}")
-    earnings_mask = target_df["forward_earning_yields"] > 0
-    target_df = target_df[earnings_mask]
-    print(f"Earnings mask count: {len(target_df)}")
-    momentum_mask = target_df["momentum_score"] >= 0.4
-    target_df = target_df[momentum_mask]
-    print(f"Momentum mask count: {len(target_df)}")
+    trend_mask = (df["close_price"] > df["ma200"]) & (df["ma200_20d_roc"] > 0)
+    df = df[trend_mask].copy()
+    print(f"Trend mask count: {len(df)}")
+    earnings_mask = df["forward_earning_yields"] > 0
+    df = df[earnings_mask].copy()
+    print(f"Earnings mask count: {len(df)}")
+    momentum_mask = df["momentum_score"] >= 0.4
+    df = df[momentum_mask].copy()
+    print(f"Momentum mask count: {len(df)}")
     # 3. Risk Filter
     risk_mask = (
-        (target_df["vol_60d"] < 0.3)
-        & (target_df["max_drawdown_1y"] > -0.5)
-        & (target_df["var_pct"] < 0.15)
+        (df["vol_60d"] < 0.3) & (df["max_drawdown_1y"] > -0.5) & (df["var_pct"] < 0.15)
     )
-    target_df = target_df[risk_mask]
-    print(f"Risk mask count: {len(target_df)}")
+    df = df[risk_mask].copy()
+    print(f"Risk mask count: {len(df)}")
+    return df
 
 
 def main():
@@ -83,11 +100,23 @@ def main():
 
     print(f"Starting {args.frequency} run for date: {run_date}")
 
-    # Pass these parameters into your factor calculation functions
-    # run_pipeline(date=run_date, freq=args.frequency)
-    update_database()
-    target_df = fetch_factors(run_date=run_date)
-    apply_filter(target_df=target_df)
+    try:
+        wait_for_postgres()
+        update_database()
+        raw_df = fetch_factors(run_date=run_date)
+        if not raw_df.empty:
+            filtered_df = apply_filter(target_df=raw_df)
+            if not filtered_df.empty:
+                filename = f"target_companies_{run_date}.parquet"
+                minio.upload_dataframe_to_parquet(filtered_df, filename)
+                print(f"SUCCESS: Results stored as {filename}")
+            else:
+                print("No companies passed the filters today.")
+        else:
+            print("No data found for the selected date/sectors.")
+    except Exception as e:
+        print(f"CRITICAL ERROR: {e}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":

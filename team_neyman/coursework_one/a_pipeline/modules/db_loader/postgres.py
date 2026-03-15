@@ -1,9 +1,40 @@
 import pandas as pd
+import yaml
+from pathlib import Path
 from sqlalchemy import create_engine, text
 
-engine = create_engine(
-    "postgresql+psycopg://postgres:postgres@postgres_db_cw:5432/fift"
-)
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+CONFIG_PATH = BASE_DIR / "config" / "conf.yaml"
+
+
+def load_config():
+    with open(CONFIG_PATH, "r") as f:
+        return yaml.safe_load(f)
+
+
+def get_engine():
+    config = load_config()["postgres"]
+    url = f"postgresql+psycopg://{config['user']}:{config['password']}@{config['host']}:{config['port']}/{config['dbname']}"
+    return create_engine(url)
+
+
+# Initialize the engine
+engine = get_engine()
+
+
+def check_connection():
+    """Returns True if the database is reachable, False otherwise."""
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+            return True
+    except Exception:
+        return False
+
+
+# engine = create_engine(
+#    "postgresql+psycopg://postgres:postgres@postgres_db_cw:5432/fift"
+# )
 
 
 def get_table(name: str, columns: list = None, schema: str = "systematic_equity"):

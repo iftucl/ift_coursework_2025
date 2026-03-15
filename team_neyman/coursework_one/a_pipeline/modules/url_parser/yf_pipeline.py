@@ -1,14 +1,46 @@
 import time
-from datetime import datetime, timedelta
-
 import numpy as np
 import pandas as pd
 import yfinance as yf
+import yaml
+
+from datetime import datetime, timedelta
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+CONFIG_PATH = BASE_DIR / "config" / "conf.yaml"
+
 from a_pipeline.modules.db_loader import postgres
 from a_pipeline.modules.factors import calculate_factors
 
 
+def load_config():
+    """Loads settings from the central YAML file."""
+    with open(CONFIG_PATH, "r") as f:
+        return yaml.safe_load(f)
+
+
+config = load_config().get("yf_pipeline", {})
+BATCH_SIZE = config.get("batch_size", 50)
+
+
 def fetch_ohlcv_data(ticker_list: list, start_date=None, end_date=None):
+    """
+    Downloads, cleans, and uploads OHLCV market data from Yahoo Finance in batches.
+
+    Args:
+        ticker_list (list): A list of stock ticker symbols to download.
+        start_date (str, optional): Start date in 'YYYY-MM-DD' format. Defaults to 5 years ago.
+        end_date (str, optional): End date in 'YYYY-MM-DD' format. Defaults to today.
+
+    Returns:
+        None: Processes data in batches of 50 and updates the 'daily_ohlcv' PostgreSQL table.
+
+    Note:
+        Implements data transformation by stacking MultiIndex columns from yfinance
+        and performing numeric cleansing (rounding prices, filling null volumes).
+        Includes a 2-second sleep between batches to respect rate limits.
+    """
     # Fetch past 5 years data
     if end_date is None:
         end_date = datetime.now().strftime("%Y-%m-%d")
@@ -18,7 +50,7 @@ def fetch_ohlcv_data(ticker_list: list, start_date=None, end_date=None):
     print(f"Starting pipeline: Fetching from {start_date} to {end_date}")
 
     # Fetching data with batches
-    batch_size = 50
+    batch_size = BATCH_SIZE
 
     for i in range(0, len(ticker_list), batch_size):
         batch = ticker_list[i : i + batch_size]
@@ -76,8 +108,16 @@ def fetch_ohlcv_data(ticker_list: list, start_date=None, end_date=None):
             print(f"Error downloading batch starting with {batch[0]}: {e}")
 
 
-# Converts total seconds into a readable string (e.g., 5m 30s).
 def format_duration(seconds):
+    """
+    Converts a duration in seconds into a human-readable string format.
+
+    Args:
+        seconds (int or float): The total number of seconds to format.
+
+    Returns:
+        str: A formatted string representing minutes and seconds (e.g., '5m 30s' or '45s').
+    """
     minutes, sec = divmod(int(seconds), 60)
     if minutes > 0:
         return f"{minutes}m {sec}s"
@@ -85,6 +125,23 @@ def format_duration(seconds):
 
 
 def update_ohlcv_batch():
+    """
+    Coordinates the incremental update of the OHLCV database table.
+
+    This function manages the full lifecycle of a market data update: it ensures the
+    target table exists, retrieves the current universe of tickers, and calculates
+    the optimal start date based on the most recent record to prevent data gaps.
+
+    Args:
+        None
+
+    Returns:
+        None: Orchestrates data fetching and prints execution metrics to the console.
+
+    Note:
+        Implements a 20-day look-back overlap when updating existing data to account
+        for potential upstream data revisions or late reporting by the provider.
+    """
     start_time = time.time()
 
     # Create OHLCV table if there's no one
@@ -111,6 +168,28 @@ def update_ohlcv_batch():
 
 
 def calculate_liquidity_data(ticker_list: list, start_date=None):
+    """
+    Computes multi-horizon liquidity indicators and synchronizes them with PostgreSQL.
+
+    This function calculates various volume and dollar-volume metrics (average, median,
+    and Amihud illiquidity) across 20-day and 60-day windows to capture both short
+    and medium-term trading dynamics.
+
+    Args:
+        ticker_list (list): A list of stock ticker symbols to process.
+        start_date (datetime, optional): The target start date for the update.
+            If provided, the function fetches 100 extra days of history to
+            accommodate rolling window calculations.
+
+    Returns:
+        None: Filters results to the requested timeframe and updates the
+            'liquidity_factors' database table.
+
+    Note:
+        Implements a 'warm-up' period by fetching data 100 days prior to
+        start_date, ensuring that rolling averages (like 60-day ADV) are
+        fully populated on the first day of the target period.
+    """
     if start_date is not None:
         data_start_date = (start_date - timedelta(days=100)).strftime("%Y-%m-%d")
         data = postgres.get_ohlcv_data(ticker_list, data_start_date)
@@ -138,6 +217,27 @@ def calculate_liquidity_data(ticker_list: list, start_date=None):
 
 
 def calculate_trend_data(ticker_list: list, start_date=None):
+    """
+    Computes technical trend indicators and synchronizes them with PostgreSQL.
+
+    This function calculates multiple Exponential Moving Averages (EMA), the Average
+    Directional Index (ADX), Donchian Channels, and Rate of Change (ROC) metrics
+    to determine the strength and direction of asset price trends.
+
+    Args:
+        ticker_list (list): A list of stock ticker symbols to process.
+        start_date (datetime, optional): The target start date for the update.
+            If provided, fetches 300 days of prior history to handle 200-day
+            EMA and 52-week (252-day) high calculations.
+
+    Returns:
+        None: Updates the 'trend_factors' database table after filtering
+            results to the target period.
+
+    Note:
+        Uses a 300-day 'warm-up' period to ensure the 200-day EMA and 52-week
+        high metrics are fully stabilized before the target start_date.
+    """
     if start_date is not None:
         data_start_date = (start_date - timedelta(days=300)).strftime("%Y-%m-%d")
         data = postgres.get_ohlcv_data(ticker_list, data_start_date)
@@ -167,6 +267,28 @@ def calculate_trend_data(ticker_list: list, start_date=None):
 
 
 def calculate_momentum_data(ticker_list: list, start_date=None):
+    """
+    Computes absolute and risk-adjusted momentum indicators for PostgreSQL synchronization.
+
+    This function calculates returns and price momentum across various time horizons
+    (1, 3, 6, and 12 months). It specifically implements lagged momentum (to account
+    for short-term reversal) and risk-adjusted metrics to evaluate the quality
+    of price trends.
+
+    Args:
+        ticker_list (list): A list of stock ticker symbols to process.
+        start_date (datetime, optional): The target start date for the update.
+            Fetches 300 days of history to accommodate 12-month lagged momentum
+            and volatility scaling.
+
+    Returns:
+        None: Updates the 'momentum_factors' database table after filtering.
+
+    Note:
+        Calculates 'lagged' momentum (e.g., 12-month minus 1-month) to exclude
+        the most recent month's performance, a common practice to avoid
+        short-term mean reversion noise in trend signals.
+    """
     if start_date is not None:
         data_start_date = (start_date - timedelta(days=300)).strftime("%Y-%m-%d")
         data = postgres.get_ohlcv_data(ticker_list, data_start_date)
@@ -201,6 +323,28 @@ def calculate_momentum_data(ticker_list: list, start_date=None):
 
 
 def calculate_risk_data(ticker_list: list, start_date=None):
+    """
+    Computes multi-dimensional risk metrics and synchronizes them with PostgreSQL.
+
+    This function calculates a comprehensive suite of risk indicators, including
+    annualized volatility, downside deviation, maximum drawdown, and tail-risk
+    measures like Value at Risk (VaR) and Conditional Value at Risk (CVaR).
+
+    Args:
+        ticker_list (list): A list of stock ticker symbols to process.
+        start_date (datetime, optional): The target start date for the update.
+            Fetches 300 days of prior history to accommodate 1-year (252-day)
+            drawdown and volatility calculations.
+
+    Returns:
+        None: Updates the 'risk_factors' database table after filtering
+            results to the target period.
+
+    Note:
+        Implements a 300-day 'warm-up' period to ensure that long-horizon metrics
+        such as 1-year max drawdown and worst-case returns are fully populated
+        and accurate from the requested start_date.
+    """
     if start_date is not None:
         data_start_date = (start_date - timedelta(days=300)).strftime("%Y-%m-%d")
         data = postgres.get_ohlcv_data(ticker_list, data_start_date)
@@ -236,6 +380,28 @@ def calculate_risk_data(ticker_list: list, start_date=None):
 
 
 def calculate_mean_reversion_data(ticker_list: list, start_date=None):
+    """
+    Computes short-term mean reversion indicators and synchronizes them with PostgreSQL.
+
+    This function focuses on identifying overbought or oversold conditions using
+    Relative Strength Index (RSI) across multiple horizons, Bollinger Band
+    positioning, and short-term price reversals.
+
+    Args:
+        ticker_list (list): A list of stock ticker symbols to process.
+        start_date (datetime, optional): The target start date for the update.
+            Fetches 300 days of history to ensure RSI and Bollinger Band
+            calculations are fully stabilized.
+
+    Returns:
+        None: Updates the 'mean_reversion_factors' database table after filtering
+            results to the target period.
+
+    Note:
+        Features the 'RSI-2' indicator, a common quantitative measure for
+        extremely short-term mean reversion, along with Bollinger Band
+        percentage to track price relative to volatility envelopes.
+    """
     if start_date is not None:
         data_start_date = (start_date - timedelta(days=300)).strftime("%Y-%m-%d")
         data = postgres.get_ohlcv_data(ticker_list, data_start_date)
@@ -257,6 +423,26 @@ def calculate_mean_reversion_data(ticker_list: list, start_date=None):
 
 
 def update_factors():
+    """
+    Orchestrates the end-to-end factor calculation and database synchronization pipeline.
+
+    This function serves as the central control point for technical and fundamental
+    factor updates. It ensures all target database tables are initialized, manages
+    ticker batching to optimize memory usage, and retrieves the most recent
+    timestamps for each factor category to enable efficient incremental updates.
+
+    Args:
+        None
+
+    Returns:
+        None: Coordinates five sub-pipelines (Liquidity, Trend, Momentum, Risk,
+            and Mean Reversion) and provides console progress feedback.
+
+    Note:
+        Implements a batching strategy (50 tickers per batch) to prevent system
+        memory exhaustion when processing large-scale OHLCV datasets and complex
+        rolling window calculations.
+    """
     # Creates tables if the tables don't exist
     postgres.create_liquidity_table()
     postgres.create_trend_table()
@@ -271,7 +457,7 @@ def update_factors():
 
     ticker_list = [symbol.strip() for symbol in df_companies["symbol"].tolist()]
     # Calculate each factors for companies in batches
-    batch_size = 50
+    batch_size = BATCH_SIZE
 
     # Get the latest data date for each table
     date_liquidity = postgres.get_latest_date(table_name="liquidity_factors")

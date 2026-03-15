@@ -32,7 +32,7 @@ RUN curl -L https://ollama.com/download/ollama-linux-amd64 -o /usr/local/bin/oll
 RUN curl -L https://github.com/dolthub/dolt/releases/latest/download/install.sh | bash
 
 # Install Python dependencies using Poetry
-RUN poetry install --only main --no-root
+RUN poetry lock && poetry install --only main --no-root
 RUN python3 -m spacy download en_core_web_sm
 RUN python3 -m nltk.downloader stopwords
 

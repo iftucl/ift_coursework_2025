@@ -1,0 +1,16 @@
+postgres:
+  user: "postgres"
+  password: "postgres"
+  host: "postgres_db_cw"
+  port: 5432
+  dbname: "fift"
+
+minio:
+  endpoint: "miniocw:9000"
+  access_key: "ift_bigdata"
+  secret_key: "minio_password"
+  bucket_name: "portfolio"
+  secure: false
+
+yf_pipeline:
+  batch_size: 50

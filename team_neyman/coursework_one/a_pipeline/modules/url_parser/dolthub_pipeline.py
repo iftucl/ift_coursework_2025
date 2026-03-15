@@ -8,7 +8,19 @@ from a_pipeline.modules.db_loader import postgres
 
 
 def update_eps_history_data(repo_path):
-    """Get eps_history data from dolthub and update to postgreSQL"""
+    """
+    Extracts historical EPS data from Dolt and synchronizes it with PostgreSQL.
+
+    Args:
+        repo_path (Path): Absolute path to the local Dolt repository.
+
+    Returns:
+        None: Updates the 'systematic_equity.eps_history' table in-place.
+
+    Note:
+        Renames 'act_symbol' to 'symbol' and 'reported' to 'reported_eps'
+        to match the systematic equity database schema.
+    """
 
     query = """
     SELECT *
@@ -44,7 +56,19 @@ def update_eps_history_data(repo_path):
 
 
 def update_eps_estimate_data(repo_path):
-    """Get eps_extimate data from dolthub and update to postgreSQL"""
+    """
+    Fetches analyst EPS estimates from Dolt and synchronizes them with PostgreSQL.
+
+    Args:
+        repo_path (Path): Absolute path to the local Dolt repository.
+
+    Returns:
+        None: Executes a bulk upsert to the 'systematic_equity.eps_estimate' table.
+
+    Note:
+        Performs a 10-column mapping and converts both 'estimate_date'
+        and 'period_end_date' to datetime objects for point-in-time analysis.
+    """
 
     query = """
     SELECT *
@@ -88,9 +112,18 @@ def update_eps_estimate_data(repo_path):
 
 def setup_dolt_database():
     """
-    Initiate dolthub.
-    Clone the database from dolthub if there's no data in local. Otherwise, pull the data to update.
-    Upload the data to postgreSQL.
+    Initializes the local Dolt environment and triggers the EPS ETL pipeline.
+
+    Args:
+        None
+
+    Returns:
+        None: Manages global Dolt configuration, repository cloning/pulling,
+            and database table initialization.
+
+    Note:
+        Requires the 'dolt' CLI installed on the system path. Clones data
+        into the 'data/earnings' directory relative to the project root.
     """
     # Providing identity to dolthub for fetching data
     print("Configuring Dolt identity for automated pipeline...")

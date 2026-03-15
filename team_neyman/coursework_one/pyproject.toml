@@ -2,7 +2,7 @@
 name = "coursework-one"
 version = "0.1.0"
 description = ""
-authors = ["TeamOak"]
+authors = ["TeamNeyman"]
 readme = "README.md"
 package-mode = false
 
@@ -16,6 +16,8 @@ nltk = "^3.8.0"
 psycopg = {extras = ["binary"], version = "^3.1.18"}
 yfinance = "^0.2.40"
 tqdm = "^4.66.0"
+minio = "^7.2.20"
+pyyaml = "^6.0.3"
 
 
 [build-system]
