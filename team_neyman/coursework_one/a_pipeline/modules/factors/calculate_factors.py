@@ -164,7 +164,6 @@ def calculate_adx(data: pd.DataFrame, days: int = 14):
         data.groupby("symbol", group_keys=False)
         .apply(_compute_adx_per_symbol, include_groups=False)
         .round(2)
-        .squeeze()
     )
 
 

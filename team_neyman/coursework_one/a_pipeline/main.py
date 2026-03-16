@@ -102,7 +102,11 @@ def main():
 
     try:
         wait_for_postgres()
-        update_database()
+        if args.date is None:
+            print("Starting full database update...")
+            update_database()
+        else:
+            print(f"Historical date {run_date} provided. Skipping database update.")
         raw_df = fetch_factors(run_date=run_date)
         if not raw_df.empty:
             filtered_df = apply_filter(target_df=raw_df)

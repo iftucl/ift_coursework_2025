@@ -227,7 +227,7 @@ def calculate_trend_data(ticker_list: list, start_date=None):
     Args:
         ticker_list (list): A list of stock ticker symbols to process.
         start_date (datetime, optional): The target start date for the update.
-            If provided, fetches 300 days of prior history to handle 200-day
+            If provided, fetches 500 days of prior history to handle 200-day
             EMA and 52-week (252-day) high calculations.
 
     Returns:
@@ -239,7 +239,7 @@ def calculate_trend_data(ticker_list: list, start_date=None):
         high metrics are fully stabilized before the target start_date.
     """
     if start_date is not None:
-        data_start_date = (start_date - timedelta(days=300)).strftime("%Y-%m-%d")
+        data_start_date = (start_date - timedelta(days=500)).strftime("%Y-%m-%d")
         data = postgres.get_ohlcv_data(ticker_list, data_start_date)
     else:
         data = postgres.get_ohlcv_data(ticker_list)
@@ -248,6 +248,8 @@ def calculate_trend_data(ticker_list: list, start_date=None):
     data["ma150"] = calculate_factors.calculate_ema(data, days=150)
     data["ma100"] = calculate_factors.calculate_ema(data, days=100)
     data["adx14"] = calculate_factors.calculate_adx(data, days=14)
+    adx_df = data["adx14"]
+    print(f"ADX Sample:\n{adx_df.dropna().head()}")
     data["donchian_high_55"] = calculate_factors.calculate_donchian_high(data, days=55)
     data["donchian_high_120"] = calculate_factors.calculate_donchian_high(
         data, days=120
@@ -278,7 +280,7 @@ def calculate_momentum_data(ticker_list: list, start_date=None):
     Args:
         ticker_list (list): A list of stock ticker symbols to process.
         start_date (datetime, optional): The target start date for the update.
-            Fetches 300 days of history to accommodate 12-month lagged momentum
+            Fetches 500 days of history to accommodate 12-month lagged momentum
             and volatility scaling.
 
     Returns:
@@ -290,7 +292,7 @@ def calculate_momentum_data(ticker_list: list, start_date=None):
         short-term mean reversion noise in trend signals.
     """
     if start_date is not None:
-        data_start_date = (start_date - timedelta(days=300)).strftime("%Y-%m-%d")
+        data_start_date = (start_date - timedelta(days=500)).strftime("%Y-%m-%d")
         data = postgres.get_ohlcv_data(ticker_list, data_start_date)
     else:
         data = postgres.get_ohlcv_data(ticker_list)
@@ -341,12 +343,12 @@ def calculate_risk_data(ticker_list: list, start_date=None):
             results to the target period.
 
     Note:
-        Implements a 300-day 'warm-up' period to ensure that long-horizon metrics
+        Implements a 500-day 'warm-up' period to ensure that long-horizon metrics
         such as 1-year max drawdown and worst-case returns are fully populated
         and accurate from the requested start_date.
     """
     if start_date is not None:
-        data_start_date = (start_date - timedelta(days=300)).strftime("%Y-%m-%d")
+        data_start_date = (start_date - timedelta(days=500)).strftime("%Y-%m-%d")
         data = postgres.get_ohlcv_data(ticker_list, data_start_date)
     else:
         data = postgres.get_ohlcv_data(ticker_list)

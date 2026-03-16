@@ -2,6 +2,11 @@
 
 All notable changes to the **Team Neyman Coursework** will be documented in this file.
 
+## 2026-03-16
+### Fixed
+- Updated factors calculating logic to ensure alignment across multi-ticker datasets.
+- Implemented a check on dolt pull output to skip database updates if no new data is found.
+
 ## 2026-03-15
 ### Added
 - Integrated minio_loader.py to enable analytical data storage in Parquet format.

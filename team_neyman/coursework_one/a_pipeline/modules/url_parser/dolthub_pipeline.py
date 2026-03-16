@@ -148,12 +148,18 @@ def setup_dolt_database():
     if os.path.exists(os.path.join(data_dir, ".dolt")):
         print(f"Dolt database found at {data_dir}. Running 'dolt pull' ...")
         # Get new data from dolthub
-        subprocess.run(["dolt", "pull"], cwd=data_dir)
+        result = subprocess.run(
+            ["dolt", "pull"], cwd=data_dir, capture_output=True, text=True
+        )
+        if "Everything up-to-date" in result.stdout:
+            print("No new data on DoltHub. Skipping database update.")
+            return False
+        print("New data found and pulled. Updating PostgreSQL tables...")
         postgres.create_eps_history_table()
         update_eps_history_data(data_dir)
         postgres.create_eps_estimate_table()
         update_eps_estimate_data(data_dir)
-        return
+        return True
 
     # If it doesn't exist, create the folder and clone it
     print("Initializing Dolt database for the first time. This may take a minute...")
@@ -166,3 +172,4 @@ def setup_dolt_database():
     update_eps_history_data(data_dir)
     postgres.create_eps_estimate_table()
     update_eps_estimate_data(data_dir)
+    return True
