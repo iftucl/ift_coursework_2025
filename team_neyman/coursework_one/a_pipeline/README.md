@@ -15,7 +15,7 @@ The system follows a modern **Data Lakehouse** design:
 ### 1. Environment Setup
 Ensure you have **Docker Desktop** and **Poetry** installed.
 
-```PowerShell
+```powershell
 # Install dependencies locally
 poetry install
 
@@ -25,7 +25,6 @@ docker-compose up -d
 ### 2. Run the Pipeline
 The main entry point handles the full end-to-end flow:
 
-**PowerShell**
 ```powershell
 docker exec -it worker_cw poetry run python main.py
 ```
@@ -33,7 +32,6 @@ docker exec -it worker_cw poetry run python main.py
 ### Testing & Coverage
 The project maintains high reliability with a suite of 46 unit and integration tests.
 
-**PowerShell**
 ```powershell
 # Run tests and generate HTML coverage report
 poetry run pytest --cov=a_pipeline --cov-report html
@@ -43,7 +41,6 @@ Current Test Coverage: ~85% (Verified via pytest-cov)
 ### Code Quality (Linting)
 We adhere to PEP 8 standards using a 3-tier formatting stack:
 
-**PowerShell**
 ```powershell
 poetry run isort a_pipeline
 poetry run black a_pipeline
@@ -52,7 +49,6 @@ poetry run flake8 a_pipeline
 ### Security Auditing
 The pipeline undergoes regular security scans to identify vulnerabilities in code and dependencies:
 
-**PowerShell**
 ```powershell
 poetry run bandit -r a_pipeline -lll
 poetry run safety check
