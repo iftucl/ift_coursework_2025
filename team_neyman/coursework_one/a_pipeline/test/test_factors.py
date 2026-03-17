@@ -1,7 +1,8 @@
-import pytest
-import pandas as pd
-import numpy as np
 from unittest.mock import patch
+
+import pandas as pd
+import pytest
+
 from a_pipeline.modules.factors import calculate_factors
 
 
@@ -119,11 +120,11 @@ def test_get_latest_indicators_master_merge(mock_get_data):
 
     assert not result.empty
     assert "price_above_ma200" in result.columns
-    assert result.query("symbol == 'AAPL'")["price_above_ma200"].iloc[0] == True
+    assert result.query("symbol == 'AAPL'")["price_above_ma200"].iloc[0]
 
 
 def test_math_completeness_sweep(sample_price_data):
-    """Executes all remaining complex math functions to ensure 90%+ coverage."""
+    """Executes all remaining complex math functions to ensure higher coverage."""
     calculate_factors.calculate_volatility(sample_price_data, days=2)
     calculate_factors.calculate_adx(sample_price_data, days=2)
     calculate_factors.calculate_rsi(sample_price_data, days=2)

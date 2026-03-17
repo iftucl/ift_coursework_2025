@@ -1,8 +1,10 @@
-import pandas as pd
 import io
-import yaml
 from pathlib import Path
+
+import pandas as pd
+import yaml
 from minio import Minio
+from minio.error import S3Error
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 CONFIG_PATH = BASE_DIR / "config" / "conf.yaml"
@@ -41,17 +43,23 @@ def upload_dataframe_to_parquet(df: pd.DataFrame, object_name: str):
         secure=config["secure"],
     )
 
-    parquet_buffer = io.BytesIO()
-    df.to_parquet(parquet_buffer, index=False)
-    parquet_buffer.seek(0)
-
-    client.put_object(
-        config["bucket_name"],
-        object_name,
-        data=parquet_buffer,
-        length=parquet_buffer.getbuffer().nbytes,
-        content_type="application/octet-stream",
-    )
-    print(
-        f"Successfully uploaded {object_name} to MinIO bucket '{config['bucket_name']}'."
-    )
+    try:
+        bucket_name = config["bucket_name"]
+        if not client.bucket_exists(bucket_name):
+            print(f"Bucket '{bucket_name}' not found. Creating it...")
+            client.make_bucket(bucket_name)
+        parquet_buffer = io.BytesIO()
+        df.to_parquet(parquet_buffer, index=False, engine="pyarrow")
+        parquet_buffer.seek(0)
+        client.put_object(
+            bucket_name=bucket_name,
+            object_name=object_name,
+            data=parquet_buffer,
+            length=parquet_buffer.getbuffer().nbytes,
+            content_type="application/octet-stream",
+        )
+        print(f"Successfully uploaded {object_name} to MinIO bucket '{bucket_name}'.")
+    except S3Error as e:
+        print(f"MinIO S3 Error: {e}")
+    except Exception as e:
+        print(f"MinIO Upload Error: {e}")

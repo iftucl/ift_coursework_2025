@@ -1,5 +1,7 @@
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
+
 from a_pipeline.modules.url_parser import dolthub_pipeline
 
 

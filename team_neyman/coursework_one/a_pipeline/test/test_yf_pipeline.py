@@ -1,7 +1,8 @@
-import pytest
+from unittest.mock import patch
+
 import pandas as pd
-import numpy as np
-from unittest.mock import patch, MagicMock
+import pytest
+
 from a_pipeline.modules.url_parser import yf_pipeline
 
 

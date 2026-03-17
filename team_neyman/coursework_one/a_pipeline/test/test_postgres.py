@@ -1,6 +1,8 @@
-import pytest
+from unittest.mock import MagicMock, patch
+
 import pandas as pd
-from unittest.mock import patch, MagicMock
+import pytest
+
 from a_pipeline.modules.db_loader import postgres
 
 

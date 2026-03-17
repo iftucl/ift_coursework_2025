@@ -1,5 +1,6 @@
-from apscheduler.schedulers.blocking import BlockingScheduler
 import subprocess
+
+from apscheduler.schedulers.blocking import BlockingScheduler
 
 
 def my_scheduled_task():

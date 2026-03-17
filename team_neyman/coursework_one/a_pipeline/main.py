@@ -1,16 +1,17 @@
-import pandas as pd
 import argparse
-import time
 import sys
-from pathlib import Path
+import time
 from datetime import datetime, timedelta
+from pathlib import Path
+
+import pandas as pd
+
+from a_pipeline.modules.db_loader import postgres, minio_loader
+from a_pipeline.modules.factors import calculate_factors
+from a_pipeline.modules.url_parser import dolthub_pipeline, yf_pipeline
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 sys.path.append(str(BASE_DIR))
-
-from a_pipeline.modules.db_loader import postgres, minio
-from a_pipeline.modules.factors import calculate_factors
-from a_pipeline.modules.url_parser import dolthub_pipeline, yf_pipeline
 
 
 def wait_for_postgres():
@@ -112,7 +113,7 @@ def main():
             filtered_df = apply_filter(target_df=raw_df)
             if not filtered_df.empty:
                 filename = f"target_companies_{run_date}.parquet"
-                minio.upload_dataframe_to_parquet(filtered_df, filename)
+                minio_loader.upload_dataframe_to_parquet(filtered_df, filename)
                 print(f"SUCCESS: Results stored as {filename}")
             else:
                 print("No companies passed the filters today.")

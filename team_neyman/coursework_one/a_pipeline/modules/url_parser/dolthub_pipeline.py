@@ -4,6 +4,7 @@ import subprocess
 from pathlib import Path
 
 import pandas as pd
+
 from a_pipeline.modules.db_loader import postgres
 
 

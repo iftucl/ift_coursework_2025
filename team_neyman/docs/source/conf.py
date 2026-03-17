@@ -12,7 +12,7 @@ import sys
 sys.path.insert(0, os.path.abspath("../../coursework_one"))
 
 project = "ift_coursework_neyman"
-copyright = "2026, Ryan"
+copyright = "2026, Team Neyman"
 author = "Ryan"
 release = "en"
 
@@ -27,7 +27,7 @@ extensions = [
 
 templates_path = ["_templates"]
 exclude_patterns = []
-autodoc_mock_imports = ["pandas", "sqlalchemy", "psycopg2"]
+autodoc_mock_imports = ["pandas", "sqlalchemy", "psycopg2", "minio", "yaml", "pyarrow"]
 
 
 # -- Options for HTML output -------------------------------------------------

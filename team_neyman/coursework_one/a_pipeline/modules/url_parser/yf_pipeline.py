@@ -1,17 +1,18 @@
 import time
-import numpy as np
-import pandas as pd
-import yfinance as yf
-import yaml
-
 from datetime import datetime, timedelta
 from pathlib import Path
 
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
-CONFIG_PATH = BASE_DIR / "config" / "conf.yaml"
+import numpy as np
+import pandas as pd
+import yaml
+import yfinance as yf
 
 from a_pipeline.modules.db_loader import postgres
 from a_pipeline.modules.factors import calculate_factors
+
+
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+CONFIG_PATH = BASE_DIR / "config" / "conf.yaml"
 
 
 def load_config():
@@ -247,9 +248,11 @@ def calculate_trend_data(ticker_list: list, start_date=None):
     data["ma200"] = calculate_factors.calculate_ema(data, days=200)
     data["ma150"] = calculate_factors.calculate_ema(data, days=150)
     data["ma100"] = calculate_factors.calculate_ema(data, days=100)
-    data["adx14"] = calculate_factors.calculate_adx(data, days=14)
-    adx_df = data["adx14"]
-    print(f"ADX Sample:\n{adx_df.dropna().head()}")
+    adx_series = calculate_factors.calculate_adx(data, days=14)
+    if not adx_series.dropna().empty:
+        data["adx14"] = adx_series.to_numpy().flatten()
+    else:
+        print("Warning: ADX calculation returned all Nulls. Skipping column update.")
     data["donchian_high_55"] = calculate_factors.calculate_donchian_high(data, days=55)
     data["donchian_high_120"] = calculate_factors.calculate_donchian_high(
         data, days=120

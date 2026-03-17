@@ -1,6 +1,7 @@
+from pathlib import Path
+
 import pandas as pd
 import yaml
-from pathlib import Path
 from sqlalchemy import create_engine, text
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent

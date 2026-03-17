@@ -1,0 +1,5 @@
+[run]
+omit =
+    a_pipeline/main.py
+    a_pipeline/scheduler.py
+    a_pipeline/modules/db_loader/rebuild.py
