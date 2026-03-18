@@ -6,6 +6,8 @@ def test_factor_observation_model_core_metadata():
     assert table.schema == "systematic_equity"
     assert table.name == "factor_observations"
     assert {"symbol", "observation_date", "factor_name", "factor_value"}.issubset(table.c.keys())
+    assert table.c["factor_value"].type.precision == 18
+    assert table.c["factor_value"].type.scale == 6
     uniques = {c.name for c in table.constraints if c.__class__.__name__ == "UniqueConstraint"}
     assert "uniq_observation" in uniques
 
@@ -15,6 +17,8 @@ def test_financial_observation_model_core_metadata():
     assert table.schema == "systematic_equity"
     assert table.name == "financial_observations"
     assert {"symbol", "report_date", "metric_name", "metric_value"}.issubset(table.c.keys())
+    assert table.c["metric_value"].type.precision == 24
+    assert table.c["metric_value"].type.scale == 6
     uniques = {c.name for c in table.constraints if c.__class__.__name__ == "UniqueConstraint"}
     assert "uniq_financial_observation" in uniques
 

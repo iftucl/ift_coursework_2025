@@ -1,7 +1,8 @@
-# API Reference
+# Module Reference
 
-This page maps the code API to the actual pipeline runtime architecture.
-Use it to understand call flow first, then inspect details in **Module Index** and **View Source**.
+This page maps the main code modules and callable interfaces to the actual
+pipeline runtime architecture. Use it to understand call flow first, then
+inspect details in **Module Index** and **View Source**.
 
 ## 1. Pipeline Call Graph (High Level)
 
@@ -9,11 +10,12 @@ Use it to understand call flow first, then inspect details in **Module Index** a
 main()
   -> resolve_runtime(...)
   -> run_pipeline_stage(...)
+       -> output.manifest.* (plan units, track materialization/reuse, enforce completion gate)
        -> input.extract_source_a(...)
        -> input.extract_source_b(...)
        -> output.normalize_*(...)
        -> output.run_quality_checks(...)
-       -> output.load_*(...)
+       -> output.load_*(...)  # batched / incremental atomic persistence
        -> transform.build_and_load_final_factors(...)
        -> output.metadata.write_quality_snapshot(...)
   -> finalize_audit_and_runlog(...)
@@ -30,7 +32,7 @@ main()
 | Transform | `modules/transform/factors.py` | Final factor computation and load-back |
 | Utils | `modules/utils/*` | CLI parsing and env loading |
 
-## 3. Main Pipeline API (`Main.py`)
+## 3. Main Pipeline Interface (`Main.py`)
 
 ### Core runtime types
 
@@ -46,10 +48,10 @@ main()
 | --- | --- |
 | `main()` | Top-level pipeline entrypoint |
 | `resolve_runtime(...)` | Resolve CLI/env/config into validated context |
-| `run_pipeline_stage(...)` | Execute extract -> normalize -> quality -> load -> transform |
+| `run_pipeline_stage(...)` | Execute work-unit extraction, incremental atomic persistence, and gated final-factor build |
 | `finalize_audit_and_runlog(...)` | Persist audits and return process exit code |
 
-## 4. DB Access API (`modules/db`)
+## 4. DB Access Interface (`modules/db`)
 
 ### Database and universe functions
 
@@ -60,7 +62,7 @@ main()
 | `universe.get_company_universe(...)` | Dynamic universe retrieval with override support |
 | `universe.get_company_count()` | Universe cardinality query |
 
-## 5. Input Extraction API (`modules/input`)
+## 5. Input Extraction Interface (`modules/input`)
 
 ### Source A and Source B
 
@@ -75,7 +77,7 @@ main()
 | `symbol_filter.symbol_allowed(...)` | Symbol-level policy check |
 | `symbol_filter.filter_symbols(...)` | Filter + dedupe symbol list |
 
-## 6. Output Processing API (`modules/output`)
+## 6. Output Processing Interface (`modules/output`)
 
 ### Normalize, quality, load, metadata
 
@@ -84,14 +86,15 @@ main()
 | `normalize.normalize_records(...)` | Normalize atomic factor records |
 | `normalize.normalize_financial_records(...)` | Normalize financial atomic records |
 | `quality.run_quality_checks(...)` | Quality report generation |
-| `load.load_curated(...)` | Curated factor upsert loader |
-| `load.load_financial_observations(...)` | Financial table upsert loader |
+| `load.load_curated(...)` | Curated factor upsert loader (bounded batch / incremental) |
+| `load.load_financial_observations(...)` | Financial table upsert loader (bounded batch / incremental) |
 | `audit.write_pipeline_run_start(...)` | Run-start audit persistence |
 | `audit.write_pipeline_run_finish(...)` | Run-finish audit persistence |
 | `metadata.bootstrap_metadata_catalog(...)` | Dataset/schema/lineage bootstrap |
 | `metadata.write_quality_snapshot(...)` | Run-level quality snapshot persistence |
+| `manifest.*` | Run-level orchestration state, work-unit status, materialization reuse, and final-build gating |
 
-## 7. Transform API (`modules/transform`)
+## 7. Transform Interface (`modules/transform`)
 
 ### Final factor computation
 
@@ -100,7 +103,7 @@ main()
 | `factors.compute_final_factor_records(...)` | Compute final factor rows from atomic inputs |
 | `factors.build_and_load_final_factors(...)` | Load atomics, compute finals, upsert results |
 
-## 8. Utility API (`modules/utils`)
+## 8. Utility Interface (`modules/utils`)
 
 ### CLI and environment helpers
 
@@ -109,10 +112,10 @@ main()
 | `args_parser.build_parser(...)` | CLI parser builder for main pipeline |
 | `env.load_dotenv_if_exists(...)` | `.env` loader with safe non-override behavior |
 
-## 9. How to inspect full API details
+## 9. How to inspect full module details
 
 After building docs, use:
 
-1. **Module Index** (`py-modindex.html`) for module-level symbol navigation.
-2. **General Index** (`genindex.html`) for function and class lookup.
-3. **View Source** links on API pages for exact implementation details.
+<div>（1）<strong>Module Index</strong> (<code>py-modindex.html</code>) for module-level symbol navigation.</div>
+<div>（2）<strong>General Index</strong> (<code>genindex.html</code>) for function and class lookup.</div>
+<div>（3）<strong>View Source</strong> links on reference pages for exact implementation details.</div>

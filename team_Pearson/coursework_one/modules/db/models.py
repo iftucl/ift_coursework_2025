@@ -70,7 +70,7 @@ class FinancialObservation(Base):
     symbol: Mapped[str] = mapped_column(String(50), nullable=False)
     report_date: Mapped[date] = mapped_column(Date, nullable=False)
     metric_name: Mapped[str] = mapped_column(String(100), nullable=False)
-    metric_value: Mapped[Optional[float]] = mapped_column(Numeric(18, 6))
+    metric_value: Mapped[Optional[float]] = mapped_column(Numeric(24, 6))
     currency: Mapped[Optional[str]] = mapped_column(String(16))
     period_type: Mapped[Optional[str]] = mapped_column(String(20))
     metric_definition: Mapped[Optional[str]] = mapped_column(String(50))

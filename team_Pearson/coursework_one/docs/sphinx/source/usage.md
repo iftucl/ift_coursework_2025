@@ -48,7 +48,7 @@ Notes:
 | Validate pipeline consistency | `poetry run python scripts/validate_pipeline_data.py --tolerance 1e-6` |
 | Search Mongo news index | `poetry run python scripts/search_news.py --symbol AAPL --limit 10` |
 
-### 2.3 Quality and security gates
+### 2.3 Quality and security checks
 
 ```bash
 poetry run pytest -q
@@ -64,10 +64,10 @@ poetry run safety auth login --headless
 
 ## 3. Typical Run Sequence
 
-1. Run `scripts/init_db.py` once on a fresh database.
-2. Run `Main.py` or `run_pipeline_and_index.py` for ingestion and load.
-3. Run `validate_pipeline_data.py` to confirm cross-source consistency.
-4. Run `search_news.py` when checking indexed news retrieval behavior.
+<div>（1）On a freshly initialized environment, complete the Installation Guide first.</div>
+<div>（2）Run <code>Main.py</code> or <code>run_pipeline_and_index.py</code> for ingestion and load.</div>
+<div>（3）Run <code>validate_pipeline_data.py</code> to confirm cross-source consistency.</div>
+<div>（4）Run <code>search_news.py</code> when checking indexed news retrieval behavior.</div>
 
 ## 4. Output Footprint
 

@@ -11,7 +11,7 @@ pipeline:
 
 # Universe filters
 universe:
-  country_allowlist: ["US", "GB", "CA", "FR", "DE"]
+  country_allowlist: null    # null = no country filtering; use full seeded universe
 
 # Logging 
 logging:

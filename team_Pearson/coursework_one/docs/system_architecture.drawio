@@ -1,0 +1,156 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0" version="29.6.1">
+  <diagram id="cw1-paper-style" name="CW1 Architecture">
+    <mxGraphModel dx="340" dy="591" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1800" pageHeight="980" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=24;fontStyle=1;fontColor=#202124;" value="&amp;nbsp;End-to-End Data Pipeline" vertex="1">
+          <mxGeometry height="36" width="700" x="440" y="730" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=11;fontColor=#5F6368;" value="Dynamic universe selection, replayable storage, curated loading, factor construction, and optional news serving" vertex="1">
+          <mxGeometry height="20" width="1040" x="270" y="766" as="geometry" />
+        </mxCell>
+        <mxCell id="uXdFuc_tS6pzYHgXlYBY-21" edge="1" parent="1" source="group_sources" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.002;entryY=0.507;entryDx=0;entryDy=0;entryPerimeter=0;" target="group_main" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="431" y="398" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="group_sources" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FBF4EE;strokeColor=#C8A98D;strokeWidth=1.5;arcSize=18;" value="" vertex="1">
+          <mxGeometry height="573.5" width="280" x="120" y="106.5" as="geometry" />
+        </mxCell>
+        <mxCell id="group_sources_label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=20;fontStyle=1;fontColor=#6A4A34;" value="Inputs" vertex="1">
+          <mxGeometry height="24" width="60" x="232.5" y="130" as="geometry" />
+        </mxCell>
+        <mxCell id="uXdFuc_tS6pzYHgXlYBY-2" edge="1" parent="1" source="group_main" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" target="group_right">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="750" y="310" />
+            </Array>
+            <mxPoint x="810" y="415.31578947368416" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="uXdFuc_tS6pzYHgXlYBY-18" edge="1" parent="1" source="group_main" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.75;exitDx=0;exitDy=0;" target="group_serving">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="750" y="610" />
+            </Array>
+            <mxPoint x="800" y="608" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="group_main" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF4FB;strokeColor=#6C93AE;strokeWidth=2;arcSize=22;" value="" vertex="1">
+          <mxGeometry height="570" width="320" x="430" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="group_main_label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=20;fontStyle=1;fontColor=#2A5368;" value="Core Pipeline" vertex="1">
+          <mxGeometry height="26" width="180" x="495" y="128" as="geometry" />
+        </mxCell>
+        <mxCell id="uXdFuc_tS6pzYHgXlYBY-5" edge="1" parent="1" source="group_right" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="group_serving">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="group_right" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FBF5EE;strokeColor=#C99A71;strokeWidth=1.8;arcSize=18;" value="" vertex="1">
+          <mxGeometry height="400" width="325" x="780" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="group_right_label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=20;fontStyle=1;fontColor=#6C4A2E;" value="Curated Storage" vertex="1">
+          <mxGeometry height="24" width="160" x="865" y="130" as="geometry" />
+        </mxCell>
+        <mxCell id="group_bottom" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F7F1F8;strokeColor=#A185A4;strokeWidth=1.6;arcSize=18;" value="" vertex="1">
+          <mxGeometry height="580" width="290" x="1130" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="group_bottom_label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=20;fontStyle=1;fontColor=#5E4562;" value="Governance &amp;amp; Audit" vertex="1">
+          <mxGeometry height="24" width="180" x="1190" y="130" as="geometry" />
+        </mxCell>
+        <mxCell id="audit_section_foundation" parent="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=none;fillColor=#F7F1F8;align=center;verticalAlign=middle;fontSize=11;fontStyle=1;fontColor=#7B6380;arcSize=12;" value="Governance foundation" vertex="1">
+          <mxGeometry height="24" width="156" x="1140" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="audit_section_divider" parent="1" style="shape=line;html=1;strokeColor=#D0C0D4;strokeWidth=1;" vertex="1">
+          <mxGeometry height="1" width="236" x="1162" y="364" as="geometry" />
+        </mxCell>
+        <mxCell id="audit_section_evidence" parent="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=none;fillColor=#F7F1F8;align=center;verticalAlign=middle;fontSize=11;fontStyle=1;fontColor=#7B6380;arcSize=12;" value="Run-level evidence" vertex="1">
+          <mxGeometry height="24" width="132" x="1140" y="372" as="geometry" />
+        </mxCell>
+        <mxCell id="uXdFuc_tS6pzYHgXlYBY-9" edge="1" parent="1" source="group_serving" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1134.24" y="607.6" as="sourcePoint" />
+            <mxPoint x="1130" y="608" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="group_serving" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FBF5EE;strokeColor=#C99A71;strokeWidth=1.8;arcSize=18;" value="" vertex="1">
+          <mxGeometry height="164" width="310" x="787.5" y="526" as="geometry" />
+        </mxCell>
+        <mxCell id="group_serving_label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=18;fontStyle=1;fontColor=#6C4A2E;" value="Serving Layer" vertex="1">
+          <mxGeometry height="24" width="120" x="887.5" y="531" as="geometry" />
+        </mxCell>
+        <mxCell id="input_universe" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF8F2;strokeColor=#A98059;strokeWidth=2;arcSize=18;fontSize=16;fontStyle=1;fontColor=#4A3423;" value="Universe control&lt;br&gt;&lt;br&gt;&lt;font style=&quot;font-size: 15px; font-weight: normal;&quot;&gt;PostgreSQL&lt;br&gt;company_static + overrides&lt;/font&gt;" vertex="1">
+          <mxGeometry height="88" width="220" x="152.5" y="184" as="geometry" />
+        </mxCell>
+        <mxCell id="input_sa" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F8EFE6;strokeColor=#A98059;strokeWidth=2;arcSize=18;fontSize=16;fontColor=#4A3423;" value="&lt;b&gt;Structured market and fundamentals&lt;/b&gt;&lt;div&gt;&lt;b&gt;&lt;br&gt;&lt;/b&gt;&lt;font style=&quot;font-size: 15px;&quot;&gt;Source A&lt;br&gt;Alpha Vantage primary&lt;br&gt;yfinance fallback&lt;/font&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="126" width="220" x="147.5" y="324.5" as="geometry" />
+        </mxCell>
+        <mxCell id="input_sb" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3E6D9;strokeColor=#A98059;strokeWidth=2;arcSize=18;fontSize=16;fontColor=#4A3423;" value="&lt;b&gt;Unstructured news feed&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;font style=&quot;font-size: 15px;&quot;&gt;Source B&lt;br&gt;Alpha Vantage NEWS_SENTIMENT&lt;/font&gt;" vertex="1">
+          <mxGeometry height="104" width="220" x="147.5" y="511" as="geometry" />
+        </mxCell>
+        <mxCell id="step_extract" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#A9D3EA;strokeColor=#5A89A7;strokeWidth=2;arcSize=16;fontSize=14;fontColor=#17384A;" value="&lt;font style=&quot;font-size: 16px;&quot;&gt;&lt;b&gt;Extraction&lt;/b&gt;&lt;/font&gt;&lt;br&gt;&lt;br&gt;provider routing&lt;br&gt;raw capture" vertex="1">
+          <mxGeometry height="76" width="245" x="465" y="184" as="geometry" />
+        </mxCell>
+        <mxCell id="step_norm" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#C2DEEE;strokeColor=#5A89A7;strokeWidth=2;arcSize=16;fontSize=14;fontColor=#17384A;" value="&lt;b&gt;&lt;font style=&quot;font-size: 16px;&quot;&gt;Normalize &amp;amp; Quality Checks&lt;/font&gt;&lt;/b&gt;&lt;br&gt;&lt;br&gt;alignment, required fields,&lt;br&gt;duplicates, finite numerics" vertex="1">
+          <mxGeometry height="84" width="258.75" x="458.13" y="288" as="geometry" />
+        </mxCell>
+        <mxCell id="uXdFuc_tS6pzYHgXlYBY-12" edge="1" parent="1" source="step_load" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="step_factor" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="step_load" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#8FC2DF;strokeColor=#5A89A7;strokeWidth=2;arcSize=16;fontSize=14;fontColor=#17384A;" value="&lt;b&gt;&lt;font style=&quot;font-size: 16px;&quot;&gt;Curated Atomic Load&lt;/font&gt;&lt;/b&gt;&lt;br&gt;&lt;br&gt;idempotent PostgreSQL&lt;br&gt;upserts" vertex="1">
+          <mxGeometry height="83.5" width="240" x="467.5" y="406.5" as="geometry" />
+        </mxCell>
+        <mxCell id="step_factor" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#78B0D4;strokeColor=#4B7FA0;strokeWidth=2;arcSize=16;fontSize=14;fontColor=#143449;" value="&lt;font style=&quot;font-size: 16px;&quot;&gt;&lt;b&gt;Final Factor Construction&lt;/b&gt;&lt;/font&gt;&lt;br&gt;&lt;br&gt;daily construction +&lt;br&gt;configured frequency sampling" vertex="1">
+          <mxGeometry height="104" width="242.5" x="466.25" y="526" as="geometry" />
+        </mxCell>
+        <mxCell id="storage_minio" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFDF9;strokeColor=#B8865B;strokeWidth=2;arcSize=16;fontSize=16;fontColor=#5F3A14;" value="&lt;b&gt;Source-layer replay store&lt;/b&gt;&lt;br&gt;&lt;br&gt;MinIO&lt;br&gt;Source A raw JSON&lt;br&gt;Source B raw JSONL" vertex="1">
+          <mxGeometry height="105" width="290" x="800" y="170" as="geometry" />
+        </mxCell>
+        <mxCell id="storage_pg_box" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF9F4;strokeColor=#D2AA84;strokeWidth=1.6;arcSize=14;" value="" vertex="1">
+          <mxGeometry height="200" width="303" x="797" y="290" as="geometry" />
+        </mxCell>
+        <mxCell id="storage_pg_label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=16;fontStyle=1;fontColor=#6C4A2E;" value="PostgreSQL" vertex="1">
+          <mxGeometry height="22" width="140" x="870" y="294" as="geometry" />
+        </mxCell>
+        <mxCell id="storage_fin" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFDF9;strokeColor=#B8865B;strokeWidth=2;arcSize=16;fontSize=14;fontColor=#5F3A14;" value="&lt;font style=&quot;font-size: 16px;&quot;&gt;Final factors&lt;/font&gt;&lt;br&gt;&lt;br&gt;momentum&lt;br&gt;volatility&lt;br&gt;dividend_yield&lt;br&gt;pb_ratio&lt;br&gt;debt_to_equity&lt;br&gt;ebitda_margin&lt;br&gt;sentiment" vertex="1">
+          <mxGeometry height="160" width="126" x="964" y="323.5" as="geometry" />
+        </mxCell>
+        <mxCell id="serve_mongo" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFDF9;strokeColor=#B8865B;strokeWidth=2;arcSize=16;fontSize=16;fontColor=#5F3A14;" value="&lt;b&gt;News serving index&lt;/b&gt;&lt;br&gt;&lt;br&gt;MongoDB&lt;br&gt;ift_cw.news_articles&lt;br&gt;MinIO trace links" vertex="1">
+          <mxGeometry height="106" width="270" x="812.5" y="565" as="geometry" />
+        </mxCell>
+        <mxCell id="audit_runs" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFDFF;strokeColor=#8D7392;strokeWidth=2;arcSize=16;fontSize=16;fontColor=#4E3652;" value="&lt;b&gt;Run audit&lt;/b&gt;&lt;br&gt;&lt;br&gt;pipeline_runs" vertex="1">
+          <mxGeometry height="72" width="220" x="1170" y="408" as="geometry" />
+        </mxCell>
+        <mxCell id="audit_quality" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFDFF;strokeColor=#8D7392;strokeWidth=2;arcSize=16;fontSize=16;fontColor=#4E3652;" value="&lt;b&gt;Quality evidence&lt;/b&gt;&lt;br&gt;&lt;br&gt;quality_snapshots" vertex="1">
+          <mxGeometry height="78" width="220" x="1170" y="596" as="geometry" />
+        </mxCell>
+        <mxCell id="audit_meta" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFDFF;strokeColor=#8D7392;strokeWidth=2;arcSize=16;fontSize=16;fontColor=#4E3652;" value="&lt;b&gt;Metadata governance&lt;/b&gt;&lt;br&gt;&lt;br&gt;dataset_registry&lt;br&gt;schema_versions&lt;br&gt;lineage_edges" vertex="1">
+          <mxGeometry height="100" width="220" x="1170" y="234" as="geometry" />
+        </mxCell>
+        <mxCell id="audit_jsonl" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFDFF;strokeColor=#8D7392;strokeWidth=2;arcSize=16;fontSize=16;fontColor=#4E3652;" value="&lt;b&gt;Local run log mirror&lt;/b&gt;&lt;br&gt;&lt;br&gt;logs/pipeline_runs.jsonl" vertex="1">
+          <mxGeometry height="78" width="220" x="1170" y="502" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" edge="1" parent="1" source="step_extract" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#3F3F46;strokeWidth=2;endArrow=block;endFill=1;" target="step_norm" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" edge="1" parent="1" source="step_norm" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#3F3F46;strokeWidth=2;endArrow=block;endFill=1;" target="step_load" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e18" edge="1" parent="1" source="audit_runs" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#8B6D8E;strokeWidth=1.6;dashed=1;endArrow=block;endFill=1;" target="audit_jsonl" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="storage_factor" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFDF9;strokeColor=#B8865B;strokeWidth=2;arcSize=16;fontSize=16;fontColor=#5F3A14;" value="Curated atomics&lt;br&gt;&lt;br&gt;&lt;font style=&quot;font-size: 14px;&quot;&gt;Source A market atomics&lt;br&gt;Source A quarterly financial atomics&lt;br&gt;Source B news atomics&lt;/font&gt;" vertex="1">
+          <mxGeometry height="162.5" width="136" x="805" y="321" as="geometry" />
+        </mxCell>
+        <mxCell id="uXdFuc_tS6pzYHgXlYBY-6" edge="1" parent="1" source="group_right" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.006;entryY=0.345;entryDx=0;entryDy=0;entryPerimeter=0;" target="group_bottom">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="uXdFuc_tS6pzYHgXlYBY-20" edge="1" parent="1" source="group_main" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.537;entryY=0.999;entryDx=0;entryDy=0;entryPerimeter=0;" target="group_bottom">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

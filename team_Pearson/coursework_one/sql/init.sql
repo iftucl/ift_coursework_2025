@@ -42,7 +42,7 @@ CREATE TABLE systematic_equity.financial_observations (
     symbol VARCHAR(50) NOT NULL,
     report_date DATE NOT NULL,
     metric_name VARCHAR(100) NOT NULL,
-    metric_value NUMERIC(18,6),
+    metric_value NUMERIC(24,6),
 
     currency VARCHAR(16),
     period_type VARCHAR(20)

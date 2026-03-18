@@ -41,10 +41,42 @@ def test_extract_total_debt_missing_returns_none():
     assert source_a._extract_total_debt(_FakeTickerNoDebt()) is None
 
 
+def test_get_yfinance_quarterly_frame_skips_broken_attr_and_uses_next():
+    class _Ticker:
+        @property
+        def quarterly_income_stmt(self):
+            raise RuntimeError("temporary provider failure")
+
+        @property
+        def quarterly_financials(self):
+            return pd.DataFrame({"2025Q4": [123.0]}, index=["EBITDA"])
+
+    out = source_a._get_yfinance_quarterly_frame(
+        _Ticker(),
+        ["quarterly_income_stmt", "quarterly_financials"],
+    )
+    assert not out.empty
+    assert list(out.index) == ["EBITDA"]
+
+
 def test_rolling_window_start_date_is_12_months():
     assert source_a._rolling_window_start_date("2026-03-02", 1) == "2025-03-02"
     assert source_a._rolling_window_start_date("2026-03-31", 1) == "2025-03-31"
     assert source_a._rolling_window_start_date("2026-02-14", 0) == "2026-02-14"
+
+
+def test_apply_history_window_keeps_prior_trading_row_for_boundary_metrics():
+    idx = pd.to_datetime(["2025-02-28", "2025-03-03", "2025-03-04"])
+    history = pd.DataFrame({"Close": [99.0, 100.0, 101.0]}, index=idx)
+
+    out = source_a._apply_history_window(
+        history,
+        run_date="2026-03-01",
+        backfill_years=1,
+        prior_rows=1,
+    )
+
+    assert list(out.index.strftime("%Y-%m-%d")) == ["2025-02-28", "2025-03-03", "2025-03-04"]
 
 
 def test_in_backfill_window_uses_rolling_month_window():
@@ -69,8 +101,8 @@ def test_extract_fundamentals_from_yfinance_ticker():
     assert out["total_shareholder_equity"] == 999.0
     assert out["book_value"] == 20.5
     assert out["shares_outstanding"] == 1000000.0
-    assert out["enterprise_ebitda"] == 5000000.0
-    assert out["enterprise_revenue"] == 15000000.0
+    assert out["enterprise_ebitda"] is None
+    assert out["enterprise_revenue"] is None
 
 
 def test_extract_fundamentals_unified_order_av_then_yf_fallback(monkeypatch):
@@ -88,28 +120,199 @@ def test_extract_fundamentals_unified_order_av_then_yf_fallback(monkeypatch):
     monkeypatch.setattr(source_a, "_download_overview_alpha_vantage", _av_overview)
     monkeypatch.setattr(
         source_a,
+        "_download_income_statement_alpha_vantage",
+        lambda symbol, api_key: {"quarterlyReports": []},
+    )
+    monkeypatch.setattr(
+        source_a,
         "_download_balance_sheet_alpha_vantage",
-        lambda symbol, api_key: {"quarterlyReports": [{"totalShareholderEquity": "700.0"}]},
+        lambda symbol, api_key: {
+            "quarterlyReports": [
+                {
+                    "fiscalDateEnding": "2025-12-31",
+                    "totalShareholderEquity": "700.0",
+                }
+            ]
+        },
     )
 
     class _Ticker:
         def __init__(self):
-            self.quarterly_balance_sheet = pd.DataFrame()
+            self.quarterly_balance_sheet = pd.DataFrame(
+                {
+                    pd.Timestamp("2025-12-31"): [300.0],
+                },
+                index=["Total Debt"],
+            )
+            self.quarterly_income_stmt = pd.DataFrame(
+                {
+                    pd.Timestamp("2025-12-31"): [900.0],
+                },
+                index=["Total Revenue"],
+            )
             self.info = {
-                "totalDebt": 300.0,
                 "sharesOutstanding": 12345,
-                "totalRevenue": 900.0,
             }
 
-    out = source_a._extract_fundamentals(symbol="AAPL", ticker=_Ticker(), config={})
-    # AV values kept when present
+    out = source_a._extract_fundamentals(
+        symbol="AAPL",
+        ticker=_Ticker(),
+        config={},
+        run_date="2026-02-14",
+        backfill_years=1,
+    )
+    # Non-enterprise fields still fill independently, but enterprise metrics require
+    # one complete pair from the same source family.
     assert out["book_value"] == 10.0
-    assert out["enterprise_ebitda"] == 200.0
     assert out["total_shareholder_equity"] == 700.0
-    # Missing AV values filled by yfinance
     assert out["total_debt"] == 300.0
     assert out["shares_outstanding"] == 12345.0
-    assert out["enterprise_revenue"] == 900.0
+    assert out["enterprise_ebitda"] is None
+    assert out["enterprise_revenue"] is None
+    latest = out["quarterly_fundamentals"][-1]
+    assert latest["enterprise_ebitda"] is None
+    assert latest["enterprise_revenue"] is None
+
+
+def test_extract_fundamentals_prefers_yfinance_quarterly_over_snapshot_for_enterprise_metrics(
+    monkeypatch,
+):
+    monkeypatch.setenv("ALPHA_VANTAGE_API_KEY", "k")
+    monkeypatch.setattr(
+        source_a,
+        "_download_income_statement_alpha_vantage",
+        lambda symbol, api_key: (_ for _ in ()).throw(RuntimeError("income unavailable")),
+    )
+    monkeypatch.setattr(
+        source_a,
+        "_download_balance_sheet_alpha_vantage",
+        lambda symbol, api_key: (_ for _ in ()).throw(RuntimeError("balance unavailable")),
+    )
+    monkeypatch.setattr(
+        source_a,
+        "_download_overview_alpha_vantage",
+        lambda symbol, api_key: {
+            "TotalDebt": "",
+            "BookValue": "",
+            "SharesOutstanding": "",
+            "EBITDA": "",
+            "RevenueTTM": "",
+            "Currency": "USD",
+        },
+    )
+
+    class _Ticker:
+        def __init__(self):
+            self.quarterly_balance_sheet = pd.DataFrame(
+                {
+                    pd.Timestamp("2025-12-31"): [300.0, 700.0, 10.0],
+                },
+                index=[
+                    "Total Debt",
+                    "Stockholders Equity",
+                    "Common Stock Shares Outstanding",
+                ],
+            )
+            self.quarterly_income_stmt = pd.DataFrame(
+                {
+                    pd.Timestamp("2025-12-31"): [210.0, 520.0],
+                },
+                index=["EBITDA", "Total Revenue"],
+            )
+            self.info = {
+                "ebitda": 9999.0,
+                "totalRevenue": 8888.0,
+                "bookValue": 70.0,
+                "sharesOutstanding": 10.0,
+                "currency": "USD",
+            }
+
+    out = source_a._extract_fundamentals(
+        symbol="SYM2",
+        ticker=_Ticker(),
+        config={},
+        run_date="2026-02-14",
+        backfill_years=1,
+    )
+
+    assert out["total_debt"] == 300.0
+    assert out["total_shareholder_equity"] == 700.0
+    assert out["book_value"] == 70.0
+    assert out["shares_outstanding"] == 10.0
+    assert out["enterprise_ebitda"] == 210.0
+    assert out["enterprise_revenue"] == 520.0
+    latest = out["quarterly_fundamentals"][-1]
+    assert latest["enterprise_ebitda"] == 210.0
+    assert latest["enterprise_revenue"] == 520.0
+
+
+def test_extract_fundamentals_prefers_yfinance_quarterly_when_statement_pair_missing(
+    monkeypatch,
+):
+    monkeypatch.setenv("ALPHA_VANTAGE_API_KEY", "k")
+    monkeypatch.setattr(
+        source_a,
+        "_download_income_statement_alpha_vantage",
+        lambda symbol, api_key: {"quarterlyReports": []},
+    )
+    monkeypatch.setattr(
+        source_a,
+        "_download_balance_sheet_alpha_vantage",
+        lambda symbol, api_key: {
+            "quarterlyReports": [
+                {
+                    "fiscalDateEnding": "2025-12-31",
+                    "totalDebt": "300",
+                    "totalShareholderEquity": "700",
+                    "commonStockSharesOutstanding": "10",
+                }
+            ]
+        },
+    )
+    monkeypatch.setattr(
+        source_a,
+        "_download_overview_alpha_vantage",
+        lambda symbol, api_key: {
+            "EBITDA": "200",
+            "RevenueTTM": "500",
+            "LatestQuarter": "2025-12-31",
+            "Currency": "USD",
+        },
+    )
+
+    class _Ticker:
+        def __init__(self):
+            self.quarterly_balance_sheet = pd.DataFrame(
+                {
+                    pd.Timestamp("2025-12-31"): [300.0, 700.0, 10.0],
+                },
+                index=[
+                    "Total Debt",
+                    "Stockholders Equity",
+                    "Common Stock Shares Outstanding",
+                ],
+            )
+            self.quarterly_income_stmt = pd.DataFrame(
+                {
+                    pd.Timestamp("2025-12-31"): [210.0, 520.0],
+                },
+                index=["EBITDA", "Total Revenue"],
+            )
+            self.info = {"currency": "USD"}
+
+    out = source_a._extract_fundamentals(
+        symbol="SYM3",
+        ticker=_Ticker(),
+        config={},
+        run_date="2026-02-14",
+        backfill_years=1,
+    )
+
+    assert out["enterprise_ebitda"] == 210.0
+    assert out["enterprise_revenue"] == 520.0
+    latest = out["quarterly_fundamentals"][-1]
+    assert latest["enterprise_ebitda"] == 210.0
+    assert latest["enterprise_revenue"] == 520.0
 
 
 def test_extract_fundamentals_uses_income_statement_for_quarterly_enterprise_metrics(monkeypatch):
@@ -182,6 +385,12 @@ def test_extract_fundamentals_uses_income_statement_for_quarterly_enterprise_met
     qf = out["quarterly_fundamentals"]
     assert len(qf) == 2
     latest = [r for r in qf if r["report_date"] == "2025-12-31"][0]
+    assert out["total_debt"] == 120.0
+    assert out["total_shareholder_equity"] == 300.0
+    assert out["book_value"] == 30.0
+    assert out["shares_outstanding"] == 10.0
+    assert out["enterprise_ebitda"] == 210.0
+    assert out["enterprise_revenue"] == 520.0
     assert latest["enterprise_ebitda"] == 210.0
     assert latest["enterprise_revenue"] == 520.0
 
@@ -208,6 +417,30 @@ def test_build_records_from_history_shape():
     assert len(dr) == 2
     assert dr[0]["value"] is None
     assert abs(dr[1]["value"] - math.log(1.01)) < 1e-12
+
+
+def test_build_records_from_history_uses_prior_boundary_row_without_emitting_it():
+    idx = pd.to_datetime(["2025-02-28", "2025-03-03"])
+    history = pd.DataFrame(
+        {
+            "Close": [99.0, 100.0],
+            "Dividends": [0.0, 0.0],
+        },
+        index=idx,
+    )
+
+    out = source_a._build_records_from_history(
+        symbol="AAPL",
+        history=history,
+        run_date="2026-03-01",
+        frequency="daily",
+        emit_start_date="2025-03-01",
+    )
+
+    assert len(out) == 3
+    assert {r["observation_date"] for r in out} == {"2025-03-03"}
+    daily_return = [r for r in out if r["factor_name"] == "daily_return"][0]
+    assert abs(daily_return["value"] - math.log(100.0 / 99.0)) < 1e-12
 
 
 def test_build_fundamental_records_shape():
@@ -278,7 +511,7 @@ def test_build_fundamental_records_expands_quarters_within_backfill_window():
     )
     report_dates = sorted({r["report_date"] for r in out if r["report_date"] is not None})
     assert report_dates == ["2025-03-31", "2025-06-30", "2025-09-30", "2025-12-31"]
-    assert len(out) == 24  # 4 quarters * 6 financial metrics
+    assert len(out) == 16  # 4 quarters * 4 non-enterprise metrics; incomplete pairs skipped
 
 
 def test_extract_source_a_handles_symbol_failure(monkeypatch):
@@ -386,7 +619,11 @@ def test_download_price_history_with_fake_yfinance(monkeypatch):
 
         def history(self, period, auto_adjust=False):
             idx = pd.to_datetime(["2026-02-13"])
-            return pd.DataFrame({"Close": [101.0], "Dividends": [0.0]}, index=idx)
+            assert auto_adjust is True
+            return pd.DataFrame(
+                {"Close": [99.5], "Dividends": [0.0]},
+                index=idx,
+            )
 
     monkeypatch.setitem(
         __import__("sys").modules, "yfinance", type("YF", (), {"Ticker": _FakeTicker})
@@ -394,6 +631,7 @@ def test_download_price_history_with_fake_yfinance(monkeypatch):
     ticker, history = source_a._download_price_history("AAPL", 1)
     assert ticker.symbol == "AAPL"
     assert len(history) == 1
+    assert history["Close"].iloc[0] == 99.5
 
 
 def test_build_technical_records_drops_if_less_than_20_days():
@@ -611,6 +849,7 @@ def test_download_price_history_retries_then_success(monkeypatch):
             if calls["n"] == 1:
                 raise RuntimeError("transient")
             idx = pd.to_datetime(["2026-02-13"])
+            assert auto_adjust is True
             return pd.DataFrame({"Close": [101.0], "Dividends": [0.0]}, index=idx)
 
     monkeypatch.setitem(sys.modules, "yfinance", type("YF", (), {"Ticker": _FakeTicker}))

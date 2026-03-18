@@ -1,5 +1,9 @@
 # Installation Guide
 
+This page covers environment setup and first-time project initialization. For
+day-to-day execution commands, scheduler usage, and validation workflows, see
+the Usage Instructions page.
+
 ## Prerequisites
 - Python 3.11+
 - Poetry 2.x
@@ -32,29 +36,19 @@ poetry install
 poetry run python scripts/init_db.py
 ```
 
-This applies `sql/init.sql` and seeds `systematic_equity.company_static`.
+This auto-creates the coursework database `fift` if needed, applies
+`sql/init.sql`, and seeds `systematic_equity.company_static`.
 
-## 4. Optional smoke run
+## 4. Optional smoke test
 
 ```bash
 poetry run python Main.py --run-date 2026-02-14 --frequency daily --dry-run
 ```
 
-## 5. Verify quality gates
+This is only a lightweight startup check. Operational runs, validation, and
+inspection commands are documented under Usage Instructions.
 
-```bash
-poetry run pytest -q
-poetry run bandit -r modules Main.py scripts
-poetry run safety scan -r poetry.lock
-```
-
-If `safety scan` is run for the first time, authenticate once:
-
-```bash
-poetry run safety auth login --headless
-```
-
-## 6. Build docs
+## 5. Build docs
 
 ```bash
 cd docs/sphinx

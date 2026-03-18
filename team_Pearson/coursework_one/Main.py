@@ -6,6 +6,7 @@ import sys
 import time
 import traceback
 import uuid
+from collections import Counter
 from dataclasses import asdict, dataclass
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
@@ -444,6 +445,95 @@ def summarize_provider_usage(records: List[Dict[str, Any]]) -> Dict[str, int]:
     return counts
 
 
+def _merge_stats(total: Dict[str, int], partial: Dict[str, int]) -> None:
+    """Add one stats mapping into an aggregate stats mapping in place."""
+    for key, value in (partial or {}).items():
+        total[key] = int(total.get(key, 0)) + int(value)
+
+
+def _plan_hybrid_work_units(
+    symbols: List[str],
+    *,
+    enabled_extractors: List[str],
+    run_date: str,
+    backfill_years: int,
+    config: Dict[str, Any],
+) -> List[Dict[str, Any]]:
+    """Build deterministic work units for hybrid orchestration."""
+    units: List[Dict[str, Any]] = []
+    enabled = {str(x).strip().lower() for x in enabled_extractors}
+
+    if "source_a" in enabled:
+        for symbol in symbols:
+            units.append(
+                {
+                    "unit_id": f"source_a:{symbol}",
+                    "extractor": "source_a",
+                    "symbol": symbol,
+                }
+            )
+
+    if "source_b" in enabled:
+        from modules.input.extract_source_b import _filter_symbols_for_source_b, _month_windows
+
+        source_b_symbols = _filter_symbols_for_source_b(symbols, config)
+        windows = _month_windows(run_date, backfill_years)
+        for symbol in source_b_symbols:
+            for month_start, fetch_end in windows:
+                units.append(
+                    {
+                        "unit_id": f"source_b:{symbol}:{month_start.isoformat()}",
+                        "extractor": "source_b",
+                        "symbol": symbol,
+                        "month_start": month_start.isoformat(),
+                        "fetch_end": fetch_end.isoformat(),
+                    }
+                )
+
+    return units
+
+
+def _persist_atomic_unit_records(
+    *,
+    raw_records: List[Dict[str, Any]],
+    dry_run: bool,
+    normalize_records_fn: Any,
+    normalize_financial_records_fn: Any,
+    load_curated_fn: Any,
+    load_financial_observations_fn: Any,
+    quality_accumulator: Any,
+) -> tuple[int, int, int, Dict[str, int], Dict[str, int], Dict[str, Any]]:
+    """Normalize and persist one unit's atomic records immediately."""
+    from modules.output.quality import run_quality_checks
+
+    financial_atomic_raw, curated_raw = split_atomic_financial_records(raw_records)
+    curated = normalize_records_fn(curated_raw)
+    quality_accumulator.update(curated)
+    unit_quality_report = run_quality_checks(curated)
+
+    curated_stats: Dict[str, int] = {}
+    curated_rows = int(load_curated_fn(curated, dry_run=dry_run, stats_out=curated_stats))
+
+    financial_normalized = normalize_financial_records_fn(financial_atomic_raw)
+    financial_stats: Dict[str, int] = {}
+    financial_rows = int(
+        load_financial_observations_fn(
+            financial_normalized,
+            dry_run=dry_run,
+            stats_out=financial_stats,
+        )
+    )
+
+    return (
+        int(len(curated)),
+        int(len(financial_normalized)),
+        curated_rows + financial_rows,
+        curated_stats,
+        financial_stats,
+        unit_quality_report,
+    )
+
+
 def split_atomic_financial_records(
     records: List[Dict[str, Any]],
 ) -> tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
@@ -615,13 +705,27 @@ def run_pipeline_stage(ctx: RunContext, state: PipelineState) -> None:
     try:
         # Lazy imports so unit tests can import Main without DB drivers installed.
         from modules.db.universe import get_company_universe
+        from modules.input.extract_source_a import extract_source_a
+        from modules.input.extract_source_b import (
+            _filter_symbols_for_source_b,
+            _month_windows,
+            ingest_source_b_raw,
+            transform_source_b_features,
+        )
         from modules.output import (
             load_curated,
             load_financial_observations,
             normalize_financial_records,
             normalize_records,
-            run_quality_checks,
         )
+        from modules.output.manifest import (
+            MaterializationRegistry,
+            RunManifestTracker,
+            atomic_config_identity,
+            source_a_materialization_key,
+            source_b_materialization_key,
+        )
+        from modules.output.quality import QualityAccumulator
         from modules.transform import build_and_load_final_factors
 
         t0 = time.monotonic()
@@ -649,23 +753,354 @@ def run_pipeline_stage(ctx: RunContext, state: PipelineState) -> None:
         extractor_errors: List[Dict[str, str]] = []
         source_a_failed_symbols: List[Dict[str, str]] = []
         source_b_failed_months: List[Dict[str, str]] = []
-        logger.info(
-            "extract_config run_id=%s atomic_collection_frequency=daily "
-            "output_sampling_frequency=%s",
-            ctx.run_id,
-            ctx.frequency,
-        )
-        raw = collect_raw_records(
+        provider_usage_counter: Counter[str] = Counter()
+        quality_accumulator = QualityAccumulator()
+        curated_load_stats_total: Dict[str, int] = {}
+        financial_load_stats_total: Dict[str, int] = {}
+        atomic_loaded_rows = 0
+        raw_record_count = 0
+        reused_unit_count = 0
+        reused_loaded_rows = 0
+
+        planned_units = _plan_hybrid_work_units(
             universe,
-            ctx.args.run_date,
-            "daily",
-            ctx.backfill_years,
             enabled_extractors=ctx.enabled_extractors,
+            run_date=ctx.args.run_date,
+            backfill_years=ctx.backfill_years,
             config=ctx.cfg,
-            source_a_failed_symbols_out=source_a_failed_symbols,
-            extractor_errors_out=extractor_errors,
-            source_b_failed_months_out=source_b_failed_months,
         )
+        manifest = RunManifestTracker(
+            base_dir=ctx.base_dir,
+            run_id=ctx.run_id,
+            run_date=ctx.args.run_date,
+            frequency=ctx.frequency,
+            backfill_years=ctx.backfill_years,
+            company_limit=ctx.company_limit,
+            enabled_extractors=ctx.enabled_extractors,
+            universe=universe,
+            planned_units=planned_units,
+        )
+        materialization_registry = MaterializationRegistry(base_dir=ctx.base_dir)
+        source_a_config_id = atomic_config_identity(ctx.cfg, extractor="source_a")
+        source_b_config_id = atomic_config_identity(ctx.cfg, extractor="source_b")
+        manifest_summary = manifest.summary()
+        state.notes = _append_note(
+            state.notes, f"manifest_plan_path={manifest_summary['plan_path']}"
+        )
+        state.notes = _append_note(
+            state.notes, f"manifest_state_path={manifest_summary['state_path']}"
+        )
+        state.notes = _append_note(
+            state.notes, f"manifest_events_path={manifest_summary['events_path']}"
+        )
+
+        if "source_a" in {str(x).strip().lower() for x in ctx.enabled_extractors}:
+            for idx, symbol in enumerate(universe, start=1):
+                unit_id = f"source_a:{symbol}"
+                unit_failed: List[Dict[str, str]] = []
+                materialization_key = source_a_materialization_key(
+                    symbol, ctx.args.run_date, ctx.backfill_years
+                )
+                reusable = None if ctx.args.dry_run else materialization_registry.get_reusable(
+                    materialization_key,
+                    config_identity=source_a_config_id,
+                )
+                if reusable:
+                    reused_unit_count += 1
+                    reused_loaded_rows += int(
+                        ((reusable.get("details") or {}).get("loaded_rows") or 0)
+                    )
+                    quality_accumulator.update_report(
+                        (reusable.get("details") or {}).get("quality_report") or {}
+                    )
+                    manifest.mark_unit(
+                        unit_id,
+                        "skipped",
+                        details={
+                            "symbol": symbol,
+                            "reason": "atomic_materialization_reused",
+                            "materialization_key": materialization_key,
+                            "source_run_id": reusable.get("run_id"),
+                        },
+                    )
+                    continue
+                try:
+                    unit_raw = extract_source_a(
+                        [symbol],
+                        ctx.args.run_date,
+                        ctx.backfill_years,
+                        "daily",
+                        config=ctx.cfg,
+                        failed_symbols=unit_failed,
+                    )
+                    if unit_failed:
+                        source_a_failed_symbols.extend(unit_failed)
+                        manifest.mark_unit(unit_id, "failed", details=unit_failed[0])
+                        continue
+                    if not unit_raw:
+                        manifest.mark_unit(
+                            unit_id,
+                            "skipped",
+                            details={"symbol": symbol, "reason": "filtered_or_routing_skipped"},
+                        )
+                        continue
+
+                    raw_record_count += len(unit_raw)
+                    provider_usage_counter.update(summarize_provider_usage(unit_raw))
+                    (
+                        curated_count,
+                        financial_count,
+                        unit_loaded_rows,
+                        curated_stats,
+                        financial_stats,
+                        unit_quality_report,
+                    ) = _persist_atomic_unit_records(
+                        raw_records=unit_raw,
+                        dry_run=bool(ctx.args.dry_run),
+                        normalize_records_fn=normalize_records,
+                        normalize_financial_records_fn=normalize_financial_records,
+                        load_curated_fn=load_curated,
+                        load_financial_observations_fn=load_financial_observations,
+                        quality_accumulator=quality_accumulator,
+                    )
+                    atomic_loaded_rows += unit_loaded_rows
+                    _merge_stats(curated_load_stats_total, curated_stats)
+                    _merge_stats(financial_load_stats_total, financial_stats)
+                    manifest.mark_unit(
+                        unit_id,
+                        "success",
+                        details={
+                            "symbol": symbol,
+                            "raw_records": len(unit_raw),
+                            "curated_rows": curated_count,
+                            "financial_rows": financial_count,
+                            "loaded_rows": unit_loaded_rows,
+                        },
+                    )
+                    if not ctx.args.dry_run:
+                        materialization_registry.record_success(
+                            materialization_key,
+                            run_id=ctx.run_id,
+                            unit_id=unit_id,
+                            extractor="source_a",
+                            config_identity=source_a_config_id,
+                            details={
+                                "symbol": symbol,
+                                "raw_records": len(unit_raw),
+                                "curated_rows": curated_count,
+                                "financial_rows": financial_count,
+                                "loaded_rows": unit_loaded_rows,
+                                "quality_report": unit_quality_report,
+                            },
+                        )
+                except Exception as exc:
+                    err = f"{exc!r}"
+                    extractor_errors.append(
+                        {"extractor": "source_a", "symbol": symbol, "error": err}
+                    )
+                    source_a_failed_symbols.append({"symbol": symbol, "reason": err})
+                    manifest.mark_unit(
+                        unit_id,
+                        "failed",
+                        details={"symbol": symbol, "reason": err},
+                    )
+
+                if idx % 25 == 0:
+                    logger.info(
+                        "unit_progress run_id=%s extractor=source_a completed=%s/%s loaded_rows=%s",
+                        ctx.run_id,
+                        idx,
+                        len(universe),
+                        atomic_loaded_rows,
+                    )
+
+        if "source_b" in {str(x).strip().lower() for x in ctx.enabled_extractors}:
+            source_b_symbols = _filter_symbols_for_source_b(universe, ctx.cfg)
+            windows = _month_windows(ctx.args.run_date, ctx.backfill_years)
+            for idx, symbol in enumerate(source_b_symbols, start=1):
+                failed_months_local: List[Dict[str, str]] = []
+                month_failures_by_key: Dict[str, Dict[str, str]] = {}
+                reusable_by_month: Dict[str, Dict[str, Any]] = {}
+                skip_month_keys: set[str] = set()
+                for month_start, fetch_end in windows:
+                    month_key = month_start.isoformat()
+                    materialization_key = source_b_materialization_key(
+                        symbol, month_key, fetch_end.isoformat()
+                    )
+                    reusable = (
+                        None
+                        if ctx.args.dry_run
+                        else materialization_registry.get_reusable(
+                            materialization_key,
+                            config_identity=source_b_config_id,
+                        )
+                    )
+                    if reusable:
+                        reusable_by_month[month_key] = reusable
+                        skip_month_keys.add(
+                            f"{str(symbol).strip().upper()}:{month_key}:{fetch_end.isoformat()}"
+                        )
+                try:
+                    raw_payloads = []
+                    if len(reusable_by_month) < len(windows):
+                        raw_payloads = ingest_source_b_raw(
+                            [symbol],
+                            ctx.args.run_date,
+                            ctx.backfill_years,
+                            "daily",
+                            config=ctx.cfg,
+                            failed_months_out=failed_months_local,
+                            skip_month_keys=skip_month_keys,
+                        )
+                    month_failures_by_key = {
+                        str(entry.get("month_start")): entry for entry in failed_months_local
+                    }
+                    payloads_by_month = {
+                        str(payload.get("month_start")): payload for payload in raw_payloads
+                    }
+
+                    for month_start, _fetch_end in windows:
+                        month_key = month_start.isoformat()
+                        unit_id = f"source_b:{symbol}:{month_key}"
+                        if month_key in reusable_by_month:
+                            reusable = reusable_by_month[month_key]
+                            reused_unit_count += 1
+                            reused_loaded_rows += int(
+                                ((reusable.get("details") or {}).get("loaded_rows") or 0)
+                            )
+                            quality_accumulator.update_report(
+                                (reusable.get("details") or {}).get("quality_report") or {}
+                            )
+                            manifest.mark_unit(
+                                unit_id,
+                                "skipped",
+                                details={
+                                    "symbol": symbol,
+                                    "month_start": month_key,
+                                    "reason": "atomic_materialization_reused",
+                                    "materialization_key": reusable.get(
+                                        "materialization_key", ""
+                                    ),
+                                    "source_run_id": reusable.get("run_id"),
+                                },
+                            )
+                        elif month_key in payloads_by_month:
+                            payload = payloads_by_month[month_key]
+                            try:
+                                unit_raw = transform_source_b_features(
+                                    [payload],
+                                    [symbol],
+                                    ctx.args.run_date,
+                                    "daily",
+                                    config=ctx.cfg,
+                                )
+                                raw_record_count += len(payload.get("feed") or [])
+                                (
+                                    curated_count,
+                                    financial_count,
+                                    unit_loaded_rows,
+                                    curated_stats,
+                                    financial_stats,
+                                    unit_quality_report,
+                                ) = _persist_atomic_unit_records(
+                                    raw_records=unit_raw,
+                                    dry_run=bool(ctx.args.dry_run),
+                                    normalize_records_fn=normalize_records,
+                                    normalize_financial_records_fn=normalize_financial_records,
+                                    load_curated_fn=load_curated,
+                                    load_financial_observations_fn=load_financial_observations,
+                                    quality_accumulator=quality_accumulator,
+                                )
+                                atomic_loaded_rows += unit_loaded_rows
+                                _merge_stats(curated_load_stats_total, curated_stats)
+                                _merge_stats(financial_load_stats_total, financial_stats)
+                                manifest.mark_unit(
+                                    unit_id,
+                                    "success",
+                                    details={
+                                        "symbol": symbol,
+                                        "month_start": month_key,
+                                        "raw_records": len(payload.get("feed") or []),
+                                        "curated_rows": curated_count,
+                                        "financial_rows": financial_count,
+                                        "loaded_rows": unit_loaded_rows,
+                                    },
+                                )
+                                if not ctx.args.dry_run:
+                                    materialization_registry.record_success(
+                                        source_b_materialization_key(
+                                            symbol,
+                                            month_key,
+                                            payload.get("fetch_end") or month_key,
+                                        ),
+                                        run_id=ctx.run_id,
+                                        unit_id=unit_id,
+                                        extractor="source_b",
+                                        config_identity=source_b_config_id,
+                                        details={
+                                            "symbol": symbol,
+                                            "month_start": month_key,
+                                            "raw_records": len(payload.get("feed") or []),
+                                            "curated_rows": curated_count,
+                                            "financial_rows": financial_count,
+                                            "loaded_rows": unit_loaded_rows,
+                                            "quality_report": unit_quality_report,
+                                        },
+                                    )
+                            except Exception as exc:
+                                err = f"{exc!r}"
+                                source_b_failed_months.append(
+                                    {"symbol": symbol, "month_start": month_key, "reason": err}
+                                )
+                                manifest.mark_unit(
+                                    unit_id,
+                                    "failed",
+                                    details={
+                                        "symbol": symbol,
+                                        "month_start": month_key,
+                                        "reason": err,
+                                    },
+                                )
+                        elif month_key in month_failures_by_key:
+                            failure = month_failures_by_key[month_key]
+                            source_b_failed_months.append(failure)
+                            manifest.mark_unit(unit_id, "failed", details=failure)
+                        else:
+                            manifest.mark_unit(
+                                unit_id,
+                                "skipped",
+                                details={
+                                    "symbol": symbol,
+                                    "month_start": month_key,
+                                    "reason": "no_fetch_needed_or_filtered",
+                                },
+                            )
+                except Exception as exc:
+                    err = f"{exc!r}"
+                    extractor_errors.append(
+                        {"extractor": "source_b", "symbol": symbol, "error": err}
+                    )
+                    for month_start, _fetch_end in windows:
+                        month_key = month_start.isoformat()
+                        unit_id = f"source_b:{symbol}:{month_key}"
+                        manifest.mark_unit(
+                            unit_id,
+                            "failed",
+                            details={"symbol": symbol, "month_start": month_key, "reason": err},
+                        )
+                        source_b_failed_months.append(
+                            {"symbol": symbol, "month_start": month_key, "reason": err}
+                        )
+
+                if idx % 10 == 0:
+                    logger.info(
+                        "unit_progress run_id=%s extractor=source_b completed=%s/%s loaded_rows=%s",
+                        ctx.run_id,
+                        idx,
+                        len(source_b_symbols),
+                        atomic_loaded_rows,
+                    )
+
         if source_a_failed_symbols or source_b_failed_months:
             state.notes = _append_note(state.notes, "pipeline_extractor_degraded=true")
             logger.warning(
@@ -708,53 +1143,47 @@ def run_pipeline_stage(ctx: RunContext, state: PipelineState) -> None:
                 f"extractor_errors={_summary_with_limit(extractor_errors, limit=10)}",
             )
 
-        if universe and not raw and len(extractor_errors) >= len(set(ctx.enabled_extractors)):
-            raise RuntimeError(
-                f"all_enabled_extractors_failed enabled={sorted(set(ctx.enabled_extractors))}"
-            )
-
-        state.provider_usage = summarize_provider_usage(raw)
+        state.provider_usage = dict(sorted(provider_usage_counter.items()))
         if state.provider_usage:
-            state.notes = (
-                f"{state.notes}; provider_usage={json.dumps(state.provider_usage, sort_keys=True)}"
+            state.notes = _append_note(
+                state.notes,
+                f"provider_usage={json.dumps(state.provider_usage, sort_keys=True)}",
             )
+        state.notes = _append_note(
+            state.notes, f"reused_atomic_units={reused_unit_count}"
+        )
+        state.notes = _append_note(
+            state.notes, f"reused_atomic_loaded_rows={reused_loaded_rows}"
+        )
+
+        state.loaded_rows = atomic_loaded_rows
+        manifest_summary = manifest.summary()
+        state.notes = _append_note(
+            state.notes,
+            "manifest_unit_status_counts="
+            f"{json.dumps(manifest_summary['unit_status_counts'], sort_keys=True)}",
+        )
         logger.info(
-            "stage_ok run_id=%s stage=extract records=%s provider_usage=%s",
+            "stage_ok run_id=%s stage=atomic_persist raw_records=%s "
+            "loaded_rows=%s provider_usage=%s manifest=%s",
             ctx.run_id,
-            len(raw),
+            raw_record_count,
+            state.loaded_rows,
             json.dumps(state.provider_usage, sort_keys=True),
+            json.dumps(manifest_summary["unit_status_counts"], sort_keys=True),
         )
         state.stages_ok += 1
         _log_stage_event(
             run_id=ctx.run_id,
-            stage="extract",
+            stage="atomic_persist",
             status="ok",
-            rows_in=len(universe),
-            rows_out=len(raw),
-            elapsed_ms=int((time.monotonic() - t0) * 1000),
-        )
-
-        financial_atomic_raw, curated_raw = split_atomic_financial_records(raw)
-
-        t0 = time.monotonic()
-        curated = normalize_records(curated_raw)
-        logger.info(
-            "stage_ok run_id=%s stage=normalize curated_records=%s",
-            ctx.run_id,
-            len(curated),
-        )
-        state.stages_ok += 1
-        _log_stage_event(
-            run_id=ctx.run_id,
-            stage="normalize",
-            status="ok",
-            rows_in=len(curated_raw),
-            rows_out=len(curated),
+            rows_in=len(planned_units),
+            rows_out=state.loaded_rows,
             elapsed_ms=int((time.monotonic() - t0) * 1000),
         )
 
         t0 = time.monotonic()
-        state.quality_report = run_quality_checks(curated)
+        state.quality_report = quality_accumulator.report()
         logger.info(
             "stage_ok run_id=%s stage=quality report=%s",
             ctx.run_id,
@@ -765,79 +1194,38 @@ def run_pipeline_stage(ctx: RunContext, state: PipelineState) -> None:
             run_id=ctx.run_id,
             stage="quality",
             status="ok",
-            rows_in=len(curated),
-            rows_out=len(curated),
+            rows_in=state.quality_report.get("row_count"),
+            rows_out=state.quality_report.get("row_count"),
             elapsed_ms=int((time.monotonic() - t0) * 1000),
         )
 
-        t0 = time.monotonic()
-        curated_load_stats: Dict[str, int] = {}
-        state.loaded_rows = load_curated(
-            curated, dry_run=ctx.args.dry_run, stats_out=curated_load_stats
+        state.notes = _append_note(
+            state.notes,
+            f"load_curated_stats={json.dumps(curated_load_stats_total, sort_keys=True)}",
         )
         state.notes = _append_note(
             state.notes,
-            f"load_curated_stats={json.dumps(curated_load_stats, sort_keys=True)}",
-        )
-        logger.info(
-            "stage_ok run_id=%s stage=load_curated rows=%s dry_run=%s stats=%s",
-            ctx.run_id,
-            state.loaded_rows,
-            ctx.args.dry_run,
-            json.dumps(curated_load_stats, sort_keys=True),
-        )
-        state.stages_ok += 1
-        _log_stage_event(
-            run_id=ctx.run_id,
-            stage="load_curated",
-            status="ok",
-            rows_in=len(curated),
-            rows_out=state.loaded_rows,
-            elapsed_ms=int((time.monotonic() - t0) * 1000),
-        )
-
-        t0 = time.monotonic()
-        financial_normalized = normalize_financial_records(financial_atomic_raw)
-        financial_load_stats: Dict[str, int] = {}
-        financial_rows = load_financial_observations(
-            financial_normalized,
-            dry_run=ctx.args.dry_run,
-            stats_out=financial_load_stats,
-        )
-        state.loaded_rows += int(financial_rows)
-        state.notes = _append_note(
-            state.notes,
-            f"load_financial_stats={json.dumps(financial_load_stats, sort_keys=True)}",
-        )
-        logger.info(
-            "stage_ok run_id=%s stage=load_financial rows=%s "
-            "total_loaded_rows=%s dry_run=%s stats=%s",
-            ctx.run_id,
-            int(financial_rows),
-            state.loaded_rows,
-            ctx.args.dry_run,
-            json.dumps(financial_load_stats, sort_keys=True),
-        )
-        state.stages_ok += 1
-        _log_stage_event(
-            run_id=ctx.run_id,
-            stage="load_financial",
-            status="ok",
-            rows_in=len(financial_normalized),
-            rows_out=int(financial_rows),
-            elapsed_ms=int((time.monotonic() - t0) * 1000),
+            f"load_financial_stats={json.dumps(financial_load_stats_total, sort_keys=True)}",
         )
 
         t0 = time.monotonic()
         final_factor_rows = 0
         if os.getenv("CW1_TEST_MODE") != "1":
-            final_factor_rows = build_and_load_final_factors(
-                run_date=ctx.args.run_date,
-                backfill_years=ctx.backfill_years,
-                output_frequency=ctx.frequency,
-                symbols=universe,
-                dry_run=ctx.args.dry_run,
-            )
+            if not manifest.ready_for_final_build():
+                raise RuntimeError("final_build_gate_blocked: pending_or_running_units_exist")
+            manifest.mark_final_build("running")
+            try:
+                final_factor_rows = build_and_load_final_factors(
+                    run_date=ctx.args.run_date,
+                    backfill_years=ctx.backfill_years,
+                    output_frequency=ctx.frequency,
+                    symbols=universe,
+                    dry_run=ctx.args.dry_run,
+                )
+                manifest.mark_final_build("success", rows_written=int(final_factor_rows))
+            except Exception as exc:
+                manifest.mark_final_build("failed", error=f"{exc!r}")
+                raise
         state.loaded_rows += int(final_factor_rows)
         logger.info(
             "stage_ok run_id=%s stage=transform_final rows=%s total_loaded_rows=%s",

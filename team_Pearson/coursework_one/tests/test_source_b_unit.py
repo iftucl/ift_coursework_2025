@@ -319,6 +319,46 @@ def test_ingest_source_b_raw_collects_payloads(monkeypatch):
     assert out[0]["fetch_end"] == "2026-02-14"
 
 
+def test_ingest_source_b_raw_respects_skip_month_keys(monkeypatch):
+    monkeypatch.setenv("ALPHA_VANTAGE_API_KEY", "k")
+    monkeypatch.setattr(
+        source_b,
+        "_month_windows",
+        lambda run_date, backfill_years: [
+            (date(2026, 1, 1), date(2026, 1, 31)),
+            (date(2026, 2, 1), date(2026, 2, 14)),
+        ],
+    )
+    monkeypatch.setattr(source_b, "_load_month_cursor_closed", lambda *args, **kwargs: False)
+    monkeypatch.setattr(source_b, "_load_month_cursor", lambda *args, **kwargs: None)
+    monkeypatch.setattr(source_b, "_save_month_cursor", lambda *args, **kwargs: None)
+    monkeypatch.setattr(source_b, "_load_current_month_articles", lambda *args, **kwargs: [])
+    monkeypatch.setattr(source_b, "_save_current_month_articles", lambda *args, **kwargs: None)
+    monkeypatch.setattr(source_b, "_save_raw_to_minio", lambda *args, **kwargs: None)
+    monkeypatch.setattr(source_b.time, "sleep", lambda *_args: None)
+
+    seen = []
+
+    def _fake_fetch(symbol, api_key, time_from, time_to):  # noqa: ARG001
+        seen.append((time_from, time_to))
+        return {"feed": []}
+
+    monkeypatch.setattr(source_b, "_fetch_news_for_range", _fake_fetch)
+
+    out = source_b.ingest_source_b_raw(
+        ["AAPL"],
+        "2026-02-14",
+        1,
+        "daily",
+        config={},
+        skip_month_keys={"AAPL:2026-01-01:2026-01-31"},
+    )
+
+    assert len(out) == 1
+    assert out[0]["month_start"] == "2026-02-01"
+    assert seen == [("20260201T0000", "20260214T2359")]
+
+
 def test_ingest_source_b_raw_incremental_range_uses_buffer(monkeypatch):
     monkeypatch.setenv("ALPHA_VANTAGE_API_KEY", "k")
     monkeypatch.setattr(

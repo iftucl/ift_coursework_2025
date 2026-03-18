@@ -28,7 +28,7 @@ poetry run python scripts/init_db.py
 poetry run python Main.py --run-date 2026-03-05 --frequency daily --backfill-years 1 --company-limit 5
 
 # 5) verify in PostgreSQL
-docker exec -i postgres_db_cw psql -U postgres -d postgres -c \
+docker exec -i postgres_db_cw psql -U postgres -d fift -c \
 "select run_id, run_date, status, rows_written from systematic_equity.pipeline_runs order by started_at desc limit 5;"
 ```
 
@@ -110,6 +110,9 @@ Defaults in `.env.example` are aligned with root compose:
 - MongoDB `localhost:27019`
 - MinIO `localhost:9000`
 
+The project database name is `fift`. `scripts/init_db.py` creates it
+automatically inside the running PostgreSQL container if it is missing.
+
 ## 7. 10-Minute Runbook (First Successful Run)
 
 ### 1) Start infra (repo root)
@@ -128,8 +131,9 @@ poetry run python scripts/init_db.py
 ```
 
 `init_db.py` does:
-1. Apply `sql/init.sql` via `docker exec ... psql`
-2. Seed `systematic_equity.company_static` from `000.Database/SQL/Equity.db`
+1. Ensure the PostgreSQL database `fift` exists inside the running container
+2. Apply `sql/init.sql` to `fift` via `docker exec ... psql`
+3. Seed `systematic_equity.company_static` from `000.Database/SQL/Equity.db`
 
 ### 3) Run one end-to-end pipeline job
 
@@ -142,10 +146,10 @@ poetry run python Main.py --run-date 2026-03-05 --frequency daily --backfill-yea
 ### 4) Verify load result
 
 ```bash
-docker exec -i postgres_db_cw psql -U postgres -d postgres -c \
+docker exec -i postgres_db_cw psql -U postgres -d fift -c \
 "select run_id, run_date, status, rows_written from systematic_equity.pipeline_runs order by started_at desc limit 5;"
 
-docker exec -i postgres_db_cw psql -U postgres -d postgres -c \
+docker exec -i postgres_db_cw psql -U postgres -d fift -c \
 "select count(*) from systematic_equity.factor_observations;"
 ```
 

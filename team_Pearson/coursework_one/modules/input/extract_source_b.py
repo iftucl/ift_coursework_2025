@@ -14,7 +14,7 @@ import re
 import time
 from datetime import date, datetime, timedelta
 from io import BytesIO
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Optional, Set
 from urllib.parse import urlparse
 
 import requests
@@ -681,6 +681,7 @@ def ingest_source_b_raw(
     frequency: str,
     config: Optional[Dict[str, Any]] = None,
     failed_months_out: Optional[List[Dict[str, str]]] = None,
+    skip_month_keys: Optional[Set[str]] = None,
 ) -> List[Dict[str, Any]]:
     """Ingest raw Source B payloads from Alpha Vantage news endpoint."""
     _ = frequency  # Source B extraction cadence is independent from output sampling label.
@@ -704,9 +705,16 @@ def ingest_source_b_raw(
         return []
 
     raw_payloads: List[Dict[str, Any]] = []
+    skipped = {str(x) for x in (skip_month_keys or set())}
 
     for symbol in target_symbols:
         for month_start, fetch_end in windows:
+            month_key = (
+                f"{str(symbol).strip().upper()}:"
+                f"{month_start.isoformat()}:{fetch_end.isoformat()}"
+            )
+            if month_key in skipped:
+                continue
             try:
                 if _load_month_cursor_closed(config, symbol, month_start):
                     continue

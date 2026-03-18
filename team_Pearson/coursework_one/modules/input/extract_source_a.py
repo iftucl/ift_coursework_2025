@@ -69,7 +69,7 @@ def _download_price_history(symbol: str, years_back: int, max_retries: int = 3):
     for attempt in range(max_retries):
         try:
             ticker = yf.Ticker(symbol)
-            history = ticker.history(period=period, auto_adjust=False)
+            history = ticker.history(period=period, auto_adjust=True)
             if history is None or history.empty:
                 raise ValueError(f"No history returned for symbol={symbol}")
             return ticker, history
@@ -84,9 +84,17 @@ def _download_price_history(symbol: str, years_back: int, max_retries: int = 3):
 
 
 def _apply_history_window(
-    history: pd.DataFrame, run_date: str, backfill_years: int
+    history: pd.DataFrame,
+    run_date: str,
+    backfill_years: int,
+    *,
+    prior_rows: int = 0,
 ) -> pd.DataFrame:
-    """Trim history to rolling-month window ending at run_date."""
+    """Trim history to rolling-month window ending at run_date.
+
+    Optionally retain a small number of pre-window rows so boundary metrics such as
+    ``daily_return`` can reference the immediately preceding trading day.
+    """
     if history is None or history.empty:
         return history
 
@@ -98,7 +106,15 @@ def _apply_history_window(
     end_ts = pd.Timestamp(run_date)
     start_ts = pd.Timestamp(_rolling_window_start_date(run_date, backfill_years))
     mask = (idx >= start_ts) & (idx <= end_ts)
-    return frame.loc[mask]
+    window = frame.loc[mask]
+    if prior_rows <= 0 or window.empty:
+        return window
+
+    prior = frame.loc[idx < start_ts].tail(prior_rows)
+    if prior.empty:
+        return window
+
+    return pd.concat([prior, window]).sort_index()
 
 
 def _download_price_history_alpha_vantage(
@@ -334,15 +350,6 @@ def _build_quarterly_fundamentals_from_av_balance_sheet(
         )
 
     out.sort(key=lambda x: str(x.get("report_date") or ""))
-    if out:
-        latest_report_date = str(out[-1].get("report_date") or "")
-        for row in out:
-            if str(row.get("report_date") or "") != latest_report_date:
-                continue
-            if row.get("enterprise_ebitda") is None and snapshot_ebitda is not None:
-                row["enterprise_ebitda"] = snapshot_ebitda
-            if row.get("enterprise_revenue") is None and snapshot_revenue is not None:
-                row["enterprise_revenue"] = snapshot_revenue
     return out
 
 
@@ -368,6 +375,215 @@ def _build_quarterly_income_map_from_av_income_statement(
             "enterprise_revenue": _to_float_or_none(report.get("totalRevenue")),
         }
     return out
+
+
+def _get_yfinance_quarterly_frame(ticker: Any, attr_names: List[str]) -> pd.DataFrame:
+    for attr in attr_names:
+        frame = None
+        try:
+            frame = getattr(ticker, attr)
+        except Exception:
+            frame = None
+        if isinstance(frame, pd.DataFrame) and not frame.empty:
+            return frame.copy()
+    return pd.DataFrame()
+
+
+def _map_yfinance_quarter_columns(frame: pd.DataFrame) -> Dict[str, Any]:
+    if frame is None or frame.empty:
+        return {}
+    out: Dict[str, Any] = {}
+    for col in frame.columns:
+        ts = pd.to_datetime(col, errors="coerce")
+        if pd.isna(ts):
+            continue
+        out[ts.date().isoformat()] = col
+    return out
+
+
+def _extract_yfinance_frame_value(
+    frame: pd.DataFrame, column: Any, field_names: List[str]
+) -> Optional[float]:
+    if frame is None or frame.empty or column is None:
+        return None
+    for field in field_names:
+        if field not in frame.index:
+            continue
+        value = frame.loc[field, column]
+        if isinstance(value, pd.Series):
+            value = value.iloc[0]
+        parsed = _to_float_or_none(value)
+        if parsed is not None:
+            return parsed
+    return None
+
+
+def _build_quarterly_fundamentals_from_yfinance_ticker(
+    ticker: Any,
+    *,
+    run_date: str,
+    backfill_years: int,
+    currency: Optional[str],
+    metric_definition: str,
+) -> List[Dict[str, Any]]:
+    balance_sheet = _get_yfinance_quarterly_frame(
+        ticker,
+        ["quarterly_balance_sheet"],
+    )
+    income_stmt = _get_yfinance_quarterly_frame(
+        ticker,
+        ["quarterly_income_stmt", "quarterly_incomestmt", "quarterly_financials"],
+    )
+
+    bs_cols = _map_yfinance_quarter_columns(balance_sheet)
+    inc_cols = _map_yfinance_quarter_columns(income_stmt)
+    report_dates = sorted(set(bs_cols) | set(inc_cols))
+    out: List[Dict[str, Any]] = []
+
+    for report_date in report_dates:
+        if not _in_backfill_window(report_date, run_date, backfill_years):
+            continue
+        bs_col = bs_cols.get(report_date)
+        inc_col = inc_cols.get(report_date)
+        total_debt = _extract_yfinance_frame_value(
+            balance_sheet,
+            bs_col,
+            ["Total Debt", "TotalDebt", "Long Term Debt", "LongTermDebt"],
+        )
+        total_equity = _extract_yfinance_frame_value(
+            balance_sheet,
+            bs_col,
+            [
+                "Stockholders Equity",
+                "Total Stockholder Equity",
+                "Total Shareholder Equity",
+                "TotalEquityGrossMinorityInterest",
+            ],
+        )
+        shares_outstanding = _extract_yfinance_frame_value(
+            balance_sheet,
+            bs_col,
+            [
+                "Common Stock Shares Outstanding",
+                "CommonStockSharesOutstanding",
+                "Ordinary Shares Number",
+                "Share Issued",
+            ],
+        )
+        enterprise_ebitda = _extract_yfinance_frame_value(
+            income_stmt,
+            inc_col,
+            ["EBITDA", "Ebitda"],
+        )
+        enterprise_revenue = _extract_yfinance_frame_value(
+            income_stmt,
+            inc_col,
+            ["Total Revenue", "TotalRevenue"],
+        )
+        book_value = None
+        if (
+            total_equity is not None
+            and shares_outstanding is not None
+            and shares_outstanding > 0
+        ):
+            book_value = total_equity / shares_outstanding
+        if all(
+            value is None
+            for value in (
+                total_debt,
+                total_equity,
+                shares_outstanding,
+                enterprise_ebitda,
+                enterprise_revenue,
+            )
+        ):
+            continue
+        out.append(
+            {
+                "report_date": report_date,
+                "total_debt": total_debt,
+                "total_shareholder_equity": total_equity,
+                "book_value": book_value,
+                "shares_outstanding": shares_outstanding,
+                "enterprise_ebitda": enterprise_ebitda,
+                "enterprise_revenue": enterprise_revenue,
+                "currency": currency,
+                "metric_definition": metric_definition,
+            }
+        )
+
+    out.sort(key=lambda x: str(x.get("report_date") or ""))
+    return out
+
+
+def _merge_quarterly_fundamentals(
+    existing: List[Dict[str, Any]], incoming: List[Dict[str, Any]]
+) -> List[Dict[str, Any]]:
+    if not existing:
+        return sorted(incoming, key=lambda x: str(x.get("report_date") or ""))
+    merged: Dict[str, Dict[str, Any]] = {
+        str(row.get("report_date") or ""): dict(row) for row in existing if row.get("report_date")
+    }
+    for row in incoming:
+        report_date = str(row.get("report_date") or "")
+        if not report_date:
+            continue
+        if report_date not in merged:
+            merged[report_date] = dict(row)
+            continue
+        current = merged[report_date]
+        for key, value in row.items():
+            if current.get(key) is None and value is not None:
+                current[key] = value
+    return sorted(merged.values(), key=lambda x: str(x.get("report_date") or ""))
+
+
+def _has_complete_enterprise_pair(row: Optional[Dict[str, Any]]) -> bool:
+    if not isinstance(row, dict):
+        return False
+    return (
+        _to_float_or_none(row.get("enterprise_ebitda")) is not None
+        and _to_float_or_none(row.get("enterprise_revenue")) is not None
+    )
+
+
+def _set_enterprise_pair(target: Dict[str, Any], source: Optional[Dict[str, Any]]) -> None:
+    if not isinstance(source, dict):
+        target["enterprise_ebitda"] = None
+        target["enterprise_revenue"] = None
+        return
+    target["enterprise_ebitda"] = source.get("enterprise_ebitda")
+    target["enterprise_revenue"] = source.get("enterprise_revenue")
+
+
+def _apply_enterprise_pair_priority(
+    quarterly_fundamentals: List[Dict[str, Any]],
+    *,
+    av_quarterly: List[Dict[str, Any]],
+    yf_quarterly: List[Dict[str, Any]],
+) -> None:
+    if not quarterly_fundamentals:
+        return
+
+    av_by_date = {
+        str(row.get("report_date") or ""): row for row in av_quarterly if row.get("report_date")
+    }
+    yf_by_date = {
+        str(row.get("report_date") or ""): row for row in yf_quarterly if row.get("report_date")
+    }
+
+    for row in quarterly_fundamentals:
+        report_date = str(row.get("report_date") or "")
+        selected: Optional[Dict[str, Any]] = None
+        av_row = av_by_date.get(report_date)
+        yf_row = yf_by_date.get(report_date)
+
+        if _has_complete_enterprise_pair(av_row):
+            selected = av_row
+        elif _has_complete_enterprise_pair(yf_row):
+            selected = yf_row
+
+        _set_enterprise_pair(row, selected)
 
 
 def _extract_fundamentals_from_yfinance_ticker(ticker: Any) -> Dict[str, Any]:
@@ -409,12 +625,21 @@ def _extract_fundamentals_from_yfinance_ticker(ticker: Any) -> Dict[str, Any]:
         "total_shareholder_equity": total_shareholder_equity,
         "book_value": _to_float_or_none(info.get("bookValue")),
         "shares_outstanding": _to_float_or_none(info.get("sharesOutstanding")),
-        "enterprise_ebitda": _to_float_or_none(info.get("ebitda")),
-        "enterprise_revenue": _to_float_or_none(info.get("totalRevenue")),
+        "enterprise_ebitda": None,
+        "enterprise_revenue": None,
         "report_date": str(info.get("mostRecentQuarter") or "").strip()[:10] or None,
         "currency": str(info.get("currency") or "").strip().upper() or None,
         "metric_definition": "provider_reported",
     }
+
+
+def _apply_snapshot_fallback_to_latest_quarter(
+    quarterly_fundamentals: List[Dict[str, Any]],
+    *,
+    snapshot_ebitda: Optional[float],
+    snapshot_revenue: Optional[float],
+) -> None:
+    _ = (quarterly_fundamentals, snapshot_ebitda, snapshot_revenue)
 
 
 def _extract_fundamentals(
@@ -424,7 +649,7 @@ def _extract_fundamentals(
     run_date: Optional[str] = None,
     backfill_years: int = 1,
 ) -> Dict[str, Any]:
-    """Extract fundamentals with unified provider order: Alpha Vantage -> yfinance fallback."""
+    """Extract fundamentals with statement-first order and fallback layers."""
     out: Dict[str, Any] = {
         "total_debt": None,
         "total_shareholder_equity": None,
@@ -438,63 +663,73 @@ def _extract_fundamentals(
         "quarterly_fundamentals": [],
     }
 
-    # 1) Alpha Vantage first
+    # 1) Alpha Vantage statements first: prefer period-aligned quarterly fields.
     api_key = _resolve_alpha_key(config)
     if api_key:
+        income_by_date: Dict[str, Dict[str, Optional[float]]] = {}
+        av_quarterly: List[Dict[str, Any]] = []
+        yf_quarterly: List[Dict[str, Any]] = []
+        try:
+            income_statement = _download_income_statement_alpha_vantage(symbol, api_key)
+            income_by_date = _build_quarterly_income_map_from_av_income_statement(
+                income_statement,
+                run_date=str(run_date or ""),
+                backfill_years=backfill_years,
+            )
+        except Exception as exc:
+            logger.warning(
+                "alpha_vantage_income_statement_failed symbol=%s reason=%r; "
+                "falling back to yfinance quarterly for enterprise metrics",
+                symbol,
+                exc,
+            )
+        try:
+            balance_sheet = _download_balance_sheet_alpha_vantage(symbol, api_key)
+            av_quarterly = _build_quarterly_fundamentals_from_av_balance_sheet(
+                balance_sheet,
+                run_date=str(run_date or ""),
+                backfill_years=backfill_years,
+                currency=out["currency"],
+                metric_definition=str(out["metric_definition"] or "provider_reported"),
+                income_by_date=income_by_date,
+            )
+            out["quarterly_fundamentals"] = list(av_quarterly)
+            if out["quarterly_fundamentals"]:
+                latest_quarter = out["quarterly_fundamentals"][-1]
+                out["total_debt"] = latest_quarter.get("total_debt")
+                out["total_shareholder_equity"] = latest_quarter.get("total_shareholder_equity")
+                out["book_value"] = latest_quarter.get("book_value")
+                out["shares_outstanding"] = latest_quarter.get("shares_outstanding")
+                out["enterprise_ebitda"] = latest_quarter.get("enterprise_ebitda")
+                out["enterprise_revenue"] = latest_quarter.get("enterprise_revenue")
+                out["report_date"] = str(latest_quarter.get("report_date") or "").strip() or None
+        except Exception as exc:
+            logger.warning(
+                "alpha_vantage_balance_sheet_failed symbol=%s reason=%r; "
+                "falling back to overview/yfinance fields",
+                symbol,
+                exc,
+            )
+
+        # 2) Alpha Vantage overview fills remaining gaps only.
         try:
             overview = _download_overview_alpha_vantage(symbol, api_key)
-            out["total_debt"] = _to_float_or_none(overview.get("TotalDebt"))
-            out["book_value"] = _to_float_or_none(overview.get("BookValue"))
-            out["shares_outstanding"] = _to_float_or_none(overview.get("SharesOutstanding"))
-            out["enterprise_ebitda"] = _to_float_or_none(overview.get("EBITDA"))
-            out["enterprise_revenue"] = _to_float_or_none(overview.get("RevenueTTM"))
-            out["report_date"] = str(overview.get("LatestQuarter") or "").strip()[:10] or None
-            out["currency"] = str(overview.get("Currency") or "").strip().upper() or None
-            income_by_date: Dict[str, Dict[str, Optional[float]]] = {}
-            try:
-                income_statement = _download_income_statement_alpha_vantage(symbol, api_key)
-                income_by_date = _build_quarterly_income_map_from_av_income_statement(
-                    income_statement,
-                    run_date=str(run_date or ""),
-                    backfill_years=backfill_years,
-                )
-            except Exception as exc:
-                logger.warning(
-                    "alpha_vantage_income_statement_failed symbol=%s reason=%r; "
-                    "falling back to overview snapshot for enterprise metrics",
-                    symbol,
-                    exc,
-                )
-            try:
-                balance_sheet = _download_balance_sheet_alpha_vantage(symbol, api_key)
-                out["quarterly_fundamentals"] = _build_quarterly_fundamentals_from_av_balance_sheet(
-                    balance_sheet,
-                    run_date=str(run_date or ""),
-                    backfill_years=backfill_years,
-                    currency=out["currency"],
-                    metric_definition=str(out["metric_definition"] or "provider_reported"),
-                    income_by_date=income_by_date,
-                    snapshot_ebitda=out["enterprise_ebitda"],
-                    snapshot_revenue=out["enterprise_revenue"],
-                )
-                quarterly = balance_sheet.get("quarterlyReports") or []
-                if quarterly:
-                    latest = quarterly[0] or {}
-                    out["total_shareholder_equity"] = _to_float_or_none(
-                        latest.get("totalShareholderEquity")
-                        or latest.get("totalStockholdersEquity")
-                    )
-                    if out["report_date"] is None:
-                        out["report_date"] = (
-                            str(latest.get("fiscalDateEnding") or "").strip()[:10] or None
-                        )
-            except Exception as exc:
-                logger.warning(
-                    "alpha_vantage_balance_sheet_failed symbol=%s reason=%r; "
-                    "falling back to yfinance equity fields",
-                    symbol,
-                    exc,
-                )
+            overview_total_debt = _to_float_or_none(overview.get("TotalDebt"))
+            overview_book_value = _to_float_or_none(overview.get("BookValue"))
+            overview_shares = _to_float_or_none(overview.get("SharesOutstanding"))
+            overview_report_date = str(overview.get("LatestQuarter") or "").strip()[:10] or None
+            overview_currency = str(overview.get("Currency") or "").strip().upper() or None
+
+            if out["total_debt"] is None:
+                out["total_debt"] = overview_total_debt
+            if out["book_value"] is None:
+                out["book_value"] = overview_book_value
+            if out["shares_outstanding"] is None:
+                out["shares_outstanding"] = overview_shares
+            if out["report_date"] is None:
+                out["report_date"] = overview_report_date
+            if out["currency"] is None:
+                out["currency"] = overview_currency
         except Exception as exc:
             logger.warning(
                 "alpha_vantage_overview_failed symbol=%s reason=%r; "
@@ -503,7 +738,7 @@ def _extract_fundamentals(
                 exc,
             )
 
-    # 2) yfinance fallback for missing fields only
+    # 3) yfinance fallback for remaining missing fields only
     if any(
         out.get(k) is None
         for k in (
@@ -526,10 +761,52 @@ def _extract_fundamentals(
             except Exception:
                 yf_ticker = None
         if yf_ticker is not None:
+            yf_quarterly = _build_quarterly_fundamentals_from_yfinance_ticker(
+                yf_ticker,
+                run_date=str(run_date or ""),
+                backfill_years=backfill_years,
+                currency=out.get("currency"),
+                metric_definition=str(out.get("metric_definition") or "provider_reported"),
+            )
+            if yf_quarterly:
+                out["quarterly_fundamentals"] = _merge_quarterly_fundamentals(
+                    out.get("quarterly_fundamentals") or [],
+                    yf_quarterly,
+                )
+                latest_quarter = out["quarterly_fundamentals"][-1]
+                for key in (
+                    "total_debt",
+                    "total_shareholder_equity",
+                    "book_value",
+                    "shares_outstanding",
+                    "enterprise_ebitda",
+                    "enterprise_revenue",
+                ):
+                    if out.get(key) is None:
+                        out[key] = latest_quarter.get(key)
+                if out.get("report_date") is None:
+                    latest_report_date = str(latest_quarter.get("report_date") or "").strip()
+                    out["report_date"] = latest_report_date or None
+                if out.get("currency") is None:
+                    out["currency"] = latest_quarter.get("currency")
             yf_vals = _extract_fundamentals_from_yfinance_ticker(yf_ticker)
             for key in out:
                 if out[key] is None:
                     out[key] = yf_vals.get(key)
+
+        _apply_enterprise_pair_priority(
+            out["quarterly_fundamentals"],
+            av_quarterly=av_quarterly,
+            yf_quarterly=yf_quarterly,
+        )
+
+        out["enterprise_ebitda"] = None
+        out["enterprise_revenue"] = None
+        if out["quarterly_fundamentals"]:
+            latest_quarter = out["quarterly_fundamentals"][-1]
+            if _has_complete_enterprise_pair(latest_quarter):
+                out["enterprise_ebitda"] = latest_quarter.get("enterprise_ebitda")
+                out["enterprise_revenue"] = latest_quarter.get("enterprise_revenue")
 
     return out
 
@@ -676,9 +953,11 @@ def _build_records_from_history(
     run_date: str,
     frequency: str,
     source_label: str = "alpha_vantage",
+    emit_start_date: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     records: List[Dict[str, Any]] = []
     prev_close: Optional[float] = None
+    emit_start = str(emit_start_date or "").strip()[:10] or None
 
     for idx, row in history.iterrows():
         observation_date = idx.date().isoformat() if hasattr(idx, "date") else str(idx)[:10]
@@ -689,6 +968,11 @@ def _build_records_from_history(
         daily_return = None
         if close_v is not None and close_v > 0 and prev_close is not None and prev_close > 0:
             daily_return = math.log(close_v / prev_close)
+
+        if emit_start and observation_date < emit_start:
+            if close_v is not None and close_v > 0:
+                prev_close = close_v
+            continue
 
         records.append(
             {
@@ -761,7 +1045,10 @@ def _build_fundamental_records(
             .strip()
             .lower()
         )
+        has_enterprise_pair = _has_complete_enterprise_pair(row)
         for key, (factor_name, period_type) in field_map.items():
+            if key in {"enterprise_ebitda", "enterprise_revenue"} and not has_enterprise_pair:
+                continue
             out.append(
                 {
                     "symbol": symbol,
@@ -1042,7 +1329,8 @@ def extract_source_a(
                 }
                 _save_raw_to_minio(cfg, symbol, run_date, payload)
 
-            history = _apply_history_window(history, run_date, backfill_years)
+            history = _apply_history_window(history, run_date, backfill_years, prior_rows=1)
+            emit_start_date = _rolling_window_start_date(run_date, backfill_years)
 
             symbol_records.extend(
                 _build_records_from_history(
@@ -1051,6 +1339,7 @@ def extract_source_a(
                     run_date=run_date,
                     frequency=frequency,
                     source_label=provider_source,
+                    emit_start_date=emit_start_date,
                 )
             )
             symbol_records.extend(

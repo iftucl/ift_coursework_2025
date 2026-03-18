@@ -18,15 +18,18 @@ Authoritative code paths:
 
 Pipeline execution in `Main.py`:
 
-1. Resolve runtime config (`run_date`, `frequency`, `backfill_years`, enabled extractors).
-2. Load universe from `systematic_equity.company_static`.
-3. Extract atomics from Source A and Source B.
-4. Split records:
-   - financial atomics -> `financial_observations`
-   - other atomics/factors -> `factor_observations`
-5. Normalize and run quality checks.
-6. Upsert curated atomics into PostgreSQL.
-7. Build final factors from atomics and upsert back to `factor_observations`.
+<div>（1）Resolve runtime config (<code>run_date</code>, <code>frequency</code>, <code>backfill_years</code>, enabled extractors).</div>
+<div>（2）Load universe from <code>systematic_equity.company_static</code>.</div>
+<div>（3）Plan work units and manifest state for the run (target symbols, Source B symbol-month windows, reuse eligibility, and final-build gate).</div>
+<div>（4）Extract Source A / Source B atomics by work unit and archive raw payloads to MinIO.</div>
+<div>（5）Split unit outputs:</div>
+<ul style="margin-top: 0.2rem; margin-bottom: 0.2rem;">
+<li>financial atomics -&gt; <code>financial_observations</code></li>
+<li>other atomics/factors -&gt; <code>factor_observations</code></li>
+</ul>
+<div>（6）Normalize and accumulate quality evidence as atomic units are materialized.</div>
+<div>（7）Upsert curated atomics into PostgreSQL incrementally in bounded batches.</div>
+<div>（8）After all planned atomic units reach a terminal manifest state, build final factors globally and upsert back to <code>factor_observations</code>.</div>
 
 ## 2. Frequency Model
 
@@ -127,7 +130,7 @@ Trigger and control rules:
 
 | Metric | Source cadence | Stored cadence | Meaning / Formula | Key rules |
 | --- | --- | --- | --- | --- |
-| `adjusted_close_price` | daily market trading | daily | adjusted close | provider-aligned daily row |
+| `adjusted_close_price` | daily market trading | daily | adjusted close | Alpha Vantage adjusted close and yfinance adjusted-close-aligned history are normalized to the same internal field |
 | `daily_return` | daily market trading | daily | `ln(P_t/P_{t-1})` | null if current/previous price invalid |
 | `dividend_per_share` | daily market series | daily | provider dividend amount | mostly `0`, non-zero on dividend dates |
 | `total_debt` | quarterly filings | quarterly snapshot | provider debt | in `financial_observations` |

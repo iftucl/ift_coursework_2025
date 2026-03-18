@@ -199,6 +199,52 @@ def test_output_frequency_quarterly_samples_daily_asof_series():
     assert em[0]["factor_value"] == 0.2
 
 
+def test_ebitda_margin_uses_available_enterprise_pair_without_period_basis_check():
+    atomic = [
+        {
+            "symbol": "AAPL",
+            "observation_date": "2026-01-10",
+            "factor_name": "enterprise_ebitda",
+            "factor_value": 200.0,
+            "source_report_date": "2026-01-10",
+        },
+        {
+            "symbol": "AAPL",
+            "observation_date": "2026-01-10",
+            "factor_name": "enterprise_revenue",
+            "factor_value": 1000.0,
+            "source_report_date": "2026-01-10",
+        },
+    ]
+    out = factors.compute_final_factor_records(atomic, run_date="2026-01-15", backfill_years=1)
+    em = [r for r in out if r["factor_name"] == "ebitda_margin"]
+    assert len(em) == 6
+    assert {r["factor_value"] for r in em} == {0.2}
+
+
+def test_debt_to_equity_keeps_original_stock_logic_with_mismatched_period_basis():
+    atomic = [
+        {
+            "symbol": "AAPL",
+            "observation_date": "2026-01-10",
+            "factor_name": "total_debt",
+            "factor_value": 300.0,
+            "source_report_date": "2026-01-10",
+        },
+        {
+            "symbol": "AAPL",
+            "observation_date": "2026-01-10",
+            "factor_name": "total_shareholder_equity",
+            "factor_value": 100.0,
+            "source_report_date": "2026-01-10",
+        },
+    ]
+    out = factors.compute_final_factor_records(atomic, run_date="2026-01-15", backfill_years=1)
+    dte = [r for r in out if r["factor_name"] == "debt_to_equity"]
+    assert len(dte) == 6
+    assert {r["factor_value"] for r in dte} == {3.0}
+
+
 def test_compute_final_factor_records_sentiment_with_zero_news_fallback():
     atomic = [
         {

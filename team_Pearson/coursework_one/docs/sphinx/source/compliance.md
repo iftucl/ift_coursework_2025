@@ -65,8 +65,8 @@ This page maps the Coursework One brief to concrete, checkable project artifacts
 | Requirement | Implementation in this project |
 | --- | --- |
 | Sphinx docs | `docs/sphinx/source` and generated HTML in `docs/sphinx/build/html` |
-| Installation / Usage / API / Architecture | `installation.md`, `usage.md`, `api.md`, `architecture.md` |
-| Core code docstrings for API context | Core runtime and module docstrings aligned with Sphinx pages |
+| Installation / Usage / Module Reference / Architecture | `installation.md`, `usage.md`, `module_reference.md`, `architecture.md` |
+| Core code docstrings | Core runtime and module docstrings aligned with Sphinx pages |
 
 ## 8. Zero-to-Run Acceptance Commands
 
