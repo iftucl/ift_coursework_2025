@@ -27,8 +27,6 @@ Database connectivity and operations
    :nosignatures:
 
    modules.db.postgres_connector.PostgresConnector
-   modules.db.mongo_connector.MongoConnector
-   modules.db.query_builder.QueryBuilder
 
 **Input Module (modules/input/)**
 

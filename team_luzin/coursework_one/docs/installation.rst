@@ -9,8 +9,7 @@ Before installing the Investment Strategy Data Pipeline, ensure you have:
 - **Python 3.10 or higher**: `python --version`
 - **Poetry** (Python dependency manager): `pip install poetry`
 - **PostgreSQL 12+**: For structured data storage
-- **MongoDB 4.4+**: For document storage (optional)
-- **MinIO**: For data lake (optional, or use S3-compatible storage)
+- **MinIO** (optional): For cloud data lake (or use S3-compatible storage)
 - **Git**: For version control
 
 System Requirements
@@ -189,6 +188,43 @@ For development, install additional tools:
     # Install pre-commit hooks (optional)
     pip install pre-commit
     pre-commit install
+
+Building Documentation
+----------------------
+
+This project uses Sphinx to generate HTML documentation automatically from reStructuredText source files and code docstrings.
+
+**Generate HTML Documentation:**
+
+.. code-block:: bash
+
+    # From the coursework_one directory
+    poetry run sphinx-build -b html docs/ docs/_build/html
+
+**View Generated Documentation:**
+
+.. code-block:: bash
+
+    # Open in browser
+    open docs/_build/html/index.html  # macOS
+    xdg-open docs/_build/html/index.html  # Linux
+
+    # Or serve locally to test
+    python3 -m http.server --directory docs/_build/html 8000
+    # Then visit http://localhost:8000 in your browser
+
+The HTML documentation is built from:
+- **RST source files** in ``docs/`` (installation, quickstart, architecture, usage, etc.)
+- **Module docstrings** automatically extracted via Sphinx autodoc from Python source code
+- **API reference** auto-generated from docstrings in ``modules/`` directory
+
+**Rebuild after code changes:**
+
+.. code-block:: bash
+
+    # Clean build to ensure all changes are included
+    rm -rf docs/_build
+    poetry run sphinx-build -b html docs/ docs/_build/html
 
 Next Steps
 ----------

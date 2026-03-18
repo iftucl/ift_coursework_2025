@@ -61,22 +61,22 @@ The pipeline produces:
 1. **Step 1 - VAR Calculation**
    - Computes Value-at-Risk (95th percentile) for each stock
    - Calculates 14-day Average True Range (ATR)
-   - Filters to 597 eligible stocks
+   - Processes eligible securities based on data quality
 
 2. **Step 2 - Portfolio Selection**
-   - Selects top 130 stocks by composite score
+   - Selects stocks by composite score
    - Combines risk, momentum, and liquidity metrics
    - Exports to PostgreSQL
 
 3. **Step 3 - Signal Generation**
    - Generates trading signals using MACD and ATR
    - Identifies BUY/SELL opportunities
-   - Creates 335 executable signals
+   - Creates executable trading signals
 
 4. **Step 4 - Data Export**
-   - Exports results to MinIO
+   - Exports results to local storage
+   - Optionally exports to MinIO for cloud storage
    - Generates analytics summaries
-   - Stores execution records
 
 Expected Results
 ~~~~~~~~~~~~~~~~
@@ -86,18 +86,19 @@ For a complete pipeline run:
 .. code-block:: text
 
     ✓ Step 1: VAR calculation completed
-      - 678 stocks processed
-      - 597 stocks calculated (88.1%)
-      - Results: VaR_95, ATR_14
+      - Securities processed from yfinance
+      - Valid securities selected based on data quality
+      - Results: VaR_95, ATR_14 metrics calculated
 
     ✓ Step 2: Portfolio selection completed
-      - 130 stocks selected (19.2%)
-      - Composite score calculated
+      - Top stocks selected by composite score
+      - Sector diversification applied
       - Results: COMPOSITE_SCORE, RANKING
 
     ✓ Step 3: Signal generation completed
-      - 335 signals generated
-      - Signal types: BUY (49.4%), SELL (remaining)
+      - MACD signals generated
+      - ATR confirmation applied
+      - Signal types: BUY, SELL, HOLD
       - Results: SIGNAL_TYPE, STRENGTH
 
     ✓ Step 4: Analytics export completed

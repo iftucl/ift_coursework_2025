@@ -49,7 +49,7 @@ The Investment Strategy Data Pipeline is a comprehensive system for:
 - **Risk Analysis**: Computing Value-at-Risk (VAR) and volatility metrics
 - **Portfolio Selection**: Identifying optimal stocks based on multiple factors
 - **Signal Generation**: Creating trading signals using technical indicators
-- **Data Export**: Storing results in PostgreSQL, MinIO, and MongoDB
+- **Data Export**: Storing results in PostgreSQL and optional MinIO storage
 
 Key Features
 ============
@@ -58,8 +58,8 @@ Key Features
 - **Modular Design**: Pluggable components for easy extension
 - **Comprehensive Risk Metrics**: VAR-95, ATR, sector exposure analysis
 - **Technical Indicators**: MACD, momentum, liquidity analysis
-- **Database Integration**: PostgreSQL for structured data, MongoDB for documents
-- **Object Storage**: MinIO for data lake implementation
+- **Database Integration**: PostgreSQL for structured data
+- **Object Storage**: MinIO for optional data lake
 - **Test Coverage**: Comprehensive unit tests with 80%+ coverage target
 - **Documentation**: Full Sphinx documentation with API reference
 
@@ -68,8 +68,8 @@ Technology Stack
 
 - **Language**: Python 3.10+
 - **Data Processing**: pandas, numpy, yfinance
-- **Databases**: PostgreSQL, MongoDB
-- **Storage**: MinIO (S3-compatible)
+- **Database**: PostgreSQL
+- **Storage**: MinIO (S3-compatible), local filesystem
 - **Testing**: pytest, coverage
 - **Documentation**: Sphinx with Napoleon extension
 - **Dependency Management**: Poetry
@@ -89,8 +89,8 @@ Project Structure
 .. code-block:: text
 
     coursework_one/
-    ├── main.py                  # Primary entry point
-    ├── run_pipeline.py          # CLI orchestrator with scheduling
+    ├── main.py                  # Official entry point (thin wrapper)
+    ├── run_pipeline.py          # Core orchestration engine
     ├── config/                  # Configuration files
     │   └── conf.yaml            # Credentials and settings template
     ├── modules/                 # Core processing modules
@@ -109,15 +109,17 @@ Project Structure
     ├── pytest.ini               # Test configuration
     └── README.md                # Project README
 
-Pipeline Output Summary
-=======================
+Pipeline Stages
+===============
 
-The system processes 678 stocks through a multi-stage pipeline:
+The system processes 600+ securities through a multi-stage pipeline:
 
-1. **Step 1**: VAR-95 and ATR-14 calculation → 597 stocks (88.1%)
-2. **Step 2**: Composite portfolio selection → 130 stocks (19.2%)
-3. **Step 3**: Trading signal generation → 335 BUY signals (49.4%)
-4. **Step 4**: Analytics export to MinIO
+1. **Step 1**: Risk metrics calculation (VAR-95, ATR-14) across all eligible securities
+2. **Step 2**: Portfolio selection via sector-balanced composite scoring
+3. **Step 3**: Trading signal generation using technical indicators (MACD, ATR, liquidity filters)
+4. **Step 4**: Analytics export to local storage and optional MinIO
+
+Run the pipeline to see exact output counts for your data and analysis date.
 
 Indices and tables
 ==================

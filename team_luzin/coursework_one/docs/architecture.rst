@@ -1,399 +1,314 @@
 Architecture Overview
 =====================
 
-System Architecture
--------------------
+System Design
+-------------
 
-The Investment Strategy Data Pipeline follows a modular, multi-stage architecture:
+The Investment Strategy Data Pipeline implements a modular, sequential processing architecture with four distinct stages:
 
 .. code-block:: text
 
-    ┌─────────────────────────────────────────────────────────────┐
-    │                  Data Sources                                │
-    │  (yfinance, market feeds, reference data)                   │
-    └────────────────────────┬────────────────────────────────────┘
-                             │
-                    ┌────────▼────────┐
-                    │  Step 1: Risk   │
-                    │  Calculation    │
-                    │  (VAR, ATR)     │
-                    └────────┬────────┘
-                             │ 597 stocks
-                    ┌────────▼──────────────┐
-                    │ Step 2: Portfolio     │
-                    │ Selection             │
-                    │ (Composite Score)     │
-                    └────────┬──────────────┘
-                             │ 130 stocks
-                    ┌────────▼──────────────┐
-                    │ Step 3: Signal        │
-                    │ Generation            │
-                    │ (MACD, ATR, Liquidity)│
-                    └────────┬──────────────┘
-                             │ 335 signals
-                    ┌────────▼──────────────┐
-                    │ Step 4: Export &      │
-                    │ Storage               │
-                    │ (DB, MinIO, MongoDB)  │
-                    └────────┬──────────────┘
-                             │
-        ┌────────────────────┼────────────────────┐
-        │                    │                    │
-    ┌───▼───┐         ┌──────▼──────┐      ┌─────▼──────┐
-    │PostgreSQL       │   MinIO     │      │  MongoDB   │
-    │Structured      │   (S3-like) │      │  Documents │
-    │Data Store      │   Data Lake │      │            │
-    └────────┘       └─────────────┘      └────────────┘
+    Data Sources (yfinance, PostgreSQL)
+              │
+              ▼
+    ┌─────────────────────┐
+    │ Step 1: Risk Metrics│ (VAR-95, ATR-14)
+    └──────────┬──────────┘
+              │
+              ▼
+    ┌─────────────────────┐
+    │ Step 2: Portfolio   │ (Composite Scoring)
+    │ Selection           │
+    └──────────┬──────────┘
+              │
+              ▼
+    ┌─────────────────────┐
+    │ Step 3: Signals     │ (MACD, ATR, Filters)
+    └──────────┬──────────┘
+              │
+              ▼
+    ┌─────────────────────┐
+    │ Step 4: Export &    │ (PostgreSQL, MinIO)
+    │ Storage             │
+    └─────────────────────┘
+
+Each stage produces intermediate results (CSV/Parquet files) that feed into the next stage. This modular design simplifies testing, debugging, and future extension.
+
+**Output Variability:** The number of securities, selected stocks, and signals produced depend on:
+- Data availability from yfinance for the specified date range
+- Data quality (missing values, trading halts)
+- Risk filter thresholds and ranking criteria
+- Technical indicator parameters and signal confirmation rules
 
 Core Components
 ---------------
 
-**Module: db/**
-Handles all database operations
+**Module: modules/db/**
+
+Database connectivity for PostgreSQL operations:
 
 .. code-block:: text
 
     modules/db/
     ├── __init__.py
-    ├── postgres_connector.py    # PostgreSQL connection management
-    ├── mongo_connector.py       # MongoDB operations
-    └── query_builder.py         # SQL query construction
+    └── postgres_connector.py    # Connection pooling and queries
 
-Key Classes:
-- ``PostgresConnector``: Connection pooling and query execution
-- ``MongoConnector``: Document insertion and queries
-- ``QueryBuilder``: Parameterized query construction
+Key Class:
+- ``PostgresConnector``: Manages database connections and result persistence
 
-**Module: input/**
-Data ingestion and loading
+**Module: modules/input/**
+
+Data ingestion and loading:
 
 .. code-block:: text
 
     modules/input/
     ├── __init__.py
-    ├── market_data_loader.py    # yfinance data retrieval
-    ├── company_loader.py        # Reference data loading
-    └── data_validator.py        # Input validation
+    └── market_data_loader.py    # OHLCV data from yfinance
 
-Key Classes:
-- ``MarketDataLoader``: Fetches OHLCV data for stocks
-- ``CompanyLoader``: Loads company universe from PostgreSQL
-- ``DataValidator``: Validates input data quality
+Key Class:
+- ``MarketDataLoader``: Retrieves historical price data and company reference data
 
-**Module: processing/**
-Core analytics and factor calculations
+**Module: modules/processing/**
+
+Risk metrics, momentum, and factor calculations:
 
 .. code-block:: text
 
     modules/processing/
     ├── __init__.py
-    ├── risk.py                  # VAR-95, ATR calculations
-    ├── momentum.py              # Momentum and returns
-    ├── liquidity.py             # Volume and spread metrics
-    ├── composite_score.py       # Multi-factor scoring
-    ├── sector_analysis.py       # Sector exposure analysis
-    └── trend.py                 # Trend identification
+    ├── risk.py                  # VAR-95, ATR-14 calculations
+    ├── momentum.py              # Returns and momentum metrics
+    ├── liquidity.py             # Volume and spread analysis
+    ├── composite_score.py       # Multi-factor ranking
+    ├── sector_analysis.py       # Sector diversification
+    └── trend.py                 # Trend and momentum indicators
 
 Key Classes:
-- ``RiskCalculator``: VAR-95, ATR-14 computation
-- ``MomentumCalculator``: Returns, momentum metrics
-- ``LiquidityCalculator``: Volume and spread analysis
-- ``CompositeScorer``: Multi-factor portfolio selection
-- ``TrendAnalyzer``: Trend identification
+- ``RiskCalculator``: Computes VAR (95th percentile loss) and ATR (volatility)
+- ``MomentumCalculator``: Calculates returns over multiple periods
+- ``LiquidityCalculator``: Analyzes trading volume and spreads
+- ``CompositeScorer``: Ranks securities using multi-factor weighted scoring
+- ``TrendAnalyzer``: Identifies trend direction and strength
 
-**Module: signals/**
-Trading signal generation
+**Module: modules/signals/**
+
+Trading signal generation and validation:
 
 .. code-block:: text
 
     modules/signals/
     ├── __init__.py
-    ├── execution_signals.py     # MACD and ATR signals
-    ├── signal_strength.py       # Signal confidence metrics
-    └── signal_filter.py         # Signal validation
+    ├── execution_signals.py     # MACD and signal generation
+    ├── signal_strength.py       # Confidence scoring
+    └── signal_filter.py         # Signal filtering and validation
 
 Key Classes:
-- ``ExecutionSignalGenerator``: MACD, ATR-based signals
-- ``SignalStrengthCalculator``: Confidence and reliability
-- ``SignalFilter``: Post-generation filtering
+- ``ExecutionSignalGenerator``: Generates BUY/SELL/HOLD using MACD and ATR
+- ``SignalStrengthCalculator``: Scores signal reliability
+- ``SignalFilter``: Applies filtering criteria
 
-**Module: output/**
-Results export and reporting
+**Module: modules/output/**
+
+Results export to multiple formats:
 
 .. code-block:: text
 
     modules/output/
     ├── __init__.py
-    ├── results_exporter.py      # Multi-format export
-    └── analytics_generator.py   # Summary reports
+    ├── export_analytics.py      # CSV/Parquet export
+    └── results_exporter.py      # (if present)
 
 Key Classes:
-- ``ResultsExporter``: CSV, Parquet, JSON export
-- ``AnalyticsGenerator``: Summary statistics
+- ``ResultsExporter`` and ``AnalyticsGenerator``: Handle multi-format output
 
-**Module: storage/**
-External storage integration
+**Module: modules/storage/**
+
+Cloud and persistent storage:
 
 .. code-block:: text
 
     modules/storage/
     ├── __init__.py
-    ├── minio_storage.py         # MinIO (S3) operations
-    └── datalake_writer.py       # Data lake management
+    ├── minio_storage.py         # MinIO S3-compatible uploads
+    └── datalake_writer.py       # Data lake organization
 
 Key Classes:
-- ``MinIOStorage``: Object upload/download
-- ``DataLakeWriter``: Hierarchical data organization
+- ``MinIOStorage``: Handles optional uploads to MinIO
+- ``DataLakeWriter``: Organizes exports in cloud storage
 
-Data Flow Pipeline
+Pipeline Execution
 ------------------
 
-**Stage 1: Data Ingestion**
+The pipeline is executed through:
+- ``main.py``: Official coursework entry point (thin wrapper)
+- ``run_pipeline.py``: Core orchestration engine with CLI argument parsing
+- ``pipeline/`` directory: Individual step scripts
 
-.. code-block:: python
+**Step 1: Risk Calculation** (``pipeline/calculate_var_all_stocks.py``)
 
-    # Load company universe from PostgreSQL
-    companies = CompanyLoader.load_from_database()  # 678 companies
+Loads data from PostgreSQL and yfinance:
+- Fetches company universe from ``systematic_equity.company_static`` table
+- Retrieves 5-year historical OHLCV data via yfinance
+- Calculates VAR-95 (95th percentile loss) with 252-day rolling window
+- Calculates ATR-14 (14-period average true range as % of close price)
+- Outputs: CSV/Parquet with risk metrics for all eligible securities
 
-    # Fetch historical price data
-    market_data = MarketDataLoader.fetch_data(
-        symbols=companies.symbol,
-        start_date='2021-01-01',
-        end_date='2026-03-08'
-    )
+**Step 2: Portfolio Selection** (``pipeline/calculate_composite_portfolio.py``)
 
-    # Validate data quality
-    validated_data = DataValidator.validate(market_data)
+Ranks and selects securities:
+- Computes momentum scores (returns over 1, 5, 20, 60 days)
+- Computes liquidity scores (volume and bid-ask spread proxies)
+- Computes composite score combining risk, momentum, liquidity, and sector balance
+- Performs sector diversification to ensure broad exposure
+- Outputs: CSV/Parquet with selected securities and scores
 
-**Stage 2: Risk Analysis**
+**Step 3: Signal Generation** (``pipeline/trading_execution.py``)
 
-.. code-block:: python
+Generates trading signals for selected securities:
+- Calculates MACD (12-day, 26-day, 9-day signal line)
+- Generates initial signals (positive MACD = BUY, negative = SELL, near-zero = HOLD)
+- Filters by ATR confirmation (reduces false signals in low-volatility periods)
+- Applies strength scoring and additional validation
+- Outputs: CSV/Parquet with signals and metadata
 
-    # Calculate Value-at-Risk (95th percentile)
-    var_95 = RiskCalculator.calculate_var_95(
-        returns=market_data['returns'],
-        window=252,  # 1-year rolling window
-        confidence=0.95
-    )
+**Step 4: Export & Storage** (``pipeline/export_analytics_to_minio.py``)
 
-    # Calculate Average True Range (14-day)
-    atr_14 = RiskCalculator.calculate_atr_pct(
-        high=market_data['High'],
-        low=market_data['Low'],
-        close=market_data['Close'],
-        period=14
-    )
+Persists results:
+- Stores portfolio selections in PostgreSQL (``systematic_equity.portfolio_selections`` table)
+- Stores signals in PostgreSQL (``systematic_equity.trading_signals`` table)
+- Exports analytics to local filesystem (CSV and Parquet files)
+- Optionally uploads to MinIO if configured (``MINIO_REQUIRED`` environment variable)
+- Reports status: ✅ (both backends), ⚠️ (local only), or ❌ (if MinIO required but failed)
 
-    # Filter eligible stocks (VAR < 5%, ATR > 1%)
-    eligible_stocks = filter_by_risk_metrics(var_95, atr_14)
-
-**Stage 3: Portfolio Selection**
-
-.. code-block:: python
-
-    # Calculate momentum metrics
-    momentum = MomentumCalculator.calculate_returns(
-        prices=market_data['Close'],
-        periods=[1, 5, 20, 60]
-    )
-
-    # Calculate liquidity metrics
-    liquidity = LiquidityCalculator.calculate_spread(
-        high=market_data['High'],
-        low=market_data['Low'],
-        close=market_data['Close'],
-        volume=market_data['Volume']
-    )
-
-    # Compute composite score (multi-factor)
-    scores = CompositeScorer.calculate_score(
-        risk_metrics=var_95,
-        momentum=momentum,
-        liquidity=liquidity,
-        sector=sector_exposure
-    )
-
-    # Select top 130 stocks
-    selected_stocks = scores.nlargest(130, 'composite_score')
-
-**Stage 4: Signal Generation**
-
-.. code-block:: python
-
-    # Generate MACD signals
-    macd_signals = ExecutionSignalGenerator.calculate_macd(
-        prices=market_data['Close'],
-        fast_period=12,
-        slow_period=26,
-        signal_period=9
-    )
-
-    # Combine with ATR-based confirmation
-    final_signals = ExecutionSignalGenerator.combine_signals(
-        macd=macd_signals,
-        atr=atr_14,
-        threshold=0.5
-    )
-
-    # Calculate signal strength
-    strength = SignalStrengthCalculator.calculate_strength(signals=final_signals)
-
-    # Filter signals
-    validated_signals = SignalFilter.filter(
-        signals=final_signals,
-        min_strength=0.7,
-        max_age_days=5
-    )
-
-**Stage 5: Export & Storage**
-
-.. code-block:: python
-
-    # Store results in PostgreSQL
-    DatabaseExporter.export_selections(
-        data=selected_stocks,
-        table='portfolio_selections'
-    )
-
-    # Export signals to PostgreSQL
-    DatabaseExporter.export_signals(
-        data=validated_signals,
-        table='trading_signals'
-    )
-
-    # Upload to MinIO
-    MinIOStorage.upload_results(
-        results=validated_signals,
-        bucket='investment-data',
-        path='signals/2026-03-08/'
-    )
-
-    # Store documents in MongoDB
-    MongoConnector.insert_documents(
-        collection='signal_metadata',
-        documents=signal_metadata
-    )
-
-Key Metrics & Calculations
----------------------------
+Key Metrics
+-----------
 
 **Value-at-Risk (VAR-95)**
 
-Calculates the 95th percentile loss:
+Calculated as the 95th percentile of daily returns over a 252-day window:
 
-$$\text{VAR}_{95} = \text{quantile}(\text{returns}, 0.05)$$
+$$\text{VAR}_{95} = \text{quantile}(\text{daily\_returns}, 0.05)$$
 
-Window: 252 days (1 year of trading)
+Measured in percentage terms. Used to identify risky securities and confirm trade validity.
 
-**Average True Range (ATR)**
+**Average True Range (ATR-14)**
 
-Normalized volatility measure:
+Normalized volatility metric over 14 days:
 
 $$\text{ATR\%} = \frac{\text{ATR}_{14}}{\text{Close Price}} \times 100$$
 
+Used to filter signals and scale position sizing in realistic trading scenarios.
+
 **Composite Score**
 
-Multi-factor normalized score (0-100):
+Multi-factor ranking using weighted combination:
 
-$$\text{Score} = w_1 \times \text{Momentum} + w_2 \times \text{Liquidity} + w_3 \times \text{Trend} - w_4 \times \text{Risk}$$
+$$\text{Score} = w_1 \cdot M + w_2 \cdot L + w_3 \cdot T - w_4 \cdot R$$
 
-Default weights: [0.30, 0.25, 0.25, 0.20]
+Where M = momentum, L = liquidity, T = trend, R = risk. Weights determined by configuration.
 
 **MACD Signal**
 
-Technical indicator for trend identification:
+Technical momentum indicator:
 
-- MACD = EMA(12) - EMA(26)
-- Signal = EMA(MACD, 9)
+- MACD Line = EMA(close, 12) - EMA(close, 26)
+- Signal Line = EMA(MACD, 9)
 - Histogram = MACD - Signal
 
-Database Schema
----------------
+BUY signals when MACD crosses above Signal; SELL when below; HOLD otherwise.
 
-**PostgreSQL Tables**
+Data Storage
+------------
 
-.. code-block:: sql
+**PostgreSQL** (Primary Persistent Store)
 
-    systematic_equity.company_static
-    - symbol (Primary Key)
-    - security, gics_sector, gics_industry
-    - country, region
+Structured tables in the ``systematic_equity`` schema:
 
-    systematic_equity.portfolio_selections
-    - symbol, composite_score, ranking
-    - momentum, liquidity, trend_score
-    - risk_score, selection_date
+- ``company_static``: Reference data (symbol, sector, industry, country)
+- ``portfolio_selections``: Selected securities with scores and rankings
+- ``trading_signals``: Generated signals with strength, dates, and indicator values
 
-    systematic_equity.trading_signals
-    - id, symbol, signal_type (BUY/SELL)
-    - signal_strength, macd_value
-    - atr_value, signal_date
+**Local Filesystem** (Analytics Outputs)
 
-Configuration Management
-------------------------
+Export directory (``analytics/processed/stepN/``) contains:
 
-Settings are managed through ``config/conf.yaml``:
+- Step 1: ``factors_latest.csv|parquet`` — risk metrics for all securities
+- Step 2: ``selections_latest.csv|parquet`` — selected portfolio with scores
+- Step 3: ``signals_latest.csv|parquet`` — trading signals with metadata
+- Step 4: Summary statistics and logs
 
-.. code-block:: yaml
+**MinIO** (Optional Cloud Storage)
 
-    database:
-      host: localhost
-      port: 5439
-      pool_size: 10
-      timeout: 30
+S3-compatible object storage (if configured):
 
-    processing:
-      var_window: 252
-      atr_period: 14
-      momentum_periods: [1, 5, 20, 60]
-      min_liquidity: 1000000
+- Mirrored data lake structure for backup and archival
+- Configurable via environment variables (``MINIO_ENDPOINT``, ``MINIO_ACCESS_KEY``, etc.)
+- Optional by default; can be made mandatory with ``MINIO_REQUIRED=true``
+- Graceful degradation: pipeline continues if MinIO unavailable (unless required)
 
-    output:
-      format: parquet
-      compression: snappy
+Configuration
+-------------
 
-Performance Characteristics
-----------------------------
+Pipeline behavior is controlled via:
 
-**Processing Speed**
-- Step 1 (VAR): ~45 seconds for 678 stocks
-- Step 2 (Portfolio): ~30 seconds for 597 stocks
-- Step 3 (Signals): ~20 seconds for 130 stocks
-- Step 4 (Export): ~15 seconds for 335 signals
-- **Total**: ~2 minutes end-to-end
+1. **CLI Arguments** (via ``main.py``)
+   - ``--frequency``: daily, weekly, monthly, quarterly
+   - ``--run-date``: specific YYYY-MM-DD for historical analysis
+   - ``--dry-run``: execute without database writes
 
-**Memory Usage**
-- Market data (5 years): ~400 MB
-- Intermediate results: ~200 MB
-- Peak memory: ~800 MB
+2. **config/conf.yaml** (Database and Processing Parameters)
+   - PostgreSQL connection settings
+   - Risk window sizes (VAR: 252 days, ATR: 14 days)
+   - Momentum periods [1, 5, 20, 60]
+   - Output format (CSV or Parquet)
 
-**Storage Requirements**
-- PostgreSQL data: ~50 MB per month
-- MinIO data lake: ~100 MB per month
+3. **Environment Variables** (Storage Integration)
+   - ``MINIO_ENDPOINT``, ``MINIO_ACCESS_KEY``, ``MINIO_SECRET_KEY``: MinIO credentials
+   - ``MINIO_BUCKET``, ``MINIO_SECURE``: MinIO configuration
+   - ``MINIO_REQUIRED``: true/false (fail if MinIO unavailable)
 
-Scalability Considerations
---------------------------
-
-1. **Universe Expansion**
-   - Easily add more stocks to analysis
-   - Parallel processing across companies
-
-2. **Additional Factors**
-   - Modular processing allows new indicators
-   - Add without modifying existing code
-
-3. **Frequency Increase**
-   - Intraday analysis possible
-   - Incremental updates supported
-
-4. **Multi-Strategy**
-   - Create separate signal generators
-   - Combine signals into portfolio
-
-Extension Points
+Design Rationale
 ----------------
 
-1. **New Risk Metrics**: Add to ``modules/processing/risk.py``
-2. **New Signals**: Extend ``modules/signals/execution_signals.py``
-3. **New Storage**: Implement ``StorageInterface`` in ``modules/storage/``
-4. **New Data Sources**: Add to ``modules/input/``
+**Sequential Pipeline:**
+Clear separation of concerns and data dependency. Each stage is independently testable.
+
+**Modular Processing:**
+Risk, momentum, liquidity, and signal calculations are in separate, reusable modules.
+New metrics can be added without modifying pipeline orchestration.
+
+**Multi-Format Output:**
+CSV for human inspection; Parquet for efficient storage and analytics.
+PostgreSQL for operational queries; MinIO for optional archival.
+
+**Optional MinIO:**
+Local development works without cloud setup. Production deployments can enable cloud backup
+with graceful failure handling.
+
+**Configuration-Driven:**
+Thresholds (VAR limits, ATR floors), weights, and parameters are externalized
+to support multiple strategy variants from shared code.
+
+Limitations & Future Work
+--------------------------
+
+**Current Scope:**
+- Designed for 600+ equities with daily data
+- Single-factor (equity) asset class
+- Post-trade analysis only; no pre-trade optimization
+- Historical analysis based on past signals (not forward-looking)
+
+**Possible Extensions:**
+- Real-time signal generation (streaming data)
+- Multi-asset support (bonds, commodities, forex)
+- Advanced portfolio construction (Markowitz, Black-Litterman)
+- Machine learning-based signal refinement
+- Cross-asset correlation analysis
+
+**Known Constraints:**
+- yfinance data quality dependent on data availability
+- Sector analysis limited to GICS classification
+- MACD settings fixed (12, 26, 9); not adaptive to market regime
+- No slippage or transaction cost modeling
+

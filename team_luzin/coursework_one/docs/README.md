@@ -15,7 +15,7 @@ This directory contains comprehensive Sphinx documentation for the Investment St
 
 ### API Reference
 - **API Index**: Overview of all modules
-- **Database Module**: PostgreSQL and MongoDB connectivity
+- **Database Module**: PostgreSQL connectivity
 - **Input Module**: Data loading and ingestion
 - **Processing Module**: Factor calculations (risk, momentum, liquidity, scoring)
 - **Signals Module**: Trading signal generation
