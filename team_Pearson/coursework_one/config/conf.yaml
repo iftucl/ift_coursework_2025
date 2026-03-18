@@ -34,12 +34,16 @@ source_a:
 source_b:
   strict_time: false          # true => drop rows with missing/invalid time_published
 
-# Shared symbol filtering policy (applies to all sources unless overridden)
+# Shared symbol filtering policy.
+# Suffix-qualified symbols are intentionally excluded across all sources in the
+# current configuration. If suffix handling is enabled in a future revision,
+# these filter parameters should be relaxed accordingly.
 symbol_filter:
   skip_suffix_symbols: true
   symbol_regex_allow: "^[A-Z0-9]+$"
 
-# Provider-aware routing
+# Provider-aware routing.
+# yf_for_suffixes is kept for future use if filtering is disabled later.
 routing:
   av_only_if_regex: "^[A-Z0-9]+$"
   yf_for_suffixes: [".L", ".TO", ".PA", ".DE"]
