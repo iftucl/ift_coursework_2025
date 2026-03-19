@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# Virtual environment
+.venv/
+
+# Test / coverage artifacts
+htmlcov/
+.coverage
+.pytest_cache/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment files with real credentials / API keys
+.env
+.env.local
+.env.prod
+.env.*.local
+
+# Claude Code
+.claude/

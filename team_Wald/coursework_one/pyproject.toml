@@ -1,71 +1,63 @@
 [tool.poetry]
-name = "coursework-one"
-version = "0.1.0"
-description = "UCL IFT Big Data in Quantitative Finance - Coursework One: Data Pipeline"
-authors = ["TeamWald"]
+name = "ift-value-sentiment"
+version = "1.3.0"
+description = "IFTE0003 CW1: Data Pipeline for Value + News Sentiment Equity Strategy"
+authors = ["Team 09 <team_09@ucl.ac.uk>"]
 readme = "README.md"
 package-mode = false
 
 [tool.poetry.dependencies]
-python = "^3.11"
-
-# Database connectors
-psycopg2-binary = "^2.9"
-pymongo = "^4.6"
-sqlalchemy = "^2.0"
-
-# Object storage
-minio = "^7.2"
-
-# Data processing
-pandas = "^2.2"
-numpy = "^2.1"
-
-# HTTP / data ingestion
-requests = "^2.31"
-beautifulsoup4 = "^4.12"
-
-# Configuration
-pyyaml = "^6.0"
-python-dotenv = "^1.0"
-
-# Scheduling
-apscheduler = "^3.10"
+python = "^3.10"
+ift-global = {git = "https://github.com/iftucl/ift_global.git"}
+yfinance = "^0.2.36"
+pandas = "^2.2.0"
+numpy = "^1.26.0"
+sqlalchemy = "^2.0.38"
+psycopg2-binary = "^2.9.9"
+pydantic = "^2.10.0"
+pydantic-settings = "^2.1.0"
+pymongo = "^4.6.0"
+kafka-python = "^2.0.2"
+vaderSentiment = "^3.3.2"
+requests = "^2.31.0"
+rich = "^13.7.0"
+ruamel-yaml = "^0.18.0"
+apscheduler = "^3.10.0"
 
 [tool.poetry.group.dev.dependencies]
-# Testing
-pytest = "^7.4"
-pytest-cov = "^4.1"
+pytest = "^8.3.0"
+pytest-cov = "^6.0.0"
+pytest-mock = "^3.12.0"
+flake8 = "^7.0.0"
+black = "^24.1.0"
+isort = "^5.13.0"
+sphinx = "^8.1.3"
+pydata-sphinx-theme = "^0.16.1"
+bandit = "^1.8.0"
+safety = "^3.0.0"
 
-# Linting & formatting
-flake8 = "^6.1"
-black = "^23.11"
-isort = "^5.12"
+[tool.black]
+line-length = 120
+target-version = ["py310"]
 
-# Security scanning
-bandit = "^1.7"
-safety = "^2.3"
+[tool.isort]
+profile = "black"
+line_length = 120
 
-# Documentation
-sphinx = "^7.2"
-sphinx-rtd-theme = "^1.3"
+[tool.pytest.ini_options]
+testpaths = ["test"]
+pythonpath = ["."]
+addopts = "--cov=modules --cov-report=term-missing --cov-report=html -v"
+markers = [
+    "unit: Unit tests (no external dependencies)",
+    "integration: Integration tests requiring Docker services",
+    "e2e: Full end-to-end pipeline tests",
+]
+
+[tool.bandit]
+exclude_dirs = ["test"]
+skips = ["B101"]
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
-
-[tool.black]
-line-length = 88
-target-version = ["py39"]
-
-[tool.isort]
-profile = "black"
-line_length = 88
-
-[tool.pytest.ini_options]
-testpaths = ["a_pipeline/test", "b_pipeline/test", "c_pipeline/test"]
-pythonpath = ["."]
-addopts = "--cov=. --cov-report=term-missing --cov-fail-under=80"
-
-[tool.bandit]
-exclude_dirs = [".venv", "test"]
