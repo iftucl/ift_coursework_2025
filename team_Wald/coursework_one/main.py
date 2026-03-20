@@ -1,6 +1,6 @@
 """
 UCL -- Institute of Finance & Technology
-Author  : Team 09
+Author  : Team Wald
 Topic   : Main.py — Pipeline orchestrator
 Project : CW1 - Value + News Sentiment Strategy
 
