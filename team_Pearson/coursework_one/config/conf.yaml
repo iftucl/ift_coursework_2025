@@ -1,0 +1,51 @@
+# conf.yaml — Project Configuration File
+
+# Pipeline Settings
+pipeline:
+  frequency: daily           # How often to run: daily, weekly, monthly, quarterly, annual
+  backfill_years: 5          # Number of years of historical data to fetch
+  company_limit: 20          # Max companies to process (null = no limit, useful for testing)
+  enabled_extractors:        # Stage toggles for pluggable extractors
+    - source_a
+    - source_b               # default runs both extractors
+
+# Universe filters
+universe:
+  country_allowlist: null    # null = no country filtering; use full seeded universe
+
+# Logging 
+logging:
+  run_log_path: logs/pipeline_runs.jsonl
+
+# Alpha Vantage key is loaded from environment (.env), not from this file.
+
+# Mongo defaults (match docker-compose host mapping: 27019 -> container 27017)
+mongo:
+  host: localhost
+  port: 27019
+  database: ift_cw
+
+# Source A provider strategy
+source_a:
+  primary_source: alpha_vantage
+  enable_yfinance_fallback: true
+  use_cache: true
+
+source_b:
+  strict_time: false          # true => drop rows with missing/invalid time_published
+
+# Shared symbol filtering policy.
+# Suffix-qualified symbols are intentionally excluded across all sources in the
+# current configuration. If suffix handling is enabled in a future revision,
+# these filter parameters should be relaxed accordingly.
+symbol_filter:
+  skip_suffix_symbols: true
+  symbol_regex_allow: "^[A-Z0-9]+$"
+
+# Provider-aware routing.
+# yf_for_suffixes is kept for future use if filtering is disabled later.
+routing:
+  av_only_if_regex: "^[A-Z0-9]+$"
+  yf_for_suffixes: [".L", ".TO", ".PA", ".DE"]
+  history_ticker_policy: "skip"      # skip | try_yf_only
+  history_blocklist: ["ABC", "ADS", "FB", "ATVI", "ABMD", "CELG"]
