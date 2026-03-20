@@ -12,7 +12,10 @@ Run in this exact order:
 ```bash
 # 1) repo root
 cd <repo-root>
-docker compose up -d postgres_db mongo_db miniocw minio_client_cw
+docker compose \
+  -f docker-compose.yml \
+  -f team_Pearson/coursework_one/docker-compose.pearson.override.yml \
+  up -d postgres_db mongo_db miniocw minio_client_cw
 
 # 2) coursework folder
 cd team_Pearson/coursework_one
@@ -95,6 +98,12 @@ Important:
 - Run `docker compose ...` in repository root, not inside `coursework_one`.
 - Run `poetry ...` inside `team_Pearson/coursework_one` (where `pyproject.toml` is).
 
+Docker Compose note:
+- Team Pearson uses `team_Pearson/coursework_one/docker-compose.pearson.override.yml` as a team-scoped override.
+- This file contains team-specific infrastructure settings, including the `iceberg_net` definition used by the MinIO-related services.
+- The network definition is kept inside the team folder so that final submission changes do not modify the repository-level `docker-compose.yml`.
+- For local startup, load both the base compose file and the Pearson override together.
+
 ## 6. Environment Setup
 
 ```bash
@@ -119,7 +128,10 @@ automatically inside the running PostgreSQL container if it is missing.
 
 ```bash
 cd <repo-root>
-docker compose up -d postgres_db mongo_db miniocw minio_client_cw
+docker compose \
+  -f docker-compose.yml \
+  -f team_Pearson/coursework_one/docker-compose.pearson.override.yml \
+  up -d postgres_db mongo_db miniocw minio_client_cw
 ```
 
 ### 2) Initialize PostgreSQL schema + seed universe
@@ -317,8 +329,8 @@ Notes:
 - Fix: `cd team_Pearson/coursework_one` first.
 
 2. MinIO objects unexpectedly missing
-- `minio_client_cw` bootstrap recreates bucket `csreport`.
-- Re-running/restarting it can wipe previously written objects.
+- The standard `minio_client_cw` bootstrap only ensures that bucket `csreport` exists.
+- Bucket deletion is handled separately by the optional `minio_reset_cw` manual-reset profile.
 
 ## 15. Documentation Site
 

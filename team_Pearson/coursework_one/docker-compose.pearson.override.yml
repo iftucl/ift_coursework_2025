@@ -9,7 +9,7 @@ services:
   minio_client_cw:
     entrypoint: >
       /bin/bash -c "
-      until (/usr/bin/mc config host add minio http://miniocw:9000 ift_bigdata minio_password) do echo '...waiting...' && sleep 1; done;
+      until (/usr/bin/mc alias set minio http://miniocw:9000 ift_bigdata minio_password >/dev/null 2>&1) do echo '...waiting...' && sleep 1; done;
       sleep 5 && /usr/bin/mc mb --ignore-existing minio/csreport;
       mc anonymous set public minio/csreport;
       tail -f /dev/null
@@ -24,7 +24,7 @@ services:
       iceberg_net:
     entrypoint: >
       /bin/bash -c "
-      until (/usr/bin/mc config host add minio http://miniocw:9000 ift_bigdata minio_password) do echo '...waiting...' && sleep 1; done;
+      until (/usr/bin/mc alias set minio http://miniocw:9000 ift_bigdata minio_password >/dev/null 2>&1) do echo '...waiting...' && sleep 1; done;
       /usr/bin/mc rm -r --force minio/csreport;
       /usr/bin/mc mb --ignore-existing minio/csreport;
       mc anonymous set public minio/csreport;

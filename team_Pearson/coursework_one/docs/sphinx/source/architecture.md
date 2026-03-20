@@ -28,6 +28,7 @@ Implementation note:
 - the atomic layer is incrementally materialized per work unit;
 - run-level manifest/materialization state tracks planned, reused, skipped, failed, and completed units;
 - final factor construction starts only after the manifest completion gate is satisfied.
+- team-specific Docker networking is defined in the Pearson override file rather than in the repository-level compose file, so submission changes remain confined to the team folder.
 
 ## 3. End-to-End Data Flow
 

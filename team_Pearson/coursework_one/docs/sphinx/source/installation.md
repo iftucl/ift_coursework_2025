@@ -14,7 +14,10 @@ Run from repository root:
 
 ```bash
 cd ift_coursework_2025
-docker compose up -d postgres_db mongo_db miniocw minio_client_cw
+docker compose \
+  -f docker-compose.yml \
+  -f team_Pearson/coursework_one/docker-compose.pearson.override.yml \
+  up -d postgres_db mongo_db miniocw minio_client_cw
 ```
 
 This starts:
@@ -22,6 +25,11 @@ This starts:
 - MongoDB: `localhost:27019`
 - MinIO API: `localhost:9000`
 - MinIO Console: `localhost:9001`
+
+Team-specific compose note:
+- Team Pearson uses `team_Pearson/coursework_one/docker-compose.pearson.override.yml` as a team-scoped override file.
+- This keeps local infrastructure additions, including the `iceberg_net` definition, inside the team folder rather than modifying the repository-level compose file.
+- When starting the shared services, the base compose file and the Pearson override should be loaded together.
 
 ## 2. Install project dependencies
 
