@@ -228,7 +228,7 @@ Tips & Best Practices
 
 3. **Version Your Configuration**
    - Keep a template version without credentials
-   - Document changes in CHANGELOG.md
+    - Document changes in the team-level ``../CHANGELOG.md``
 
 4. **Document Custom Values**
    - Add comments explaining non-obvious settings
