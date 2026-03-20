@@ -6,9 +6,13 @@ services:
       image: mongo:latest
       ports:
         - 27019:27017
+      networks:
+        iceberg_net:
     postgres_db:
         container_name: postgres_db_cw
-        image: postgres:10.5        
+        image: postgres:10.5
+        networks:
+          iceberg_net:        
         environment: 
           - POSTGRES_USER=postgres
           - POSTGRES_PASSWORD=postgres
@@ -29,6 +33,8 @@ services:
     postgres_seed:
       container_name: postgres_seed_cw
       restart: on-failure
+      networks:
+        iceberg_net:
       environment:
         POSTGRES_DATABASE: postgres_feeder
         POSTGRES_HOST: postgres_feeder
@@ -44,6 +50,8 @@ services:
       container_name: pg_admin_cw
       image: dpage/pgadmin4
       restart: always
+      networks:
+        iceberg_net:
       environment:
         PGADMIN_DEFAULT_EMAIL: admin@admin.com
         PGADMIN_DEFAULT_PASSWORD: root
@@ -81,3 +89,9 @@ services:
         mc anonymous set public minio/csreport;
         tail -f /dev/null
         "
+
+networks:
+  iceberg_net:
+    driver: bridge
+
+  

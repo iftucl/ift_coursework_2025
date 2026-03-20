@@ -132,6 +132,8 @@ celerybeat.pid
 # Environments
 .env
 .venv
+.env.dev
+.env.example
 env/
 venv/
 ENV/
@@ -212,3 +214,4 @@ __pycache__
 # volumes folders docker
 
 postgres-data/
+
