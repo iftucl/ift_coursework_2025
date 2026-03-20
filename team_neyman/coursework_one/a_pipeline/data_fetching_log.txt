@@ -1,0 +1,89 @@
+Table and Index created successfully.
+Starting pipeline: Fetching from 2021-02-23 to 2026-02-22
+[*********************100%***********************]  50 of 50 completed
+
+8 Failed downloads:
+['ANTM', 'ABC', 'ABMD', 'AGN', 'ALXN', 'ATVI', 'ANSS', 'ADS']: YFTzMissingError('possibly delisted; no timezone found')
+Table updated successfully.
+Batch 1 uploaded successfully.
+[*********************100%***********************]  50 of 50 completed
+
+8 Failed downloads:
+['BLL', 'ARNC', 'BHGE', 'CBS', 'CELG', 'COG', 'BRK.B']: YFTzMissingError('possibly delisted; no timezone found')
+['BF.B']: YFPricesMissingError('possibly delisted; no price data found  (1d 2021-02-23 -> 2026-02-22)')
+Table updated successfully.
+Batch 2 uploaded successfully.
+[*********************100%***********************]  50 of 50 completed
+
+5 Failed downloads:
+['CTL', 'CXO', 'XEC', 'CERN', 'CTXS']: YFTzMissingError('possibly delisted; no timezone found')
+Table updated successfully.
+Batch 3 uploaded successfully.
+[*********************100%***********************]  49 of 50 completed
+
+10 Failed downloads:
+['DFS', 'DWDP', 'FLT', 'FRC', 'ETFC', 'DISCA', 'DISCK', 'RE', 'DRE', 'DISH']: YFTzMissingError('possibly delisted; no timezone found')
+[*********************100%***********************]  49 of 50 completedTable updated successfully.
+Batch 4 uploaded successfully.
+[*********************100%***********************]  50 of 50 completed
+
+9 Failed downloads:
+['HES', 'HBI', 'HRS', 'GPS', 'HCP', 'FL', 'HFC', 'FLIR', 'FBHS']: YFTzMissingError('possibly delisted; no timezone found')
+Table updated successfully.
+Batch 5 uploaded successfully.
+[*********************100%***********************]  50 of 50 completed
+
+6 Failed downloads:
+['IPG', 'JEC', 'K', 'KSU', 'LLL', 'JNPR']: YFTzMissingError('possibly delisted; no timezone found')
+Table updated successfully.
+Batch 6 uploaded successfully.
+[*********************100%***********************]  50 of 50 completed
+
+6 Failed downloads:
+['JWN', 'MYL', 'MXIM', 'MRO', 'NBL', 'NLSN']: YFTzMissingError('possibly delisted; no timezone found')
+Table updated successfully.
+Batch 7 uploaded successfully.
+[*********************100%***********************]  50 of 50 completed
+
+5 Failed downloads:
+['PBCT', 'PXD', 'RHT', 'PKI', 'RTN']: YFTzMissingError('possibly delisted; no timezone found')
+Table updated successfully.
+Batch 8 uploaded successfully.
+[*********************100%***********************]  50 of 50 completed
+
+6 Failed downloads:
+['SIVB', 'TWTR', 'TMK', 'TSS', 'SYMC', 'TIF']: YFTzMissingError('possibly delisted; no timezone found')
+Table updated successfully.
+Batch 9 uploaded successfully.
+[*********************100%***********************]  50 of 50 completed
+
+8 Failed downloads:
+['WLTW', 'UTX', 'WRK', 'VIAB', 'WCG', 'XLNX', 'VAR', 'WBA']: YFTzMissingError('possibly delisted; no timezone found')
+Table updated successfully.
+Batch 10 uploaded successfully.
+[*********************100%***********************]  50 of 50 completed
+
+3 Failed downloads:
+['BDEV.L', 'HL.L', 'DPH.L']: YFTzMissingError('possibly delisted; no timezone found')
+Table updated successfully.
+Batch 11 uploaded successfully.
+[*********************100%***********************]  50 of 50 completed
+
+1 Failed download:
+['SMDS.L']: YFTzMissingError('possibly delisted; no timezone found')
+Table updated successfully.
+Batch 12 uploaded successfully.
+[*********************100%***********************]  50 of 50 completed
+Table updated successfully.
+Batch 13 uploaded successfully.
+[*********************100%***********************]  28 of 28 completed
+
+3 Failed downloads:
+['NOVN.S', 'NESN.S']: YFTzMissingError('possibly delisted; no timezone found')
+['RO.S']: YFPricesMissingError('possibly delisted; no price data found  (1d 2021-02-23 -> 2026-02-22)')
+Table updated successfully.
+Batch 14 uploaded successfully.
+------------------------------
+Pipeline execution finished.
+Total duration: 2m 28s
+------------------------------
