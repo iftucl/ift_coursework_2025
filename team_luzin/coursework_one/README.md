@@ -129,10 +129,28 @@ Without MinIO: pipeline exports to local filesystem only (fully functional).
 
 ## Architecture & Documentation
 
-For detailed technical documentation, see:
-- **Architecture Report**: Main design document
-- **Design Rationale**: Implementation decisions explained
-- **Sphinx Docs** (`docs/`): API reference and installation guide
+### Sphinx Documentation
+
+Comprehensive HTML documentation generated with Sphinx:
+
+```bash
+# View documentation
+open docs/_build/html/index.html
+
+# Regenerate documentation
+poetry run sphinx-build -b html docs docs/_build/html
+```
+
+The generated docs include:
+- **Architecture**: System design, pipeline stages, data flow
+- **Configuration**: Setup guide, environment variables, local vs production
+- **Installation**: Prerequisites, Poetry setup, Docker configuration
+- **API Reference**: Module-level documentation with type hints
+- **Usage Guide**: Running and monitoring the pipeline
+- **Troubleshooting**: Common issues and solutions
+- **FAQ**: Frequently asked questions throughout the project
+
+For detailed technical documentation, see the Sphinx docs above.
 
 ---
 

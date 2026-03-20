@@ -9,7 +9,7 @@ The Investment Strategy Data Pipeline uses a YAML-based configuration system. Co
 Configuration Template
 ----------------------
 
-Create ``config/conf.yaml`` based on this template:
+Create ``config/conf.yaml`` based on this template. The pipeline reads only the keys shown below — no other sections are required.
 
 .. code-block:: yaml
 
@@ -19,236 +19,124 @@ Create ``config/conf.yaml`` based on this template:
     # IMPORTANT: Add this file to .gitignore - DO NOT commit credentials
     # ============================================================================
 
-    # Database Configuration
+    # PostgreSQL Connection
     # ============================================================================
-    database:
-      # PostgreSQL connection details
+    postgres:
       host: localhost                 # Database hostname
-      port: 5439                      # PostgreSQL port
+      port: 5439                      # PostgreSQL port (Docker default)
       user: postgres                  # Database user
-      password: postgres              # Database password (use env vars in production)
+      password: postgres              # Database password
       database: fift                  # Database name
-      schema: systematic_equity       # Default schema
+      schema: systematic_equity       # Schema for pipeline tables
 
-      # Connection pool settings
-      pool_size: 10                   # Connection pool size
-      timeout: 30                     # Connection timeout (seconds)
-      max_overflow: 5                 # Maximum overflow connections
-
-    # MinIO Object Storage Configuration
+    # MinIO Object Storage
     # ============================================================================
     minio:
-      endpoint: localhost:9000        # MinIO endpoint
-      access_key: minioadmin          # Access key (use env vars in production)
-      secret_key: minioadmin          # Secret key (use env vars in production)
-      bucket: investment-data         # Default bucket
-      secure: false                   # Use HTTPS (false for local development)
-      region: us-east-1               # S3 region
+      endpoint: localhost:9000        # MinIO endpoint (host:port, no scheme)
+      access_key: ift_bigdata         # Access key
+      secret_key: minio_password      # Secret key
+      bucket: csreport                # Bucket name (auto-created if missing)
+      use_ssl: false                  # Use HTTPS (false for local development)
 
-    # MongoDB Configuration
+    # Pipeline Execution Settings
     # ============================================================================
-    mongodb:
-      host: localhost                 # MongoDB hostname
-      port: 27019                     # MongoDB port
-      database: investment_data       # Database name
-      username: null                  # Username (optional)
-      password: null                  # Password (optional)
-      
-      collections:
-        signals: signal_metadata      # Signal metadata collection
-        selections: selection_metadata  # Selection metadata collection
+    pipeline:
+      run_frequency: daily            # daily, weekly, monthly, quarterly
+      historical_years: 5             # Years of price history to fetch
 
-    # Data Processing Configuration
-    # ============================================================================
-    processing:
-      # Risk Metrics
-      var_window: 252                 # VAR calculation window (days)
-      var_confidence: 0.95            # Confidence level (95th percentile)
-      atr_period: 14                  # Average True Range period (days)
-      atr_min_pct: 1.0                # Minimum ATR percentage threshold
+Key Configuration Notes
+-----------------------
 
-      # Momentum Metrics
-      momentum_periods: [1, 5, 20, 60]  # Return calculation windows (days)
-      momentum_min: -100              # Minimum allowed return (%)
-      momentum_max: 500               # Maximum allowed return (%)
-      momentum_threshold: 0.0         # Momentum filter threshold
+**Composite Scoring Weights (hardcoded in pipeline)**
 
-      # Liquidity Metrics
-      min_daily_volume: 1000000       # Minimum daily volume (USD)
-      min_spread_pct: 0.01            # Minimum bid-ask spread (%)
-      liquidity_lookback: 20          # Days for liquidity calculation
+The composite score formula is fixed at:
 
-      # Portfolio Selection
-      portfolio_size: 130             # Number of stocks to select
-      max_sector_concentration: 0.30  # Max portfolio % per sector
-      min_stock_concentration: 0.005  # Min position size (%)
+.. code-block:: text
 
-      # Composite Score Weights
-      score_weights:
-        momentum: 0.30                # Momentum weight
-        liquidity: 0.25               # Liquidity weight
-        trend: 0.25                   # Trend weight
-        risk: 0.20                    # Risk weight (inverted)
+    score = 0.6 \u00b7 Z(momentum) + 0.2 \u00b7 Z(liquidity) - 0.2 \u00b7 Z(risk)
 
-    # Signal Generation Configuration
-    # ============================================================================
-    signals:
-      # MACD Parameters
-      macd_fast: 12                   # MACD fast EMA period
-      macd_slow: 26                   # MACD slow EMA period
-      macd_signal: 9                  # Signal line EMA period
-      macd_threshold: 0.001           # MACD crossover threshold
+Where all z-scores are computed **within each sector** (sector-relative normalisation).
+Weights are not read from conf.yaml; they are defined directly in
+``pipeline/calculate_composite_portfolio.py``.
 
-      # ATR Confirmation
-      atr_multiplier: 2.0             # ATR multiplier for signal strength
-      signal_confirmation_periods: 2  # Periods to confirm signal
+**Portfolio Size**
 
-      # Signal Filters
-      min_signal_strength: 0.7        # Minimum signal strength (0-1)
-      max_signal_age_days: 5          # Max days before signal expires
-      signal_lookback: 10             # Days to look back for signal history
+Portfolio size is **not** a fixed number. The pipeline selects the top 20% of stocks
+within each sector, so the final count depends on the universe size and sector distribution
+for the run date.
 
-    # Output Configuration
-    # ============================================================================
-    output:
-      # Export Format
-      format: parquet                 # Format: parquet or csv
-      compression: snappy             # snappy, gzip, or none
-      include_intermediate: false     # Export intermediate step results
+**MinIO Credential Resolution**
 
-      # Export Destinations
-      export_to_minio: true           # Export to MinIO
-      export_to_mongodb: true         # Export to MongoDB
-      export_to_csv: true             # Export to CSV files
+Credentials are resolved in this order (first match wins):
 
-      # Output Directory
-      output_dir: ./results           # Local output directory
-      create_subdirs: true            # Create dated subdirectories
-
-    # Logging Configuration
-    # ============================================================================
-    logging:
-      # Log Level: DEBUG, INFO, WARNING, ERROR, CRITICAL
-      level: INFO
-      
-      # Console Output
-      console: true                   # Log to console
-      console_format: '%(asctime)s %(levelname)s %(name)s: %(message)s'
-
-      # File Output
-      file: logs/pipeline.log         # Log file path
-      file_format: '%(asctime)s %(levelname)s %(name)s: %(message)s'
-      max_bytes: 10485760             # Max log file size (10 MB)
-      backup_count: 5                 # Number of backup log files
-
-    # Data Source Configuration
-    # ============================================================================
-    data:
-      # Date Range
-      start_date: 2021-01-01          # Historical data start date
-      end_date: null                  # End date (null = today)
-      
-      # Stock Universe
-      universe: sp500_russell1000     # Data source universe
-      include_international: false    # Include international stocks
-
-      # Data Quality
-      min_price: 5.0                  # Minimum stock price (USD)
-      min_market_cap: 1000000000      # Minimum market cap (USD 1B)
-      exclude_otc: true               # Exclude OTC securities
-
-    # Scheduling Configuration
-    # ============================================================================
-    scheduling:
-      enabled: false                  # Enable scheduled runs
-      frequency: monthly              # daily, weekly, monthly, quarterly
-      time: '09:30'                   # Execution time HH:MM (24-hour)
-      timezone: UTC                   # Timezone for scheduling
-
-      # Run Schedule
-      daily_enabled: false
-      weekly_enabled: false
-      weekly_day: monday              # Day for weekly runs
-      monthly_enabled: true
-      monthly_day: 1                  # Day of month (1-31)
-      quarterly_enabled: false
+1. Environment variables: ``MINIO_ENDPOINT``, ``MINIO_ACCESS_KEY``, ``MINIO_SECRET_KEY``, ``MINIO_BUCKET``
+2. ``config/conf.yaml`` ``minio:`` section (fallback for local development)
 
 Environment Variables
 ---------------------
 
-For production, use environment variables for sensitive credentials:
+Override ``conf.yaml`` at runtime for CI/CD or production deployments:
 
 .. code-block:: bash
 
-    export DB_HOST=your-db-host
-    export DB_USER=your-db-user
-    export DB_PASSWORD=your-db-password
+    export MINIO_ENDPOINT=your-minio-host:9000
     export MINIO_ACCESS_KEY=your-access-key
     export MINIO_SECRET_KEY=your-secret-key
+    export MINIO_BUCKET=your-bucket
 
-Update ``config/conf.yaml``:
-
-.. code-block:: yaml
-
-    database:
-      host: ${DB_HOST}
-      user: ${DB_USER}
-      password: ${DB_PASSWORD}
-
-    minio:
-      access_key: ${MINIO_ACCESS_KEY}
-      secret_key: ${MINIO_SECRET_KEY}
+    # Optional: fail the pipeline if MinIO upload fails
+    export MINIO_REQUIRED=true
 
 Common Configuration Scenarios
 ------------------------------
 
-**Development Environment**
+**Local Development (Docker)**
+
+Below is the full ``config/conf.yaml`` for a local Docker-based setup:
 
 .. code-block:: yaml
 
-    database:
+    postgres:
       host: localhost
       port: 5439
-
-    logging:
-      level: DEBUG
-
-    processing:
-      portfolio_size: 50              # Smaller for testing
-      var_window: 100                 # Shorter window
-
-**Production Environment**
-
-.. code-block:: yaml
-
-    database:
-      host: prod-db.company.com
-      port: 5432
-      pool_size: 20
-      timeout: 60
+      user: postgres
+      password: postgres
+      database: fift
+      schema: systematic_equity
 
     minio:
-      secure: true
-      endpoint: s3.company.com
+      endpoint: localhost:9000
+      access_key: ift_bigdata
+      secret_key: minio_password
+      bucket: csreport
+      use_ssl: false
 
-    logging:
-      level: INFO
-      file: /var/log/pipeline/pipeline.log
+    pipeline:
+      run_frequency: daily
+      historical_years: 5
 
-    processing:
-      portfolio_size: 130
-      var_window: 252
-
-**High-Frequency Trading**
+**Production (Remote Services)**
 
 .. code-block:: yaml
 
-    data:
-      end_date: null                  # Use today's data
-    
-    processing:
-      momentum_periods: [1, 5]        # Short-term momentum
-      atr_period: 7                   # Shorter volatility window
+    postgres:
+      host: prod-db.company.com
+      port: 5432
+      user: pipeline_user
+      password: secure_password
+      database: fift
+      schema: systematic_equity
+
+    minio:
+      endpoint: s3.company.com:443
+      access_key: prod_access_key
+      secret_key: prod_secret_key
+      bucket: pipeline-data
+      use_ssl: true
+
+    pipeline:
+      run_frequency: monthly
+      historical_years: 5
 
     signals:
       max_signal_age_days: 1          # Fresh signals only

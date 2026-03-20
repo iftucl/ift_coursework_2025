@@ -118,20 +118,27 @@ Access exported analytics:
 .. code-block:: bash
 
     # List available data
-    mc ls minio/investment-data/
+    mc ls minio/csreport/
 
     # Download results
-    mc cp minio/investment-data/signals/2026-03-08/ ./local_results/
+    mc cp minio/csreport/processed/step3/ ./local_results/
 
 **File-Based Results**
 
-Pipeline also exports to CSV/Parquet:
+Pipeline exports to structured directories under ``analytics/``:
 
 .. code-block:: bash
 
-    # Results are in current directory
-    ls -lh portfolio_*.csv
-    ls -lh execution_signals_*.csv
+    # Step 1: factor data (all stocks)
+    ls analytics/processed/step1/
+
+    # Step 2: portfolio selections
+    ls analytics/processed/step2/
+    ls analytics/serving/selections/
+
+    # Step 3: trading signals
+    ls analytics/processed/step3/
+    ls analytics/serving/signals/
 
 Monitoring Pipeline Execution
 ------------------------------
@@ -140,14 +147,14 @@ Monitoring Pipeline Execution
 
 .. code-block:: bash
 
-    # Real-time log monitoring
-    tail -f logs/pipeline.log
+    # Real-time log monitoring (pipeline.log is in the project root)
+    tail -f pipeline.log
 
     # Search for errors
-    grep ERROR logs/pipeline.log
+    grep ERROR pipeline.log
 
     # View last execution
-    tail -100 logs/pipeline.log | grep "Step"
+    tail -100 pipeline.log | grep "Step"
 
 **Performance Metrics**
 
@@ -423,5 +430,5 @@ Next Steps
 
 - :doc:`Review Architecture <architecture>` for technical details
 - :doc:`Check API Reference <api/index>` for specific functions
-- :doc:`See Examples <examples>` for code samples
 - :doc:`Troubleshooting <troubleshooting>` for common issues
+- :doc:`FAQ <faq>` for frequently asked questions

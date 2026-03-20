@@ -6,7 +6,7 @@ Implements Z-score normalization and composite scoring that combines:
 - Liquidity metrics
 - Value-at-Risk (VaR)
 
-Final Score = Z(momentum) + Z(liquidity) - Z(VaR)
+Final Score = 0.6 * Z(momentum) + 0.2 * Z(liquidity) - 0.2 * Z(risk)
 
 This creates a balanced scoring system that:
 1. Rewards momentum-based returns (positive weight)
@@ -116,29 +116,31 @@ class CompositeScorer:
         momentum_col: str = "risk_adjusted_momentum_252",
         liquidity_col: str = "volume_60d_avg",
         var_col: str = "var_95",
-        momentum_weight: float = 1.0,
-        liquidity_weight: float = 1.0,
-        var_weight: float = 1.0,
+        momentum_weight: float = 0.6,
+        liquidity_weight: float = 0.2,
+        var_weight: float = 0.2,
     ) -> pd.DataFrame:
         """
         Calculate composite portfolio score using Z-score normalization.
 
-        Formula: score = w_m × Z(momentum) + w_l × Z(liquidity) - w_v × Z(|VaR|)
+        Formula: score = w_m * Z(momentum) + w_l * Z(liquidity) - w_v * Z(risk)
+        Default weights: w_m=0.6, w_l=0.2, w_v=0.2
 
         Args:
             df: DataFrame with momentum, liquidity, and VaR columns
             momentum_col: Name of momentum column
             liquidity_col: Name of liquidity (volume) column
             var_col: Name of VaR column
-            momentum_weight: Weight for momentum in final score (default 1.0)
-            liquidity_weight: Weight for liquidity in final score (default 1.0)
-            var_weight: Weight for VaR penalty in final score (default 1.0)
+            momentum_weight: Weight for momentum in final score (default 0.6)
+            liquidity_weight: Weight for liquidity in final score (default 0.2)
+            var_weight: Weight for VaR penalty in final score (default 0.2)
 
         Returns:
             DataFrame with added columns:
             - z_momentum: Z-scores for momentum
             - z_liquidity: Z-scores for liquidity
-            - z_var: Z-scores for VaR
+            - z_risk: Z-scores for risk derived from |VaR|
+            - z_var: Alias of z_risk for backward compatibility
             - composite_score: Final weighted score
             - composite_rank: Portfolio rank (1 = best)
 
@@ -180,21 +182,22 @@ class CompositeScorer:
             z_momentum = CompositeScorer.calculate_z_score(result_df[momentum_col])
             z_liquidity = CompositeScorer.calculate_z_score(result_df[liquidity_col])
 
-            # VaR is negative (loss), so use absolute value for Z-score
-            # Higher |VaR| is worse, so we subtract it
-            z_var = CompositeScorer.calculate_z_score(result_df[var_col].abs())
+            # VaR is negative (loss), so use absolute value to model downside risk.
+            # Higher |VaR| means higher risk and is penalized in the final score.
+            z_risk = CompositeScorer.calculate_z_score(result_df[var_col].abs())
 
             # Add component Z-scores to result
             result_df["z_momentum"] = z_momentum
             result_df["z_liquidity"] = z_liquidity
-            result_df["z_var"] = z_var
+            result_df["z_risk"] = z_risk
+            result_df["z_var"] = z_risk
 
             # Calculate composite score
-            # score = Z(momentum) + Z(liquidity) - Z(|VaR|)
+            # score = 0.6*Z(momentum) + 0.2*Z(liquidity) - 0.2*Z(risk)
             result_df["composite_score"] = (
                 momentum_weight * z_momentum
                 + liquidity_weight * z_liquidity
-                - var_weight * z_var
+                - var_weight * z_risk
             )
 
             # Rank by composite score (1 = highest score = best)

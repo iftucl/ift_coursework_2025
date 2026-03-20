@@ -17,18 +17,27 @@ Get the pipeline running in under 5 minutes:
 
     # 3. Start services (from repo root)
     cd ../..
-    docker compose up -d postgres_db
+    docker compose up -d postgres_db minio
 
-    # 4. Configure database
+    # 4. Configure database and MinIO
     cd team_luzin/coursework_one
     cat > config/conf.yaml << 'EOF'
-    database:
+    postgres:
       host: localhost
       port: 5439
       user: postgres
       password: postgres
       database: fift
       schema: systematic_equity
+    minio:
+      endpoint: localhost:9000
+      access_key: ift_bigdata
+      secret_key: minio_password
+      bucket: csreport
+      use_ssl: false
+    pipeline:
+      run_frequency: daily
+      historical_years: 5
     EOF
 
     # 5. Run pipeline
@@ -64,9 +73,10 @@ The pipeline produces:
    - Processes eligible securities based on data quality
 
 2. **Step 2 - Portfolio Selection**
-   - Selects stocks by composite score
-   - Combines risk, momentum, and liquidity metrics
-   - Exports to PostgreSQL
+   - Groups stocks by sector; computes z-scores within each sector
+   - Applies composite score: ``0.6·Z(momentum) + 0.2·Z(liquidity) - 0.2·Z(risk)``
+   - Selects top 20% of stocks per sector (portfolio size varies by run)
+   - Outputs: ``analytics/selections/selections_latest.csv``
 
 3. **Step 3 - Signal Generation**
    - Generates trading signals using MACD and ATR
@@ -74,9 +84,9 @@ The pipeline produces:
    - Creates executable trading signals
 
 4. **Step 4 - Data Export**
-   - Exports results to local storage
-   - Optionally exports to MinIO for cloud storage
-   - Generates analytics summaries
+   - Exports all step outputs to local ``analytics/`` directory (CSV + Parquet)
+   - Stores portfolio selections and signals in PostgreSQL
+   - Uploads to MinIO (reads credentials from ``config/conf.yaml``)
 
 Expected Results
 ~~~~~~~~~~~~~~~~

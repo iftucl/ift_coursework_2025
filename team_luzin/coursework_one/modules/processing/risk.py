@@ -200,7 +200,7 @@ class RiskCalculator:
         Why it matters:
             - Captures tail risk (worst-case scenarios)
             - Helps size positions (e.g., don't allocate 5% to -10% VaR stock)
-            - Used in portfolio scoring: score = Z(momentum) + Z(liquidity) - Z(VaR)
+            - Used in portfolio scoring: score = 0.6*Z(momentum) + 0.2*Z(liquidity) - 0.2*Z(risk)
               (higher VaR = worse, so we subtract it)
 
         Advantages over volatility:

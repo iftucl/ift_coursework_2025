@@ -80,16 +80,14 @@ Risk metrics, momentum, and factor calculations:
     ├── risk.py                  # VAR-95, ATR-14 calculations
     ├── momentum.py              # Returns and momentum metrics
     ├── liquidity.py             # Volume and spread analysis
-    ├── composite_score.py       # Multi-factor ranking
-    ├── sector_analysis.py       # Sector diversification
-    └── trend.py                 # Trend and momentum indicators
+    ├── composite_scoring.py     # Multi-factor ranking
+    └── trend.py                 # Trend indicators (supporting)
 
 Key Classes:
 - ``RiskCalculator``: Computes VAR (95th percentile loss) and ATR (volatility)
 - ``MomentumCalculator``: Calculates returns over multiple periods
 - ``LiquidityCalculator``: Analyzes trading volume and spreads
-- ``CompositeScorer``: Ranks securities using multi-factor weighted scoring
-- ``TrendAnalyzer``: Identifies trend direction and strength
+- ``CompositeScorer``: Ranks securities using weighted z-score scoring
 
 **Module: modules/signals/**
 
@@ -116,11 +114,10 @@ Results export to multiple formats:
 
     modules/output/
     ├── __init__.py
-    ├── export_analytics.py      # CSV/Parquet export
-    └── results_exporter.py      # (if present)
+    └── export_analytics.py      # CSV/Parquet export
 
 Key Classes:
-- ``ResultsExporter`` and ``AnalyticsGenerator``: Handle multi-format output
+- ``ExportAnalytics``: Handles multi-format CSV/Parquet output
 
 **Module: modules/storage/**
 
@@ -156,11 +153,12 @@ Loads data from PostgreSQL and yfinance:
 
 **Step 2: Portfolio Selection** (``pipeline/calculate_composite_portfolio.py``)
 
-Ranks and selects securities:
-- Computes momentum scores (returns over 1, 5, 20, 60 days)
-- Computes liquidity scores (volume and bid-ask spread proxies)
-- Computes composite score combining risk, momentum, liquidity, and sector balance
-- Performs sector diversification to ensure broad exposure
+Ranks and selects securities using sector-relative scoring:
+- Groups stocks by normalized sector
+- Computes z-scores within each sector for momentum, liquidity, and risk
+- Applies weighted composite score: ``0.6·Z(momentum) + 0.2·Z(liquidity) - 0.2·Z(risk)``
+- Selects top 20% of stocks within each sector
+- Final portfolio size = sum of top-20% picks across all sectors
 - Outputs: CSV/Parquet with selected securities and scores
 
 **Step 3: Signal Generation** (``pipeline/trading_execution.py``)
@@ -177,9 +175,9 @@ Generates trading signals for selected securities:
 Persists results:
 - Stores portfolio selections in PostgreSQL (``systematic_equity.portfolio_selections`` table)
 - Stores signals in PostgreSQL (``systematic_equity.trading_signals`` table)
-- Exports analytics to local filesystem (CSV and Parquet files)
-- Optionally uploads to MinIO if configured (``MINIO_REQUIRED`` environment variable)
-- Reports status: ✅ (both backends), ⚠️ (local only), or ❌ (if MinIO required but failed)
+- Exports analytics to local filesystem (CSV and Parquet files) with timestamped + latest aliases
+- Uploads to MinIO (reads credentials from ``config/conf.yaml`` as fallback when env vars absent)
+- Reports status: ``minio_success`` (both local + MinIO), ``local_only``, ``minio_failed``, or ``disabled``
 
 Key Metrics
 -----------
@@ -204,9 +202,9 @@ Used to filter signals and scale position sizing in realistic trading scenarios.
 
 Multi-factor ranking using weighted combination:
 
-$$\text{Score} = w_1 \cdot M + w_2 \cdot L + w_3 \cdot T - w_4 \cdot R$$
+$$\text{Score} = 0.6 \cdot Z_{\text{momentum}} + 0.2 \cdot Z_{\text{liquidity}} - 0.2 \cdot Z_{\text{risk}}$$
 
-Where M = momentum, L = liquidity, T = trend, R = risk. Weights determined by configuration.
+Where $Z_{\text{risk}}$ is derived from $|\text{VaR}_{95}|$.
 
 **MACD Signal**
 
@@ -238,14 +236,13 @@ Export directory (``analytics/processed/stepN/``) contains:
 - Step 3: ``signals_latest.csv|parquet`` — trading signals with metadata
 - Step 4: Summary statistics and logs
 
-**MinIO** (Optional Cloud Storage)
+**MinIO** (Cloud Storage)
 
-S3-compatible object storage (if configured):
+S3-compatible object storage mirroring the local analytics structure:
 
-- Mirrored data lake structure for backup and archival
-- Configurable via environment variables (``MINIO_ENDPOINT``, ``MINIO_ACCESS_KEY``, etc.)
-- Optional by default; can be made mandatory with ``MINIO_REQUIRED=true``
-- Graceful degradation: pipeline continues if MinIO unavailable (unless required)
+- Credentials read from ``config/conf.yaml`` (``minio.endpoint``, ``minio.access_key``, ``minio.secret_key``, ``minio.bucket``) with environment variable overrides (``MINIO_ENDPOINT``, etc.)
+- Three-layer structure in bucket: ``raw/``, ``processed/``, ``serving/``
+- Pipeline defaults to ``minio_success``; set ``MINIO_REQUIRED=true`` to fail hard on upload errors
 
 Configuration
 -------------
@@ -263,10 +260,10 @@ Pipeline behavior is controlled via:
    - Momentum periods [1, 5, 20, 60]
    - Output format (CSV or Parquet)
 
-3. **Environment Variables** (Storage Integration)
-   - ``MINIO_ENDPOINT``, ``MINIO_ACCESS_KEY``, ``MINIO_SECRET_KEY``: MinIO credentials
-   - ``MINIO_BUCKET``, ``MINIO_SECURE``: MinIO configuration
-   - ``MINIO_REQUIRED``: true/false (fail if MinIO unavailable)
+3. **Environment Variables** (Override conf.yaml at Runtime)
+   - ``MINIO_ENDPOINT``, ``MINIO_ACCESS_KEY``, ``MINIO_SECRET_KEY``: MinIO credentials (override conf.yaml)
+   - ``MINIO_BUCKET``, ``MINIO_SECURE``: MinIO configuration (override conf.yaml)
+   - ``MINIO_REQUIRED``: ``true``/``false`` (fail pipeline if MinIO unavailable; default false)
 
 Design Rationale
 ----------------

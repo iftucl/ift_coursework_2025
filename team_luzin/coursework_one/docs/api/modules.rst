@@ -16,11 +16,6 @@ Database Module (modules/db)
    :undoc-members:
    :show-inheritance:
 
-.. automodule:: modules.db.mongo_connector
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 Input Module (modules/input)
 ----------------------------
 
@@ -30,11 +25,6 @@ Input Module (modules/input)
    :show-inheritance:
 
 .. automodule:: modules.input.market_data_loader
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-.. automodule:: modules.input.company_loader
    :members:
    :undoc-members:
    :show-inheritance:
@@ -62,7 +52,7 @@ Processing Module (modules/processing)
    :undoc-members:
    :show-inheritance:
 
-.. automodule:: modules.processing.composite_score
+.. automodule:: modules.processing.composite_scoring
    :members:
    :undoc-members:
    :show-inheritance:
@@ -88,7 +78,7 @@ Output Module (modules/output)
    :undoc-members:
    :show-inheritance:
 
-.. automodule:: modules.output.results_exporter
+.. automodule:: modules.output.export_analytics
    :members:
    :undoc-members:
    :show-inheritance:

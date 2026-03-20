@@ -365,6 +365,7 @@ def test_step4_init_minio_client_no_library(monkeypatch):
 def test_step4_init_minio_client_missing_env(monkeypatch):
     """Step 4 should return None when mandatory MinIO env vars are absent."""
     monkeypatch.setattr(step4, "MINIO_AVAILABLE", True)
+    monkeypatch.setattr(step4, "_load_conf_yaml", lambda: {})
     monkeypatch.delenv("MINIO_ENDPOINT", raising=False)
     monkeypatch.delenv("MINIO_ACCESS_KEY", raising=False)
     monkeypatch.delenv("MINIO_SECRET_KEY", raising=False)

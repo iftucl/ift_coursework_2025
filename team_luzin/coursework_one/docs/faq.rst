@@ -3,7 +3,7 @@ Frequently Asked Questions (FAQ)
 
 **Q: How long does a complete pipeline run take?**
 
-A: Approximately 2 minutes for 678 stocks (45s VAR + 30s Portfolio + 20s Signals + 15s Export).
+A: Approximately 2–4 minutes for ~600 stocks, depending on network latency to yfinance and PostgreSQL.
 
 **Q: Can I run the pipeline on a specific date?**
 
@@ -23,12 +23,9 @@ A: Tests the entire pipeline without writing to databases. Useful for validation
 
 **Q: How do I change the portfolio size?**
 
-A: Edit ``config/conf.yaml``:
-
-.. code-block:: yaml
-
-    processing:
-      portfolio_size: 50  # Default is 130
+A: Portfolio size is not configurable via ``conf.yaml``. The pipeline always selects the
+**top 20% of stocks within each sector** (sector-relative selection). The final count
+depends on the number of stocks per sector for that run date.
 
 **Q: Can I add more stocks to the universe?**
 
@@ -45,7 +42,8 @@ A: Use cron (Unix) or Task Scheduler (Windows):
 
 **Q: What databases are required?**
 
-A: PostgreSQL is required. MongoDB and MinIO are optional but recommended for complete functionality.
+A: PostgreSQL is required. MinIO is used for cloud data lake export and is configured via
+``config/conf.yaml``. MongoDB is not used by the current pipeline.
 
 **Q: Can I use a cloud database like AWS RDS?**
 
@@ -53,7 +51,7 @@ A: Yes, just update the connection details in ``config/conf.yaml``:
 
 .. code-block:: yaml
 
-    database:
+    postgres:
       host: my-rds-instance.amazonaws.com
       port: 5432
       user: admin
@@ -61,27 +59,22 @@ A: Yes, just update the connection details in ``config/conf.yaml``:
 
 **Q: How do I handle sensitive credentials?**
 
-A: Use environment variables:
+A: Override ``conf.yaml`` with environment variables at runtime:
 
 .. code-block:: bash
 
-    export DB_PASSWORD=secure_password
+    export MINIO_ACCESS_KEY=secure_key
+    export MINIO_SECRET_KEY=secure_secret
     poetry run python3 main.py
 
-Then in config/conf.yaml:
+Environment variables always take precedence over values in ``config/conf.yaml``.
 
-.. code-block:: yaml
+**Q: How do I understand the pipeline output counts?**
 
-    database:
-      password: ${DB_PASSWORD}
-
-**Q: What's the difference between the 130 and 335 outputs?**
-
-A: 
-- 130: Selected stocks (Step 2 portfolio selection)
-- 335: Trading signals (Step 3 signal generation)
-
-Different stocks may have different signal types (BUY/SELL).
+A:
+- **Step 1**: Number of stocks with valid factor data (VaR_95, ATR_14, momentum, liquidity)
+- **Step 2**: Selected stocks (top 20% per sector via composite score; varies by run date)
+- **Step 3**: Trading signals across all selected stocks (BUY / SELL / HOLD)
 
 **Q: How do I regenerate HTML documentation?**
 
@@ -92,6 +85,8 @@ A:
     cd docs
     poetry run sphinx-build -b html . _build/html
     open _build/html/index.html
+
+``sphinx-build`` is installed as part of the project dev dependencies via Poetry.
 
 **Q: Can I run tests in parallel?**
 
@@ -112,7 +107,7 @@ A:
 
 **Q: What Python versions are supported?**
 
-A: Python 3.10+. Check version:
+A: Python 3.9+. Check version:
 
 .. code-block:: bash
 

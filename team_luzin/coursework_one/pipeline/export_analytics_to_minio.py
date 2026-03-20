@@ -32,8 +32,10 @@ import os
 import sys
 from datetime import datetime
 from pathlib import Path
+from typing import Any, Dict
 
 import pandas as pd
+import yaml
 
 # Import structured result types
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -52,6 +54,49 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
+
+
+def _load_conf_yaml() -> Dict[str, Any]:
+    """Load config/conf.yaml and return its dictionary payload."""
+    config_path = Path(__file__).parent.parent / "config" / "conf.yaml"
+    if not config_path.exists():
+        return {}
+
+    try:
+        with open(config_path, "r") as f:
+            data = yaml.safe_load(f) or {}
+            if isinstance(data, dict):
+                return data
+    except Exception as e:
+        logger.warning(f"⚠️  Failed to read conf.yaml for MinIO settings: {e}")
+
+    return {}
+
+
+def _apply_minio_env_fallback_from_config() -> None:
+    """
+    Populate MINIO_* environment variables from config/conf.yaml when missing.
+
+    Environment variables still take precedence over config values.
+    """
+    conf = _load_conf_yaml()
+    minio_conf = conf.get("minio", {}) if isinstance(conf, dict) else {}
+    if not isinstance(minio_conf, dict):
+        return
+
+    env_map = {
+        "MINIO_ENDPOINT": minio_conf.get("endpoint"),
+        "MINIO_ACCESS_KEY": minio_conf.get("access_key"),
+        "MINIO_SECRET_KEY": minio_conf.get("secret_key"),
+        "MINIO_BUCKET": minio_conf.get("bucket"),
+    }
+
+    for env_key, conf_val in env_map.items():
+        if not os.getenv(env_key) and conf_val:
+            os.environ[env_key] = str(conf_val)
+
+    if not os.getenv("MINIO_SECURE") and minio_conf.get("use_ssl") is not None:
+        os.environ["MINIO_SECURE"] = str(bool(minio_conf.get("use_ssl"))).lower()
 
 
 def _ensure_dir(path: Path) -> None:
@@ -92,6 +137,8 @@ def _init_minio_client():
     Returns:
         Minio client or None if config missing/invalid
     """
+    _apply_minio_env_fallback_from_config()
+
     if not MINIO_AVAILABLE:
         logger.warning("⚠️  minio library not installed; MinIO upload disabled")
         return None
@@ -285,6 +332,7 @@ def export_to_local_and_minio():
     logger.info("=" * 70)
 
     # Initialize MinIO if available
+    _apply_minio_env_fallback_from_config()
     bucket = os.getenv("MINIO_BUCKET", "trading-analytics")
     minio_client = _init_minio_client()
 
@@ -535,6 +583,7 @@ def export_with_status_tracking():
     logger.info("=" * 70)
 
     # Check MinIO configuration first
+    _apply_minio_env_fallback_from_config()
     endpoint = os.getenv("MINIO_ENDPOINT")
     access_key = os.getenv("MINIO_ACCESS_KEY")
     secret_key = os.getenv("MINIO_SECRET_KEY")

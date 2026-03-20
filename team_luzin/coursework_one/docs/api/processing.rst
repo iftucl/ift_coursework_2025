@@ -28,7 +28,7 @@ Liquidity Calculator
 Composite Scorer
 ~~~~~~~~~~~~~~~~
 
-.. autoclass:: modules.processing.composite_score.CompositeScorer
+.. autoclass:: modules.processing.composite_scoring.CompositeScorer
    :members:
    :undoc-members:
    :show-inheritance:
@@ -36,7 +36,6 @@ Composite Scorer
 Trend Analyzer
 ~~~~~~~~~~~~~~
 
-.. autoclass:: modules.processing.trend.TrendAnalyzer
+.. automodule:: modules.processing.trend
    :members:
    :undoc-members:
-   :show-inheritance:

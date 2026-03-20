@@ -36,8 +36,6 @@ Data loading and ingestion
    :nosignatures:
 
    modules.input.market_data_loader.MarketDataLoader
-   modules.input.company_loader.CompanyLoader
-   modules.input.data_validator.DataValidator
 
 **Processing Module (modules/processing/)**
 
@@ -49,8 +47,7 @@ Factor calculations and analysis
    modules.processing.risk.RiskCalculator
    modules.processing.momentum.MomentumCalculator
    modules.processing.liquidity.LiquidityCalculator
-   modules.processing.composite_score.CompositeScorer
-   modules.processing.trend.TrendAnalyzer
+   modules.processing.composite_scoring.CompositeScorer
 
 **Signals Module (modules/signals/)**
 
@@ -59,9 +56,7 @@ Trading signal generation
 .. autosummary::
    :nosignatures:
 
-   modules.signals.execution_signals.ExecutionSignalGenerator
-   modules.signals.signal_strength.SignalStrengthCalculator
-   modules.signals.signal_filter.SignalFilter
+   modules.signals.execution_signals.ExecutionSignals
 
 **Output Module (modules/output/)**
 
@@ -70,8 +65,7 @@ Results export and reporting
 .. autosummary::
    :nosignatures:
 
-   modules.output.results_exporter.ResultsExporter
-   modules.output.analytics_generator.AnalyticsGenerator
+   modules.output.export_analytics.ExportAnalytics
 
 **Storage Module (modules/storage/)**
 
@@ -122,27 +116,19 @@ Quick Reference
 
 .. code-block:: python
 
-    from modules.signals.execution_signals import ExecutionSignalGenerator
+    from modules.signals.execution_signals import ExecutionSignals
 
-    generator = ExecutionSignalGenerator()
-    signals = generator.calculate_macd(
-        prices=data['Close'],
-        fast_period=12,
-        slow_period=26,
-        signal_period=9
-    )
+    generator = ExecutionSignals()
+    signals = generator.generate_signals(selections_df)
 
 **Exporting Results**
 
 .. code-block:: python
 
-    from modules.output.results_exporter import ResultsExporter
+    from modules.output.export_analytics import ExportAnalytics
 
-    exporter = ResultsExporter()
-    exporter.export_to_csv(
-        dataframe=results,
-        filename='results.csv'
-    )
+    exporter = ExportAnalytics()
+    exporter.export(dataframe=results, output_dir='analytics/')
 
 **Storing in MinIO**
 

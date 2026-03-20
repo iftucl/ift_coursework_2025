@@ -8,19 +8,3 @@ Market Data Loader
    :members:
    :undoc-members:
    :show-inheritance:
-
-Company Loader
-~~~~~~~~~~~~~~
-
-.. autoclass:: modules.input.company_loader.CompanyLoader
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-Data Validator
-~~~~~~~~~~~~~~
-
-.. autoclass:: modules.input.data_validator.DataValidator
-   :members:
-   :undoc-members:
-   :show-inheritance:

@@ -1,18 +1,10 @@
 Output Module Reference
 ========================
 
-Results Exporter
+Export Analytics
 ~~~~~~~~~~~~~~~~
 
-.. autoclass:: modules.output.results_exporter.ResultsExporter
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-Analytics Generator
-~~~~~~~~~~~~~~~~~~~
-
-.. autoclass:: modules.output.analytics_generator.AnalyticsGenerator
+.. autoclass:: modules.output.export_analytics.ExportAnalytics
    :members:
    :undoc-members:
    :show-inheritance:

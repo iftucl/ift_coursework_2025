@@ -3,8 +3,8 @@
 Production Trading Pipeline Orchestrator
 
 Runs the complete investment strategy pipeline in sequence:
-  1. calculate_var_all_stocks.py    → Calculate VAR_95 and ATR_14 metrics
-  2. calculate_composite_portfolio.py → Select 130 stocks (RAM + Liquidity + VAR)
+    1. calculate_var_all_stocks.py    → Calculate VAR_95 and ATR_14 metrics
+    2. calculate_composite_portfolio.py → Select portfolio (RAM + Liquidity + VAR)
   3. trading_execution.py            → Generate execution signals (MACD + ATR)
   4. export_analytics_to_minio.py    → Export portfolio and signals to data lake
 
@@ -225,7 +225,7 @@ Examples:
             ),
             (
                 "pipeline/calculate_composite_portfolio.py",
-                "Step 2/4: Select portfolio (130 stocks)",
+                "Step 2/4: Select portfolio (sector-relative)",
             ),
             (
                 "pipeline/trading_execution.py",
@@ -253,7 +253,7 @@ Examples:
         ),
         (
             "pipeline/calculate_composite_portfolio.py",
-            "Step 2/4: Select portfolio (130 stocks)",
+            "Step 2/4: Select portfolio (sector-relative)",
         ),
         (
             "pipeline/trading_execution.py",
@@ -403,8 +403,7 @@ Step 1: Risk Metrics
   📊 {summary.step1_factor_count} factors calculated
   📁 analytics/processed/step1/factors_latest.csv|parquet
 
-Step 2: Portfolio Selection
-  📊 {summary.step2_selections_count} stocks selected
+Step 2: selected {summary.step2_selections_count} stocks
   📁 analytics/processed/step2/selections_latest.csv|parquet
 
 Step 3: Execution Signals

@@ -6,10 +6,10 @@ Prerequisites
 
 Before installing the Investment Strategy Data Pipeline, ensure you have:
 
-- **Python 3.10 or higher**: `python --version`
+- **Python 3.9 or higher**: `python --version`
 - **Poetry** (Python dependency manager): `pip install poetry`
 - **PostgreSQL 12+**: For structured data storage
-- **MinIO** (optional): For cloud data lake (or use S3-compatible storage)
+- **MinIO**: For cloud data lake storage (S3-compatible)
 - **Git**: For version control
 
 System Requirements
@@ -18,7 +18,7 @@ System Requirements
 - **Operating System**: macOS, Linux, or Windows (WSL2)
 - **Memory**: Minimum 8GB RAM (16GB recommended)
 - **Disk Space**: 20GB for database and MinIO storage
-- **Python**: 3.10 or newer
+- **Python**: 3.9 or newer
 
 Step 1: Clone the Repository
 -----------------------------
@@ -59,7 +59,7 @@ Create a ``config/conf.yaml`` file with your database credentials:
 
 .. code-block:: yaml
 
-    database:
+    postgres:
       host: localhost
       port: 5439
       user: postgres
@@ -69,19 +69,14 @@ Create a ``config/conf.yaml`` file with your database credentials:
 
     minio:
       endpoint: localhost:9000
-      access_key: minioadmin
-      secret_key: minioadmin
-      bucket: investment-data
-      secure: false
+      access_key: ift_bigdata
+      secret_key: minio_password
+      bucket: csreport
+      use_ssl: false
 
-    mongodb:
-      host: localhost
-      port: 27019
-      database: investment_data
-
-    logging:
-      level: INFO
-      file: logs/pipeline.log
+    pipeline:
+      run_frequency: daily
+      historical_years: 5
 
 **Important**: Add ``config/conf.yaml`` to ``.gitignore`` to protect credentials.
 
@@ -93,7 +88,7 @@ To run PostgreSQL, MongoDB, and MinIO in Docker:
 .. code-block:: bash
 
     # From repository root
-    docker compose up -d postgres_db mongo_db minio
+    docker compose up -d postgres_db minio
 
     # Verify services are running
     docker compose ps

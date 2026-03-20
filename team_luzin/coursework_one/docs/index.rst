@@ -66,7 +66,7 @@ Key Features
 Technology Stack
 ================
 
-- **Language**: Python 3.10+
+- **Language**: Python 3.9+
 - **Data Processing**: pandas, numpy, yfinance
 - **Database**: PostgreSQL
 - **Storage**: MinIO (S3-compatible), local filesystem
