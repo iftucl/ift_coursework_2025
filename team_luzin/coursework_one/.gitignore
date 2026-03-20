@@ -108,7 +108,9 @@ Thumbs.db
 
 # CREDENTIALS & SECRETS (NEVER COMMIT)
 ═════════════════════════════════════════════════════════════════════════════
-config/conf.yaml
+# Coursework submission requires config/conf.yaml to exist in the repository.
+# Keep only non-sensitive/default values in this file.
+!config/conf.yaml
 config/secrets/
 .env.local
 .env.*.local
