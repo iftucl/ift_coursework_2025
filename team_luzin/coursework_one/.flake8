@@ -1,0 +1,24 @@
+[flake8]
+# Configure flake8 for Team Luzin production pipeline
+# Pragmatic settings for real-world data processing code
+
+# Line length - balanced for SQL, docstrings, and readability
+max-line-length = 120
+
+# Ignore whitespace and complexity warnings  
+ignore = W293, W291, W503, C901, E402, E203, E501
+# W293: blank line contains whitespace
+# W291: trailing whitespace
+# W503: line break before binary operator
+# C901: complexity (refactoring risky close to deadline)
+# E402: module level import not at top (acceptable after conditional imports)
+# E203: whitespace before : (conflicts with black)
+# E501: line too long (unavoidable for complex SQL and f-strings)
+
+# File exclusions
+exclude = .git,__pycache__,.pytest_cache,htmlcov,.venv,venv,dist,build
+
+# Per-file ignores for specific contexts
+per-file-ignores =
+    test/*.py:F401,F841
+    # Tests can have unused imports for fixtures and unused variables
