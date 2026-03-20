@@ -30,3 +30,7 @@ services:
       mc anonymous set public minio/csreport;
       echo 'MinIO bucket csreport reset done.'
       "
+
+networks:
+  iceberg_net:
+    driver: bridge
