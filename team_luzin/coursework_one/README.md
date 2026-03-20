@@ -54,7 +54,7 @@ coursework_one/
 │   ├── storage/         # Export (local, MinIO)
 │   └── ...
 ├── pipeline/            # 4-stage execution scripts
-├── test/                # 494 unit & integration tests
+├── test/                # 513 unit & integration tests
 ├── static/              # Static assets
 ├── main.py              # Entry point
 ├── run_pipeline.py      # Orchestrator
@@ -81,16 +81,23 @@ Both accomplish the same goal and can be used interchangeably: `poetry run pytho
 
 ## Code Quality
 
-✅ **Tests**: 494 passed, 81% coverage (exceeds 80% min)
+✅ **Tests**: 513 passed, 80.11% coverage (exceeds 80% min)
 ✅ **Linting**: Flake8 (0 violations)
 ✅ **Formatting**: Black & isort
 ✅ **Security**: Bandit scan
 
 ```bash
-poetry run pytest -q              # Run tests
+poetry run pytest -q              # Run default test suite
+poetry run pytest ./tests/        # Coursework-style command (tests alias)
+poetry run pytest -q -o addopts="--cov=modules --cov=pipeline --cov=run_pipeline --cov=main --cov-report=term-missing --cov-report=html --cov-report=xml"  # Source-only coverage
 poetry run flake8                 # Check linting
 poetry run black --check .        # Check formatting
 ```
+
+Test categories:
+- Unit tests: function and method-level behavior
+- Integration tests: interactions across modules/components
+- E2E tests: full pipeline orchestration and step flow
 
 ---
 

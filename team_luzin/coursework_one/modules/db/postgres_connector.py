@@ -8,6 +8,7 @@ from typing import Any, Dict, List
 
 import pandas as pd
 import psycopg2
+from psycopg2 import sql
 from psycopg2.extras import RealDictCursor
 
 logger = logging.getLogger(__name__)
@@ -164,11 +165,11 @@ class PostgresConnector:
         try:
             cursor = self.connection.cursor()
             schema = self.config.get("schema", "systematic_equity")
-            query = f"""
-            INSERT INTO fift.{schema}.company_static 
-            (symbol, security, gics_sector, gics_industry, country, region)
-            VALUES (%s, %s, %s, %s, %s, %s);
-            """
+            query = sql.SQL(
+                "INSERT INTO fift.{schema}.company_static "
+                "(symbol, security, gics_sector, gics_industry, country, region) "
+                "VALUES (%s, %s, %s, %s, %s, %s);"
+            ).format(schema=sql.Identifier(schema))
             cursor.execute(
                 query, (symbol, security, gics_sector, gics_industry, country, region)
             )

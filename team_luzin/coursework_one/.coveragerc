@@ -1,0 +1,18 @@
+[run]
+source =
+    modules
+    pipeline
+    run_pipeline
+    main
+omit =
+    test/*
+    */site-packages/*
+
+[report]
+show_missing = True
+skip_covered = False
+precision = 2
+exclude_lines =
+    pragma: no cover
+    if TYPE_CHECKING:
+    if __name__ == .__main__.:
