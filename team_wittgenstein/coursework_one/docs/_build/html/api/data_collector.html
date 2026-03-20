@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>DataFetcher — Data Collection &#8212; Coursework One 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=12dfc556" />
+    <script src="../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="DataWriter — Data Loading" href="data_writer.html" />
+    <link rel="prev" title="Architecture" href="../architecture.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="datafetcher-data-collection">
+<h1>DataFetcher — Data Collection<a class="headerlink" href="#datafetcher-data-collection" title="Link to this heading">¶</a></h1>
+<p>The <code class="docutils literal notranslate"><span class="pre">DataFetcher</span></code> class is the main entry point for fetching data
+from external APIs. It composes seven specialised mixins.</p>
+<p id="module-modules.input.data_collector">Data fetcher module for retrieving financial data from external APIs.</p>
+<p>Fetches price data, financial statements, and risk-free rates,
+caching all data as Parquet files in MinIO with CTL control files.</p>
+<dl class="simple">
+<dt>CTL Pattern:</dt><dd><p>Every data file (e.g. prices/AAPL.parquet) has a companion control
+file (prices/AAPL.ctl) that tracks when it was fetched, how many
+rows it contains, and whether it has been loaded into PostgreSQL.
+This makes the pipeline idempotent and resumable.</p>
+</dd>
+</dl>
+<dl class="py class">
+<dt class="sig sig-object py" id="modules.input.data_collector.DataFetcher">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">modules.input.data_collector.</span></span><span class="sig-name descname"><span class="pre">DataFetcher</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">minio_conn</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/input/data_collector.html#DataFetcher"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.input.data_collector.DataFetcher" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#modules.input.data_collector.cache.CacheMixin" title="modules.input.data_collector.cache.CacheMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">CacheMixin</span></code></a>, <a class="reference internal" href="#modules.input.data_collector.utils.UtilsMixin" title="modules.input.data_collector.utils.UtilsMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">UtilsMixin</span></code></a>, <a class="reference internal" href="#modules.input.data_collector.prices.PriceMixin" title="modules.input.data_collector.prices.PriceMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">PriceMixin</span></code></a>, <a class="reference internal" href="#modules.input.data_collector.edgar.EdgarMixin" title="modules.input.data_collector.edgar.EdgarMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">EdgarMixin</span></code></a>, <a class="reference internal" href="#modules.input.data_collector.simfin.SimFinMixin" title="modules.input.data_collector.simfin.SimFinMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">SimFinMixin</span></code></a>, <a class="reference internal" href="#modules.input.data_collector.yfinance_fundamentals.YFinanceMixin" title="modules.input.data_collector.yfinance_fundamentals.YFinanceMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">YFinanceMixin</span></code></a>, <a class="reference internal" href="#modules.input.data_collector.fundamentals.FundamentalsMixin" title="modules.input.data_collector.fundamentals.FundamentalsMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">FundamentalsMixin</span></code></a>, <a class="reference internal" href="#modules.input.data_collector.rates.RatesMixin" title="modules.input.data_collector.rates.RatesMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">RatesMixin</span></code></a></p>
+<p>Fetches financial data from external APIs with MinIO caching.</p>
+<p>Uses the parquet + CTL (control file) pattern:
+- Data is stored as .parquet files in MinIO
+- Each data file has a companion .ctl JSON file tracking metadata
+- Before fetching, checks if cached data exists via CTL files</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>minio_conn</strong> – MinioConnection instance for caching.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="modules.input.data_collector.SimFinServerError">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">modules.input.data_collector.</span></span><span class="sig-name descname"><span class="pre">SimFinServerError</span></span><a class="reference internal" href="../_modules/modules/input/data_collector/constants.html#SimFinServerError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.input.data_collector.SimFinServerError" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+<p>Raised when SimFin returns HTTP 500 so caller can trigger fallback.</p>
+</dd></dl>
+
+<section id="module-modules.input.data_collector.cache">
+<span id="cache"></span><h2>Cache<a class="headerlink" href="#module-modules.input.data_collector.cache" title="Link to this heading">¶</a></h2>
+<p>Cache management using MinIO with CTL control files.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="modules.input.data_collector.cache.CacheMixin">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">modules.input.data_collector.cache.</span></span><span class="sig-name descname"><span class="pre">CacheMixin</span></span><a class="reference internal" href="../_modules/modules/input/data_collector/cache.html#CacheMixin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.input.data_collector.cache.CacheMixin" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>MinIO caching methods for DataFetcher.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="modules.input.data_collector.cache.CacheMixin.mark_loaded">
+<span class="sig-name descname"><span class="pre">mark_loaded</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/input/data_collector/cache.html#CacheMixin.mark_loaded"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.input.data_collector.cache.CacheMixin.mark_loaded" title="Link to this definition">¶</a></dt>
+<dd><p>Update a CTL file to mark data as loaded into PostgreSQL.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data_type</strong> – Category of data.</p></li>
+<li><p><strong>name</strong> – Identifier.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="modules.input.data_collector.cache.CacheMixin.delete_symbol_cache">
+<span class="sig-name descname"><span class="pre">delete_symbol_cache</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symbol</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/input/data_collector/cache.html#CacheMixin.delete_symbol_cache"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.input.data_collector.cache.CacheMixin.delete_symbol_cache" title="Link to this definition">¶</a></dt>
+<dd><p>Delete cached price and fundamentals objects for a symbol.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-modules.input.data_collector.utils">
+<span id="utilities"></span><h2>Utilities<a class="headerlink" href="#module-modules.input.data_collector.utils" title="Link to this heading">¶</a></h2>
+<p>Shared utility functions for data fetching.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="modules.input.data_collector.utils.UtilsMixin">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">modules.input.data_collector.utils.</span></span><span class="sig-name descname"><span class="pre">UtilsMixin</span></span><a class="reference internal" href="../_modules/modules/input/data_collector/utils.html#UtilsMixin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.input.data_collector.utils.UtilsMixin" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Shared utility methods for DataFetcher.</p>
+</dd></dl>
+
+</section>
+<section id="module-modules.input.data_collector.constants">
+<span id="constants"></span><h2>Constants<a class="headerlink" href="#module-modules.input.data_collector.constants" title="Link to this heading">¶</a></h2>
+<p>Constants and configuration for data fetching modules.</p>
+<dl class="py exception">
+<dt class="sig sig-object py" id="modules.input.data_collector.constants.SimFinServerError">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">modules.input.data_collector.constants.</span></span><span class="sig-name descname"><span class="pre">SimFinServerError</span></span><a class="reference internal" href="../_modules/modules/input/data_collector/constants.html#SimFinServerError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.input.data_collector.constants.SimFinServerError" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+<p>Raised when SimFin returns HTTP 500 so caller can trigger fallback.</p>
+</dd></dl>
+
+</section>
+<section id="module-modules.input.data_collector.prices">
+<span id="prices"></span><h2>Prices<a class="headerlink" href="#module-modules.input.data_collector.prices" title="Link to this heading">¶</a></h2>
+<p>Price data fetching from Yahoo Finance.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="modules.input.data_collector.prices.PriceMixin">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">modules.input.data_collector.prices.</span></span><span class="sig-name descname"><span class="pre">PriceMixin</span></span><a class="reference internal" href="../_modules/modules/input/data_collector/prices.html#PriceMixin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.input.data_collector.prices.PriceMixin" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Price fetching methods for DataFetcher.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="modules.input.data_collector.prices.PriceMixin.fetch_prices">
+<span class="sig-name descname"><span class="pre">fetch_prices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symbols</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">period</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'5y'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/input/data_collector/prices.html#PriceMixin.fetch_prices"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.input.data_collector.prices.PriceMixin.fetch_prices" title="Link to this definition">¶</a></dt>
+<dd><p>Fetch daily price data for all symbols.</p>
+<p>Uses yfinance batch download for efficiency. Caches per-symbol
+parquet files in MinIO so individual symbols can be re-fetched
+without re-downloading everything.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>symbols</strong> – List of stock ticker symbols.</p></li>
+<li><p><strong>period</strong> – Historical period to fetch (default ‘5y’).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>Combined price data with columns: symbol,</dt><dd><p>price_date, open_price, high_price, low_price,
+close_price, adj_close, volume.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-modules.input.data_collector.edgar">
+<span id="sec-edgar"></span><h2>SEC EDGAR<a class="headerlink" href="#module-modules.input.data_collector.edgar" title="Link to this heading">¶</a></h2>
+<p>SEC EDGAR data fetching infrastructure.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="modules.input.data_collector.edgar.EdgarMixin">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">modules.input.data_collector.edgar.</span></span><span class="sig-name descname"><span class="pre">EdgarMixin</span></span><a class="reference internal" href="../_modules/modules/input/data_collector/edgar.html#EdgarMixin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.input.data_collector.edgar.EdgarMixin" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>SEC EDGAR fetching methods for DataFetcher.</p>
+</dd></dl>
+
+</section>
+<section id="module-modules.input.data_collector.simfin">
+<span id="simfin"></span><h2>SimFin<a class="headerlink" href="#module-modules.input.data_collector.simfin" title="Link to this heading">¶</a></h2>
+<p>SimFin data fetching.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="modules.input.data_collector.simfin.SimFinMixin">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">modules.input.data_collector.simfin.</span></span><span class="sig-name descname"><span class="pre">SimFinMixin</span></span><a class="reference internal" href="../_modules/modules/input/data_collector/simfin.html#SimFinMixin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.input.data_collector.simfin.SimFinMixin" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>SimFin fetching methods for DataFetcher.</p>
+</dd></dl>
+
+</section>
+<section id="module-modules.input.data_collector.yfinance_fundamentals">
+<span id="yfinance-fundamentals"></span><h2>yfinance Fundamentals<a class="headerlink" href="#module-modules.input.data_collector.yfinance_fundamentals" title="Link to this heading">¶</a></h2>
+<p>yfinance fundamentals fallback fetcher.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="modules.input.data_collector.yfinance_fundamentals.YFinanceMixin">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">modules.input.data_collector.yfinance_fundamentals.</span></span><span class="sig-name descname"><span class="pre">YFinanceMixin</span></span><a class="reference internal" href="../_modules/modules/input/data_collector/yfinance_fundamentals.html#YFinanceMixin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.input.data_collector.yfinance_fundamentals.YFinanceMixin" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>yfinance fundamentals fallback methods for DataFetcher.</p>
+</dd></dl>
+
+</section>
+<section id="module-modules.input.data_collector.fundamentals">
+<span id="fundamentals-orchestration"></span><h2>Fundamentals Orchestration<a class="headerlink" href="#module-modules.input.data_collector.fundamentals" title="Link to this heading">¶</a></h2>
+<p>Fundamentals fetching orchestration and waterfall merge.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="modules.input.data_collector.fundamentals.FundamentalsMixin">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">modules.input.data_collector.fundamentals.</span></span><span class="sig-name descname"><span class="pre">FundamentalsMixin</span></span><a class="reference internal" href="../_modules/modules/input/data_collector/fundamentals.html#FundamentalsMixin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.input.data_collector.fundamentals.FundamentalsMixin" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Fundamentals orchestration methods for DataFetcher.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="modules.input.data_collector.fundamentals.FundamentalsMixin.fetch_fundamentals">
+<span class="sig-name descname"><span class="pre">fetch_fundamentals</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symbols</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">period</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'5y'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'waterfall'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/input/data_collector/fundamentals.html#FundamentalsMixin.fetch_fundamentals"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.input.data_collector.fundamentals.FundamentalsMixin.fetch_fundamentals" title="Link to this definition">¶</a></dt>
+<dd><p>Fetch quarterly financial statements for all symbols.</p>
+<p>Supports source routing:
+- waterfall: EDGAR -&gt; SimFin -&gt; yfinance -&gt; forward fill.
+- simfin: SimFin only.</p>
+<p>Per-symbol parquet files are cached in MinIO.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>symbols</strong> – List of stock ticker symbols.</p></li>
+<li><p><strong>period</strong> – Historical window to keep (e.g. ‘1y’, ‘5y’, ‘max’).</p></li>
+<li><p><strong>source</strong> – Fundamentals data source strategy.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>Combined financial data with columns: symbol,</dt><dd><p>fiscal_year, fiscal_quarter, report_date, total_assets,
+total_debt, net_income, eps, book_equity,
+shares_outstanding.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-modules.input.data_collector.rates">
+<span id="risk-free-rates"></span><h2>Risk-Free Rates<a class="headerlink" href="#module-modules.input.data_collector.rates" title="Link to this heading">¶</a></h2>
+<p>Risk-free rate fetching from OECD and yfinance.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="modules.input.data_collector.rates.RatesMixin">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">modules.input.data_collector.rates.</span></span><span class="sig-name descname"><span class="pre">RatesMixin</span></span><a class="reference internal" href="../_modules/modules/input/data_collector/rates.html#RatesMixin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.input.data_collector.rates.RatesMixin" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Risk-free rate fetching methods for DataFetcher.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="modules.input.data_collector.rates.RatesMixin.fetch_risk_free_rates">
+<span class="sig-name descname"><span class="pre">fetch_risk_free_rates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">countries</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/input/data_collector/rates.html#RatesMixin.fetch_risk_free_rates"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.input.data_collector.rates.RatesMixin.fetch_risk_free_rates" title="Link to this definition">¶</a></dt>
+<dd><p>Fetch monthly short-term interest rates for risk-free rate proxy.</p>
+<p>Attempts the OECD SDMX API first. If that fails (unreliable),
+falls back to yfinance Treasury yield data (^IRX = 13-week T-bill).
+Results are cached as a single parquet + CTL in MinIO.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>countries</strong> – List of country codes from company_static.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>country, rate_date, rate.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame with columns</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">Coursework One</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../architecture.html">Architecture</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">DataFetcher — Data Collection</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#modules.input.data_collector.DataFetcher"><code class="docutils literal notranslate"><span class="pre">DataFetcher</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#modules.input.data_collector.SimFinServerError"><code class="docutils literal notranslate"><span class="pre">SimFinServerError</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-modules.input.data_collector.cache">Cache</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-modules.input.data_collector.utils">Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-modules.input.data_collector.constants">Constants</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-modules.input.data_collector.prices">Prices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-modules.input.data_collector.edgar">SEC EDGAR</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-modules.input.data_collector.simfin">SimFin</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-modules.input.data_collector.yfinance_fundamentals">yfinance Fundamentals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-modules.input.data_collector.fundamentals">Fundamentals Orchestration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-modules.input.data_collector.rates">Risk-Free Rates</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="data_writer.html">DataWriter — Data Loading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_validator.html">DataValidator — Data Validation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="connections.html">Database Connections</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="../architecture.html" title="previous chapter">Architecture</a></li>
+      <li>Next: <a href="data_writer.html" title="next chapter">DataWriter — Data Loading</a></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.4.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="../_sources/api/data_collector.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

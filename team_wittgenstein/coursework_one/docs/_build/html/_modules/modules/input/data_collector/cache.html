@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>modules.input.data_collector.cache &#8212; Coursework One 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/alabaster.css?v=12dfc556" />
+    <script src="../../../../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for modules.input.data_collector.cache</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Cache management using MinIO with CTL control files.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="CacheMixin">
+<a class="viewcode-back" href="../../../../api/data_collector.html#modules.input.data_collector.cache.CacheMixin">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CacheMixin</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;MinIO caching methods for DataFetcher.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_ctl_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_type</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Build the CTL file path in MinIO.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            data_type: Category (&#39;prices&#39;, &#39;fundamentals&#39;, &#39;risk_free_rates&#39;).</span>
+<span class="sd">            name: Identifier (usually ticker symbol or &#39;all&#39;).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: Object path like &#39;prices/AAPL.ctl&#39;.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">data_type</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.ctl&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_parquet_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_type</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Build the Parquet file path in MinIO.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            data_type: Category of data.</span>
+<span class="sd">            name: Identifier.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: Object path like &#39;prices/AAPL.parquet&#39;.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">data_type</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.parquet&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_write_ctl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_type</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">rows</span><span class="p">,</span> <span class="n">source</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Write a CTL control file to MinIO.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            data_type: Category of data.</span>
+<span class="sd">            name: Identifier.</span>
+<span class="sd">            rows: Number of rows in the companion data file.</span>
+<span class="sd">            source: Data source name (e.g. &#39;yfinance&#39;, &#39;oecd&#39;).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ctl</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span>
+            <span class="s2">&quot;data_type&quot;</span><span class="p">:</span> <span class="n">data_type</span><span class="p">,</span>
+            <span class="s2">&quot;fetched_at&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+            <span class="s2">&quot;rows&quot;</span><span class="p">:</span> <span class="n">rows</span><span class="p">,</span>
+            <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="n">source</span><span class="p">,</span>
+            <span class="s2">&quot;loaded_to_postgres&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">minio</span><span class="o">.</span><span class="n">upload_json</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bucket</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ctl_path</span><span class="p">(</span><span class="n">data_type</span><span class="p">,</span> <span class="n">name</span><span class="p">),</span> <span class="n">ctl</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_read_ctl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_type</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read a CTL control file from MinIO.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            data_type: Category of data.</span>
+<span class="sd">            name: Identifier.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict or None: CTL metadata, or None if not cached.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">minio</span><span class="o">.</span><span class="n">download_json</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bucket</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ctl_path</span><span class="p">(</span><span class="n">data_type</span><span class="p">,</span> <span class="n">name</span><span class="p">))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_is_cached</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_type</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if data is already cached in MinIO.</span>
+
+<span class="sd">        Returns False if files don&#39;t exist or if cache has expired</span>
+<span class="sd">        (based on cache_ttl_days setting).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            data_type: Category of data.</span>
+<span class="sd">            name: Identifier.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if both parquet and CTL files exist and are fresh.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">minio</span><span class="o">.</span><span class="n">object_exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bucket</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parquet_path</span><span class="p">(</span><span class="n">data_type</span><span class="p">,</span> <span class="n">name</span><span class="p">))</span>
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">minio</span><span class="o">.</span><span class="n">object_exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bucket</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ctl_path</span><span class="p">(</span><span class="n">data_type</span><span class="p">,</span> <span class="n">name</span><span class="p">))</span>
+        <span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="c1"># Check TTL if configured</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache_ttl_days</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ctl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_ctl</span><span class="p">(</span><span class="n">data_type</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">ctl</span> <span class="ow">and</span> <span class="s2">&quot;fetched_at&quot;</span> <span class="ow">in</span> <span class="n">ctl</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">fetched</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">ctl</span><span class="p">[</span><span class="s2">&quot;fetched_at&quot;</span><span class="p">])</span>
+                    <span class="n">age_days</span> <span class="o">=</span> <span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">-</span> <span class="n">fetched</span><span class="p">)</span><span class="o">.</span><span class="n">days</span>
+                    <span class="k">if</span> <span class="n">age_days</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache_ttl_days</span><span class="p">:</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                            <span class="s2">&quot;Cache expired for </span><span class="si">%s</span><span class="s2">/</span><span class="si">%s</span><span class="s2"> (</span><span class="si">%d</span><span class="s2"> days old)&quot;</span><span class="p">,</span>
+                            <span class="n">data_type</span><span class="p">,</span>
+                            <span class="n">name</span><span class="p">,</span>
+                            <span class="n">age_days</span><span class="p">,</span>
+                        <span class="p">)</span>
+                        <span class="k">return</span> <span class="kc">False</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                        <span class="s2">&quot;Could not parse fetched_at for </span><span class="si">%s</span><span class="s2">/</span><span class="si">%s</span><span class="s2">; treating cache as valid&quot;</span><span class="p">,</span>
+                        <span class="n">data_type</span><span class="p">,</span>
+                        <span class="n">name</span><span class="p">,</span>
+                    <span class="p">)</span>
+
+        <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_dedupe_dataframe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_type</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Drop duplicate business keys for a dataframe type.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            data_type: Category of data.</span>
+<span class="sd">            df: DataFrame to deduplicate.</span>
+<span class="sd">            name: Optional identifier used in logs.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            pd.DataFrame: Deduplicated dataframe copy.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">df</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">df</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">df</span>
+
+        <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">data_type</span> <span class="o">==</span> <span class="s2">&quot;prices&quot;</span><span class="p">:</span>
+            <span class="n">subset</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;symbol&quot;</span><span class="p">,</span> <span class="s2">&quot;trade_date&quot;</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">data_type</span> <span class="o">==</span> <span class="s2">&quot;fundamentals&quot;</span><span class="p">:</span>
+            <span class="n">subset</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;symbol&quot;</span><span class="p">,</span> <span class="s2">&quot;fiscal_year&quot;</span><span class="p">,</span> <span class="s2">&quot;fiscal_quarter&quot;</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">data_type</span> <span class="o">==</span> <span class="s2">&quot;risk_free_rates&quot;</span><span class="p">:</span>
+            <span class="n">subset</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;country&quot;</span><span class="p">,</span> <span class="s2">&quot;rate_date&quot;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">subset</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="n">subset</span> <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span><span class="n">col</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">subset</span><span class="p">):</span>
+            <span class="n">before</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+            <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="n">subset</span><span class="p">,</span> <span class="n">keep</span><span class="o">=</span><span class="s2">&quot;last&quot;</span><span class="p">)</span>
+            <span class="n">dropped</span> <span class="o">=</span> <span class="n">before</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">dropped</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">target</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">data_type</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">name</span> <span class="k">else</span> <span class="n">data_type</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="s2">&quot;Dedupe </span><span class="si">%s</span><span class="s2">: dropped </span><span class="si">%d</span><span class="s2"> duplicate rows by key </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="n">target</span><span class="p">,</span>
+                    <span class="n">dropped</span><span class="p">,</span>
+                    <span class="n">subset</span><span class="p">,</span>
+                <span class="p">)</span>
+        <span class="k">return</span> <span class="n">df</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_cache_dataframe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_type</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">source</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save a DataFrame as parquet with a companion CTL file.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            data_type: Category of data.</span>
+<span class="sd">            name: Identifier.</span>
+<span class="sd">            df: DataFrame to cache.</span>
+<span class="sd">            source: Data source name.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Ensure cache file never stores duplicate business keys.</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dedupe_dataframe</span><span class="p">(</span><span class="n">data_type</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">minio</span><span class="o">.</span><span class="n">upload_dataframe</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bucket</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parquet_path</span><span class="p">(</span><span class="n">data_type</span><span class="p">,</span> <span class="n">name</span><span class="p">),</span> <span class="n">df</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_write_ctl</span><span class="p">(</span><span class="n">data_type</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">),</span> <span class="n">source</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_load_cached</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_type</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load a cached DataFrame from MinIO.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            data_type: Category of data.</span>
+<span class="sd">            name: Identifier.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            pd.DataFrame or None.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">minio</span><span class="o">.</span><span class="n">download_dataframe</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bucket</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parquet_path</span><span class="p">(</span><span class="n">data_type</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_fundamentals_cache_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">symbol</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Build fundamentals cache key name (symbol only).&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">symbol</span>
+
+<div class="viewcode-block" id="CacheMixin.mark_loaded">
+<a class="viewcode-back" href="../../../../api/data_collector.html#modules.input.data_collector.cache.CacheMixin.mark_loaded">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">mark_loaded</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_type</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update a CTL file to mark data as loaded into PostgreSQL.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            data_type: Category of data.</span>
+<span class="sd">            name: Identifier.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">data_type</span> <span class="o">!=</span> <span class="s2">&quot;fundamentals&quot;</span><span class="p">:</span>
+            <span class="n">ctl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_ctl</span><span class="p">(</span><span class="n">data_type</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">ctl</span><span class="p">:</span>
+                <span class="n">ctl</span><span class="p">[</span><span class="s2">&quot;loaded_to_postgres&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">ctl</span><span class="p">[</span><span class="s2">&quot;loaded_at&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">minio</span><span class="o">.</span><span class="n">upload_json</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">bucket</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ctl_path</span><span class="p">(</span><span class="n">data_type</span><span class="p">,</span> <span class="n">name</span><span class="p">),</span> <span class="n">ctl</span>
+                <span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="c1"># Backward-compatible marking for fundamentals:</span>
+        <span class="c1"># - exact source-scoped cache key (e.g. AAPL.simfin)</span>
+        <span class="c1"># - legacy symbol-only key (e.g. AAPL)</span>
+        <span class="n">names_to_mark</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">if</span> <span class="s2">&quot;.&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+            <span class="n">names_to_mark</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">names_to_mark</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">object_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">minio</span><span class="o">.</span><span class="n">list_objects</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">bucket</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;fundamentals/</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="p">):</span>
+                <span class="k">if</span> <span class="n">object_name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.ctl&quot;</span><span class="p">):</span>
+                    <span class="n">names_to_mark</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">object_name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">rsplit</span><span class="p">(</span><span class="s2">&quot;.ctl&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="k">for</span> <span class="n">cache_name</span> <span class="ow">in</span> <span class="n">names_to_mark</span><span class="p">:</span>
+            <span class="n">ctl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_ctl</span><span class="p">(</span><span class="n">data_type</span><span class="p">,</span> <span class="n">cache_name</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">ctl</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">ctl</span><span class="p">[</span><span class="s2">&quot;loaded_to_postgres&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">ctl</span><span class="p">[</span><span class="s2">&quot;loaded_at&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">minio</span><span class="o">.</span><span class="n">upload_json</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">bucket</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ctl_path</span><span class="p">(</span><span class="n">data_type</span><span class="p">,</span> <span class="n">cache_name</span><span class="p">),</span> <span class="n">ctl</span>
+            <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CacheMixin.delete_symbol_cache">
+<a class="viewcode-back" href="../../../../api/data_collector.html#modules.input.data_collector.cache.CacheMixin.delete_symbol_cache">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">delete_symbol_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">symbol</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Delete cached price and fundamentals objects for a symbol.&quot;&quot;&quot;</span>
+        <span class="n">removed</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">symbol</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">symbol</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">symbol</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">removed</span>
+
+        <span class="k">for</span> <span class="n">data_type</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;prices&quot;</span><span class="p">,</span> <span class="s2">&quot;fundamentals&quot;</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">object_name</span> <span class="ow">in</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_parquet_path</span><span class="p">(</span><span class="n">data_type</span><span class="p">,</span> <span class="n">symbol</span><span class="p">),</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_ctl_path</span><span class="p">(</span><span class="n">data_type</span><span class="p">,</span> <span class="n">symbol</span><span class="p">),</span>
+            <span class="p">):</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">minio</span><span class="o">.</span><span class="n">delete_object</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bucket</span><span class="p">,</span> <span class="n">object_name</span><span class="p">):</span>
+                    <span class="n">removed</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">for</span> <span class="n">object_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">minio</span><span class="o">.</span><span class="n">list_objects</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bucket</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;fundamentals/</span><span class="si">{</span><span class="n">symbol</span><span class="si">}</span><span class="s2">.&quot;</span>
+        <span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">minio</span><span class="o">.</span><span class="n">delete_object</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bucket</span><span class="p">,</span> <span class="n">object_name</span><span class="p">):</span>
+                <span class="n">removed</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">if</span> <span class="n">removed</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Deleted </span><span class="si">%d</span><span class="s2"> cached objects for </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">removed</span><span class="p">,</span> <span class="n">symbol</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">removed</span></div>
+</div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../../index.html">Coursework One</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../architecture.html">Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/data_collector.html">DataFetcher — Data Collection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/data_writer.html">DataWriter — Data Loading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/data_validator.html">DataValidator — Data Validation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/connections.html">Database Connections</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../../index.html">Module code</a><ul>
+  <li><a href="../data_collector.html">modules.input.data_collector</a><ul>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.4.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

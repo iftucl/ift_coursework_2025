@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Coursework One — Data Pipeline Documentation &#8212; Coursework One 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=12dfc556" />
+    <script src="_static/documentation_options.js?v=01f34227"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Installation" href="installation.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="coursework-one-data-pipeline-documentation">
+<h1>Coursework One — Data Pipeline Documentation<a class="headerlink" href="#coursework-one-data-pipeline-documentation" title="Link to this heading">¶</a></h1>
+<p>A data pipeline for a 130/30 multi-factor equity strategy, built for
+Big Data in Quantitative Finance (Coursework One).</p>
+<p>The pipeline fetches daily prices, quarterly financials, and risk-free
+rates from multiple sources, validates the data, and loads it into
+PostgreSQL for downstream factor modelling.</p>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#install-dependencies">Install dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#database-setup">Database setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#configuration">Configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Usage</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#running-the-pipeline">Running the pipeline</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#re-run-safety">Re-run safety</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#command-line-flags">Command-line flags</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#dev-mode">Dev mode</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#running-tests">Running tests</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#building-documentation">Building documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="architecture.html">Architecture</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#datafetcher-mixin-composition">DataFetcher — mixin composition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#waterfall-merge-strategy">Waterfall merge strategy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#concurrency-and-rate-limiting">Concurrency and rate limiting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#ctl-caching-pattern">CTL caching pattern</a></li>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#database-schema">Database schema</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api/data_collector.html">DataFetcher — Data Collection</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/data_collector.html#modules.input.data_collector.DataFetcher"><code class="docutils literal notranslate"><span class="pre">DataFetcher</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/data_collector.html#modules.input.data_collector.SimFinServerError"><code class="docutils literal notranslate"><span class="pre">SimFinServerError</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/data_collector.html#module-modules.input.data_collector.cache">Cache</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/data_collector.html#module-modules.input.data_collector.utils">Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/data_collector.html#module-modules.input.data_collector.constants">Constants</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/data_collector.html#module-modules.input.data_collector.prices">Prices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/data_collector.html#module-modules.input.data_collector.edgar">SEC EDGAR</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/data_collector.html#module-modules.input.data_collector.simfin">SimFin</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/data_collector.html#module-modules.input.data_collector.yfinance_fundamentals">yfinance Fundamentals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/data_collector.html#module-modules.input.data_collector.fundamentals">Fundamentals Orchestration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/data_collector.html#module-modules.input.data_collector.rates">Risk-Free Rates</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api/data_writer.html">DataWriter — Data Loading</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/data_writer.html#modules.output.data_writer.DataWriter"><code class="docutils literal notranslate"><span class="pre">DataWriter</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api/data_validator.html">DataValidator — Data Validation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/data_validator.html#modules.processing.data_validator.ValidationResult"><code class="docutils literal notranslate"><span class="pre">ValidationResult</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/data_validator.html#modules.processing.data_validator.DataValidator"><code class="docutils literal notranslate"><span class="pre">DataValidator</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api/connections.html">Database Connections</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/connections.html#modules.db.db_connection.PostgresConnection"><code class="docutils literal notranslate"><span class="pre">PostgresConnection</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/connections.html#modules.db.db_connection.MongoConnection"><code class="docutils literal notranslate"><span class="pre">MongoConnection</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/connections.html#modules.db.db_connection.MinioConnection"><code class="docutils literal notranslate"><span class="pre">MinioConnection</span></code></a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="#">Coursework One</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="architecture.html">Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/data_collector.html">DataFetcher — Data Collection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/data_writer.html">DataWriter — Data Loading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/data_validator.html">DataValidator — Data Validation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/connections.html">Database Connections</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="#">Documentation overview</a><ul>
+      <li>Next: <a href="installation.html" title="next chapter">Installation</a></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.4.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="_sources/index.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
