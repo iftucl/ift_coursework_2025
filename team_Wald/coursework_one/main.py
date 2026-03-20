@@ -89,7 +89,7 @@ def run_pipeline():
     # ---------------------------------------------------------------
     progress.print_banner(
         "CW1 VALUE + NEWS SENTIMENT PIPELINE",
-        "Team 09 — UCL Institute of Finance & Technology\n"
+        "Team Wald — UCL Institute of Finance & Technology\n"
         "IFTE0003: Big Data in Quantitative Finance\n"
         "Strategy: Value (60%) + Sentiment (40%)",
     )
