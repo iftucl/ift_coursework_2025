@@ -236,7 +236,7 @@ def calculate_trend_data(ticker_list: list, start_date=None):
             results to the target period.
 
     Note:
-        Uses a 300-day 'warm-up' period to ensure the 200-day EMA and 52-week
+        Uses a 500-day 'warm-up' period to ensure the 200-day EMA and 52-week
         high metrics are fully stabilized before the target start_date.
     """
     if start_date is not None:
@@ -395,7 +395,7 @@ def calculate_mean_reversion_data(ticker_list: list, start_date=None):
     Args:
         ticker_list (list): A list of stock ticker symbols to process.
         start_date (datetime, optional): The target start date for the update.
-            Fetches 300 days of history to ensure RSI and Bollinger Band
+            Fetches 500 days of history to ensure RSI and Bollinger Band
             calculations are fully stabilized.
 
     Returns:
@@ -408,7 +408,7 @@ def calculate_mean_reversion_data(ticker_list: list, start_date=None):
         percentage to track price relative to volatility envelopes.
     """
     if start_date is not None:
-        data_start_date = (start_date - timedelta(days=300)).strftime("%Y-%m-%d")
+        data_start_date = (start_date - timedelta(days=500)).strftime("%Y-%m-%d")
         data = postgres.get_ohlcv_data(ticker_list, data_start_date)
     else:
         data = postgres.get_ohlcv_data(ticker_list)

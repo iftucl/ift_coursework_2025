@@ -58,22 +58,26 @@ def apply_filter(target_df: pd.DataFrame):
     )
     df = target_df[liquidity_mask].copy()
     print(f"Liquidity mask count: {len(df)}")
-    # 2. (Option A) Sequential Filter
-    trend_mask = (df["close_price"] > df["ma200"]) & (df["ma200_20d_roc"] > 0)
+    # 2. Sequential Filter
+    trend_mask = df["close_price"] > df["ma200"]  # & (df["ma200_20d_roc"] > 0)
     df = df[trend_mask].copy()
     print(f"Trend mask count: {len(df)}")
-    earnings_mask = df["forward_earning_yields"] > 0
-    df = df[earnings_mask].copy()
-    print(f"Earnings mask count: {len(df)}")
-    momentum_mask = df["momentum_score"] >= 0.4
-    df = df[momentum_mask].copy()
-    print(f"Momentum mask count: {len(df)}")
+    """
+    Adjust as ranking factors rather than filter
+    Used for CW2
+    """
+    # earnings_mask = df["forward_earning_yields"] > 0
+    # df = df[earnings_mask].copy()
+    # print(f"Earnings mask count: {len(df)}")
+    # momentum_mask = df["momentum_score"] >= 0.4
+    # df = df[momentum_mask].copy()
+    # print(f"Momentum mask count: {len(df)}")
     # 3. Risk Filter
-    risk_mask = (
-        (df["vol_60d"] < 0.3) & (df["max_drawdown_1y"] > -0.5) & (df["var_pct"] < 0.15)
-    )
-    df = df[risk_mask].copy()
-    print(f"Risk mask count: {len(df)}")
+    # risk_mask = (
+    #     (df["vol_60d"] < 0.3) & (df["max_drawdown_1y"] > -0.5) & (df["var_pct"] < 0.15)
+    # )
+    # df = df[risk_mask].copy()
+    # print(f"Risk mask count: {len(df)}")
     return df
 
 
