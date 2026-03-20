@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Architecture &#8212; Coursework One 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=12dfc556" />
+    <script src="_static/documentation_options.js?v=01f34227"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="DataFetcher — Data Collection" href="api/data_collector.html" />
+    <link rel="prev" title="Usage" href="usage.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="architecture">
+<h1>Architecture<a class="headerlink" href="#architecture" title="Link to this heading">¶</a></h1>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">¶</a></h2>
+<p>The pipeline follows a three-stage architecture:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>┌──────────────┐     ┌───────────────┐     ┌──────────────┐
+│ DataFetcher  │────▶│ DataValidator  │────▶│  DataWriter  │
+│  (input)     │     │  (processing)  │     │  (output)    │
+└──────────────┘     └───────────────┘     └──────────────┘
+      │                                           │
+      ▼                                           ▼
+   MinIO                                    PostgreSQL
+ (parquet                                  (structured
+  cache)                                     tables)
+                                                 │
+                                                 ▼
+                                              MongoDB
+                                           (audit trail)
+</pre></div>
+</div>
+<p><strong>DataFetcher</strong> pulls data from external APIs, caches it in MinIO,
+and returns cleaned DataFrames.</p>
+<p><strong>DataValidator</strong> checks data quality (completeness, coverage,
+null ratios) and returns pass/fail results.</p>
+<p><strong>DataWriter</strong> loads validated data into PostgreSQL with duplicate
+prevention and logs raw responses to MongoDB.</p>
+</section>
+<section id="datafetcher-mixin-composition">
+<h2>DataFetcher — mixin composition<a class="headerlink" href="#datafetcher-mixin-composition" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">DataFetcher</span></code> is assembled from eight specialised mixins, each
+handling a single responsibility:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 25.0%" />
+<col style="width: 75.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Mixin</p></th>
+<th class="head"><p>Responsibility</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">CacheMixin</span></code></p></td>
+<td><p>MinIO parquet caching with CTL control files</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">UtilsMixin</span></code></p></td>
+<td><p>Schema normalisation, period parsing, failure classification</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">PriceMixin</span></code></p></td>
+<td><p>Daily price fetching via yfinance batch download</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">EdgarMixin</span></code></p></td>
+<td><p>SEC EDGAR API: CIK resolution, company facts, concept extraction</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SimFinMixin</span></code></p></td>
+<td><p>SimFin API: income statements, balance sheets, weighted shares</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">YFinanceMixin</span></code></p></td>
+<td><p>yfinance quarterly financials (lowest-priority fallback)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">FundamentalsMixin</span></code></p></td>
+<td><p>Waterfall orchestration, multi-source merge, forward-fill</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">RatesMixin</span></code></p></td>
+<td><p>Risk-free rates from OECD API with yfinance fallback</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="waterfall-merge-strategy">
+<h2>Waterfall merge strategy<a class="headerlink" href="#waterfall-merge-strategy" title="Link to this heading">¶</a></h2>
+<p>Quarterly fundamentals are fetched using a priority waterfall:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>1. SEC EDGAR  (free, no API key, US-listed)
+       │
+       ▼
+2. SimFin     (free tier, global coverage)
+       │
+       ▼
+3. yfinance   (fallback, limited fields)
+       │
+       ▼
+4. Forward-fill remaining nulls from previous quarters
+</pre></div>
+</div>
+<p>For each <code class="docutils literal notranslate"><span class="pre">(symbol,</span> <span class="pre">fiscal_year,</span> <span class="pre">fiscal_quarter)</span></code> key, null fields
+in the higher-priority source are filled from the next source down.
+After merging, remaining nulls are forward-filled (limit 2 quarters)
+from the most recent non-null value for the same symbol.</p>
+</section>
+<section id="concurrency-and-rate-limiting">
+<h2>Concurrency and rate limiting<a class="headerlink" href="#concurrency-and-rate-limiting" title="Link to this heading">¶</a></h2>
+<p><strong>Fundamentals fetching</strong> uses a <code class="docutils literal notranslate"><span class="pre">ThreadPoolExecutor</span></code> with 5 workers
+to fetch multiple symbols concurrently. Each worker runs the full
+waterfall (EDGAR → SimFin → yfinance) for one symbol at a time.</p>
+<p><strong>Price retry logic</strong>: after the yfinance batch download, any symbols
+that were silently dropped are retried individually with separate
+<code class="docutils literal notranslate"><span class="pre">yf.download()</span></code> calls. This prevents mismatches between price and
+financial data coverage.</p>
+<p><strong>Rate limiting</strong> is enforced per API:</p>
+<ul class="simple">
+<li><p><strong>Proactive throttling</strong>: a minimum interval (0.55s for SimFin,
+0.5s for EDGAR) between consecutive requests, enforced via
+<code class="docutils literal notranslate"><span class="pre">threading.Lock</span></code>.</p></li>
+<li><p><strong>Reactive retry</strong>: on HTTP 429 (rate limited), the code sleeps
+for the <code class="docutils literal notranslate"><span class="pre">Retry-After</span></code> header value (or 2 seconds) then retries.</p></li>
+</ul>
+</section>
+<section id="ctl-caching-pattern">
+<h2>CTL caching pattern<a class="headerlink" href="#ctl-caching-pattern" title="Link to this heading">¶</a></h2>
+<p>Each fetched dataset is cached in MinIO as a parquet file with a
+companion JSON control (CTL) file:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>wittgenstein-cache/
+├── prices/
+│   ├── AAPL.parquet        (cached price data)
+│   └── AAPL.ctl            (metadata: source, timestamp, row count)
+├── fundamentals/
+│   ├── AAPL.parquet
+│   └── AAPL.ctl
+└── risk_free_rates/
+    ├── all.parquet
+    └── all.ctl
+</pre></div>
+</div>
+<p>The CTL file records when data was fetched and from which source.
+On subsequent runs, <code class="docutils literal notranslate"><span class="pre">_is_cached()</span></code> checks the CTL timestamp against
+<code class="docutils literal notranslate"><span class="pre">cache_ttl_days</span></code> to decide whether to re-fetch or serve from cache.</p>
+</section>
+<section id="database-schema">
+<h2>Database schema<a class="headerlink" href="#database-schema" title="Link to this heading">¶</a></h2>
+<p><strong>PostgreSQL</strong> (schema: <code class="docutils literal notranslate"><span class="pre">team_wittgenstein</span></code>):</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 70.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Table</p></th>
+<th class="head"><p>Primary key</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">price_data</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(symbol,</span> <span class="pre">trade_date)</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">financial_data</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(symbol,</span> <span class="pre">fiscal_year,</span> <span class="pre">fiscal_quarter)</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">risk_free_rates</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(country,</span> <span class="pre">rate_date)</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">factor_metrics</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(symbol,</span> <span class="pre">calc_date)</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">factor_scores</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(symbol,</span> <span class="pre">score_date)</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">portfolio_positions</span></code></p></td>
+<td><p>(downstream)</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>MongoDB</strong> (database: <code class="docutils literal notranslate"><span class="pre">wittgenstein</span></code>):</p>
+<p>Collections prefixed with <code class="docutils literal notranslate"><span class="pre">raw_</span></code> store timestamped audit documents
+for each API fetch (e.g. <code class="docutils literal notranslate"><span class="pre">raw_prices</span></code>, <code class="docutils literal notranslate"><span class="pre">raw_fundamentals</span></code>).
+Failure classifications are stored in <code class="docutils literal notranslate"><span class="pre">raw_price_failures</span></code> and
+<code class="docutils literal notranslate"><span class="pre">raw_fundamentals_failures</span></code>.</p>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">Coursework One</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Usage</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Architecture</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#datafetcher-mixin-composition">DataFetcher — mixin composition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#waterfall-merge-strategy">Waterfall merge strategy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#concurrency-and-rate-limiting">Concurrency and rate limiting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#ctl-caching-pattern">CTL caching pattern</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#database-schema">Database schema</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api/data_collector.html">DataFetcher — Data Collection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/data_writer.html">DataWriter — Data Loading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/data_validator.html">DataValidator — Data Validation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/connections.html">Database Connections</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="usage.html" title="previous chapter">Usage</a></li>
+      <li>Next: <a href="api/data_collector.html" title="next chapter">DataFetcher — Data Collection</a></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.4.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="_sources/architecture.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Installation &#8212; Coursework One 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=12dfc556" />
+    <script src="_static/documentation_options.js?v=01f34227"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Usage" href="usage.html" />
+    <link rel="prev" title="Coursework One — Data Pipeline Documentation" href="index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="installation">
+<h1>Installation<a class="headerlink" href="#installation" title="Link to this heading">¶</a></h1>
+<section id="prerequisites">
+<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><strong>Python 3.10+</strong></p></li>
+<li><p><strong>Poetry</strong> for dependency management</p></li>
+<li><p><strong>Docker</strong> (recommended) for running PostgreSQL, MongoDB, and MinIO locally</p></li>
+</ul>
+</section>
+<section id="install-dependencies">
+<h2>Install dependencies<a class="headerlink" href="#install-dependencies" title="Link to this heading">¶</a></h2>
+<p>Clone the repository and install with Poetry:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="o">&lt;</span><span class="n">repo</span><span class="o">-</span><span class="n">url</span><span class="o">&gt;</span>
+<span class="n">cd</span> <span class="n">big_data_team_Wittgenstein</span><span class="o">/</span><span class="n">team_wittgenstein</span><span class="o">/</span><span class="n">coursework_one</span>
+<span class="n">poetry</span> <span class="n">install</span>
+</pre></div>
+</div>
+<p>This installs all runtime and development dependencies, including
+pytest, flake8, black, and Sphinx.</p>
+</section>
+<section id="database-setup">
+<h2>Database setup<a class="headerlink" href="#database-setup" title="Link to this heading">¶</a></h2>
+<p>The pipeline requires three backing services:</p>
+<dl class="simple">
+<dt><strong>PostgreSQL</strong> (port 5439 by default)</dt><dd><p>Stores structured data: prices, financials, risk-free rates,
+factor metrics, and factor scores. The schema is created
+automatically on first run via <code class="docutils literal notranslate"><span class="pre">sql/create_schema.sql</span></code>.</p>
+</dd>
+<dt><strong>MongoDB</strong> (port 27019 by default)</dt><dd><p>Stores raw API responses as an audit trail. Each fetch is logged
+as a timestamped document.</p>
+</dd>
+<dt><strong>MinIO</strong> (port 9000 by default)</dt><dd><p>Object storage used for caching fetched data as parquet files
+with companion CTL (control) files for idempotency.</p>
+</dd>
+</dl>
+<p>Start all three services with Docker Compose (if provided) or
+configure connection details in <code class="docutils literal notranslate"><span class="pre">config/conf.yaml</span></code>.</p>
+</section>
+<section id="configuration">
+<h2>Configuration<a class="headerlink" href="#configuration" title="Link to this heading">¶</a></h2>
+<p>All settings live in <code class="docutils literal notranslate"><span class="pre">config/conf.yaml</span></code>:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">postgres</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">host</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;localhost&quot;</span>
+<span class="w">  </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5439</span>
+<span class="w">  </span><span class="nt">database</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;fift&quot;</span>
+<span class="w">  </span><span class="nt">user</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;postgres&quot;</span>
+<span class="w">  </span><span class="nt">password</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;postgres&quot;</span>
+
+<span class="nt">mongo</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">host</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;localhost&quot;</span>
+<span class="w">  </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">27019</span>
+
+<span class="nt">minio</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">host</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;localhost:9000&quot;</span>
+<span class="w">  </span><span class="nt">access_key</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;ift_bigdata&quot;</span>
+<span class="w">  </span><span class="nt">secret_key</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;minio_password&quot;</span>
+<span class="w">  </span><span class="nt">secure</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+
+<span class="nt">data</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">price_period</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;5y&quot;</span>
+<span class="w">  </span><span class="nt">fundamentals_period</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;5y&quot;</span>
+<span class="w">  </span><span class="nt">fundamentals_source</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;waterfall&quot;</span>
+<span class="w">  </span><span class="nt">cache_ttl_days</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">7</span>
+
+<span class="nt">country_filter</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;US&quot;</span>
+
+<span class="nt">validation</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">min_price_rows</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">200</span>
+<span class="w">  </span><span class="nt">min_years</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4</span>
+<span class="w">  </span><span class="nt">max_null_pct</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.5</span>
+<span class="w">  </span><span class="nt">strict</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+
+<span class="nt">dev</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">  </span><span class="nt">max_symbols</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3</span>
+</pre></div>
+</div>
+<p>Key settings:</p>
+<ul class="simple">
+<li><p><strong>fundamentals_source</strong>: <code class="docutils literal notranslate"><span class="pre">waterfall</span></code> (EDGAR → SimFin → yfinance →
+forward-fill) or <code class="docutils literal notranslate"><span class="pre">simfin</span></code> (SimFin only).</p></li>
+<li><p><strong>cache_ttl_days</strong>: Re-fetch cached data older than this many days.
+Remove to disable TTL.</p></li>
+<li><p><strong>dev.enabled</strong>: Limits the symbol list to <code class="docutils literal notranslate"><span class="pre">max_symbols</span></code> to avoid
+API rate limits during development.</p></li>
+<li><p><strong>country_filter</strong>: Restrict to a single country (e.g. <code class="docutils literal notranslate"><span class="pre">US</span></code>).</p></li>
+</ul>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">Coursework One</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#install-dependencies">Install dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#database-setup">Database setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#configuration">Configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="architecture.html">Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/data_collector.html">DataFetcher — Data Collection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/data_writer.html">DataWriter — Data Loading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/data_validator.html">DataValidator — Data Validation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/connections.html">Database Connections</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">Coursework One — Data Pipeline Documentation</a></li>
+      <li>Next: <a href="usage.html" title="next chapter">Usage</a></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.4.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="_sources/installation.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
