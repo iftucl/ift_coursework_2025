@@ -292,14 +292,14 @@ All infrastructure is containerised — you do not need to install PostgreSQL, M
 docker compose up -d
 
 # Or start specific services
-docker compose up --build postgres-db mongodb minio zookeeper kafka postgres-seed mongo-seed minio-seed
+docker compose up --build postgres-db mongodb miniocw zookeeper kafka postgres-seed mongo-seed minio-seed
 ```
 
 | Service | Internal Port | External Port | Purpose |
 |---|---|---|---|
 | `postgres-db` | 5432 | 5439 | PostgreSQL 16 database server with `fift` database and `systematic_equity` schema |
 | `mongodb` | 27017 | 27019 | MongoDB 7.0 document database for raw news articles and financial data |
-| `minio` | 9000 / 9001 | 9000 / 9001 | S3-compatible object storage (API on 9000, web console on 9001) |
+| `miniocw` | 9000 / 9001 | 9000 / 9001 | S3-compatible object storage (API on 9000, web console on 9001) |
 | `kafka` | 29092 | 9092 | Apache Kafka event streaming broker |
 | `zookeeper` | 2181 | 2181 | Kafka coordination service (required by Kafka) |
 | `postgres-seed` | — | — | Initialisation container: creates schema, tables, and seeds 678 companies from CSV |
