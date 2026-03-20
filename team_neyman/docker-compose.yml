@@ -91,10 +91,10 @@ services:
     worker:
       container_name: worker_cw
       build:
-        context: ./team_neyman/coursework_one  # The path to the folder
+        context: ./coursework_one  # The path to the folder
         dockerfile: Dockerfile        # The name of the file inside that folder
       volumes:
-        - ./team_neyman/coursework_one:/app  # This "links" your Windows folder to the Docker folder
+        - ./coursework_one:/app  # This "links" your Windows folder to the Docker folder
       environment:
         - PYTHONPATH=/app
       networks:

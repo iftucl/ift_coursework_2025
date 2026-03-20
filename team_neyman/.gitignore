@@ -1,3 +1,7 @@
+# Static FIles
+docker-compose.yml
+000.Database/
+
 # Others
 anaconda_projects/
 notebook_test/
