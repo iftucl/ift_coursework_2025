@@ -1,5 +1,5 @@
 Troubleshooting Guide
-====================
+=====================
 
 Common Issues
 -------------
@@ -226,14 +226,14 @@ Solution:
 
 .. code-block:: python
 
-    # Validate input data
-    from modules.input.data_validator import DataValidator
-    
-    validator = DataValidator()
-    issues = validator.validate(data)
-    
-    for issue in issues:
-        print(f"Issue: {issue}")
+    # Validate required columns before scoring
+    required = ['symbol', 'risk_adjusted_momentum_252', 'volume_60d_avg', 'var_95']
+    missing = [c for c in required if c not in data.columns]
+
+    if missing:
+        print(f"Missing columns: {missing}")
+    else:
+        print("Input schema looks valid")
 
 **Duplicate Records in Database**
 

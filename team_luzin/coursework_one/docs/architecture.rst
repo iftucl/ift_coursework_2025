@@ -97,14 +97,10 @@ Trading signal generation and validation:
 
     modules/signals/
     ├── __init__.py
-    ├── execution_signals.py     # MACD and signal generation
-    ├── signal_strength.py       # Confidence scoring
-    └── signal_filter.py         # Signal filtering and validation
+    └── execution_signals.py     # MACD + ATR + liquidity signal composition
 
 Key Classes:
-- ``ExecutionSignalGenerator``: Generates BUY/SELL/HOLD using MACD and ATR
-- ``SignalStrengthCalculator``: Scores signal reliability
-- ``SignalFilter``: Applies filtering criteria
+- ``ExecutionSignals``: Generates and combines BUY/SELL/HOLD signals
 
 **Module: modules/output/**
 
@@ -186,7 +182,9 @@ Key Metrics
 
 Calculated as the 95th percentile of daily returns over a 252-day window:
 
-$$\text{VAR}_{95} = \text{quantile}(\text{daily\_returns}, 0.05)$$
+.. math::
+
+    \mathrm{VAR}_{95} = \mathrm{quantile}(\mathrm{daily\_returns}, 0.05)
 
 Measured in percentage terms. Used to identify risky securities and confirm trade validity.
 
@@ -194,7 +192,9 @@ Measured in percentage terms. Used to identify risky securities and confirm trad
 
 Normalized volatility metric over 14 days:
 
-$$\text{ATR\%} = \frac{\text{ATR}_{14}}{\text{Close Price}} \times 100$$
+.. math::
+
+    \mathrm{ATR}_{\%} = \frac{\mathrm{ATR}_{14}}{\mathrm{Close}} \times 100
 
 Used to filter signals and scale position sizing in realistic trading scenarios.
 
@@ -202,9 +202,11 @@ Used to filter signals and scale position sizing in realistic trading scenarios.
 
 Multi-factor ranking using weighted combination:
 
-$$\text{Score} = 0.6 \cdot Z_{\text{momentum}} + 0.2 \cdot Z_{\text{liquidity}} - 0.2 \cdot Z_{\text{risk}}$$
+.. math::
 
-Where $Z_{\text{risk}}$ is derived from $|\text{VaR}_{95}|$.
+    \mathrm{Score} = 0.6 \cdot Z_{\mathrm{momentum}} + 0.2 \cdot Z_{\mathrm{liquidity}} - 0.2 \cdot Z_{\mathrm{risk}}
+
+Where :math:`Z_{\mathrm{risk}}` is derived from :math:`|\mathrm{VaR}_{95}|`.
 
 **MACD Signal**
 

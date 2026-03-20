@@ -32,7 +32,7 @@ The main entry point for running the pipeline is ``main.py``:
 - ``quarterly``: Run on first business day of quarter
 
 Common Usage Scenarios
----------------------
+----------------------
 
 **1. Daily Trading Strategy**
 
@@ -366,18 +366,19 @@ Create custom analysis scripts:
     import sys
     sys.path.insert(0, '.')
     
-    from modules.input.company_loader import CompanyLoader
-    from modules.processing.composite_score import CompositeScorer
+    import pandas as pd
+    from modules.processing.composite_scoring import CompositeScorer
     
-    # Load companies
-    companies = CompanyLoader.load_from_database()
+    # Load factor data exported by Step 1
+    factors = pd.read_csv('analytics/portfolio/factors_latest.csv')
     
     # Calculate scores
     scorer = CompositeScorer()
-    scores = scorer.calculate_score(
-        risk_metrics=risk_data,
-        momentum=momentum_data,
-        liquidity=liquidity_data
+    scores = scorer.calculate_composite_score(
+        df=factors,
+        momentum_col='risk_adjusted_momentum_252',
+        liquidity_col='volume_60d_avg',
+        var_col='var_95'
     )
     
     # Export results

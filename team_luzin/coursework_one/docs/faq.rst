@@ -163,7 +163,7 @@ A: Target is 80%+. Run coverage report:
 
 **Q: How do I add new technical indicators?**
 
-A: Create new module in ``modules/processing/`` and integrate into CompositeScorer or ExecutionSignalGenerator.
+A: Create a new module in ``modules/processing/`` and integrate it into ``CompositeScorer`` or ``ExecutionSignals``.
 
 **Q: Is multi-threading supported?**
 
