@@ -1,0 +1,210 @@
+# =============================================================================
+# UCL Institute of Finance & Technology
+# IFTE0003: Big Data in Quantitative Finance
+# Coursework 1 – Pipeline Configuration
+# Strategy: Value + News Sentiment (Fama-French Value + VADER NLP)
+# =============================================================================
+
+dev:
+  config:
+    env_variables:
+      - MINIO_USER
+      - MINIO_PASSWORD
+      - MINIO_URL
+      - POSTGRES_USERNAME
+      - POSTGRES_PASSWORD
+      - POSTGRES_HOST_DEV
+      - POSTGRES_PORT_DEV
+      - POSTGRES_DATABASE
+      - MONGO_HOST
+      - MONGO_PORT
+      - MONGO_USERNAME
+      - MONGO_PASSWORD
+      - KAFKA_BOOTSTRAP_SERVERS
+      - NEWSAPI_KEY
+    Database:
+      Postgres:
+        Host: localhost
+        Database: fift
+        Username: postgres
+        Password: postgres
+        Port: 5439
+        Schema: systematic_equity
+      MongoDB:
+        Host: localhost
+        Port: 27019
+        Database: ift_cw1_sentiment
+        Username: ift_bigdata
+        Password: mongo_password
+        Collections:
+          raw_news: raw_news_articles
+          raw_financials: raw_financial_data
+          raw_prices: raw_price_history
+      Minio:
+        BucketName: iftbigdata
+        RawDataPath: raw-data
+      Kafka:
+        BootstrapServers: localhost:9092
+        Topics:
+          news: news-articles
+          value: value-metrics
+  params:
+    Pipeline:
+      lookback_years: 5
+      batch_size: 50
+      delay_between_batches: 1
+      max_retries: 3
+      backoff_base: 2.0
+      api_delay_seconds: 0.5
+      retry:
+        gdelt:
+          max_retries: 3
+          timeout: 25
+          max_workers: 12
+        yf_news:
+          max_retries: 3
+          retry_passes: 2
+      circuit_breaker:
+        gdelt:
+          failure_threshold: 10
+          recovery_timeout: 30
+        yf_news:
+          failure_threshold: 8
+          recovery_timeout: 45
+        newsapi:
+          failure_threshold: 5
+          recovery_timeout: 60
+    Scoring:
+      value_weight: 0.6
+      sentiment_weight: 0.4
+      max_debt_equity: 2.0
+      min_sentiment: 0.0
+      min_articles: 3
+    DataSources:
+      yfinance:
+        enabled: true
+      gdelt:
+        enabled: true
+        timespan: 3months
+        max_records: 15
+      newsapi:
+        enabled: true
+        api_key: "${NEWSAPI_KEY}"
+        max_daily_requests: 100
+        only_top_n: 50
+        page_size: 10
+    CurrencyMapping:
+      ".L": GBP
+      ".PA": EUR
+      ".AS": EUR
+      ".DE": EUR
+      ".MC": EUR
+      ".MI": EUR
+      ".TO": CAD
+      ".S": CHF
+      default: USD
+    SwissTickerRemap:
+      from_suffix: ".S"
+      to_suffix: ".SW"
+
+docker:
+  config:
+    env_variables:
+      - MINIO_USER
+      - MINIO_PASSWORD
+      - MINIO_URL
+      - POSTGRES_USERNAME
+      - POSTGRES_PASSWORD
+      - POSTGRES_HOST_DOCKER
+      - POSTGRES_PORT_DOCKER
+      - POSTGRES_DATABASE
+      - MONGO_HOST
+      - MONGO_PORT
+      - MONGO_USERNAME
+      - MONGO_PASSWORD
+      - KAFKA_BOOTSTRAP_SERVERS
+      - NEWSAPI_KEY
+    Database:
+      Postgres:
+        Host: postgres_db
+        Database: fift
+        Username: postgres
+        Password: postgres
+        Port: 5432
+        Schema: systematic_equity
+      MongoDB:
+        Host: mongo_db
+        Port: 27017
+        Database: ift_cw1_sentiment
+        Username: ift_bigdata
+        Password: mongo_password
+        Collections:
+          raw_news: raw_news_articles
+          raw_financials: raw_financial_data
+          raw_prices: raw_price_history
+      Minio:
+        BucketName: iftbigdata
+        RawDataPath: raw-data
+      Kafka:
+        BootstrapServers: kafka:29092
+        Topics:
+          news: news-articles
+          value: value-metrics
+  params:
+    Pipeline:
+      lookback_years: 5
+      batch_size: 50
+      delay_between_batches: 1
+      max_retries: 3
+      backoff_base: 2.0
+      api_delay_seconds: 0.5
+      retry:
+        gdelt:
+          max_retries: 3
+          timeout: 25
+          max_workers: 12
+        yf_news:
+          max_retries: 3
+          retry_passes: 2
+      circuit_breaker:
+        gdelt:
+          failure_threshold: 10
+          recovery_timeout: 30
+        yf_news:
+          failure_threshold: 8
+          recovery_timeout: 45
+        newsapi:
+          failure_threshold: 5
+          recovery_timeout: 60
+    Scoring:
+      value_weight: 0.6
+      sentiment_weight: 0.4
+      max_debt_equity: 2.0
+      min_sentiment: 0.0
+      min_articles: 3
+    DataSources:
+      yfinance:
+        enabled: true
+      gdelt:
+        enabled: true
+        timespan: 3months
+        max_records: 15
+      newsapi:
+        enabled: true
+        api_key: "${NEWSAPI_KEY}"
+        max_daily_requests: 100
+        only_top_n: 50
+        page_size: 10
+    CurrencyMapping:
+      ".L": GBP
+      ".PA": EUR
+      ".AS": EUR
+      ".DE": EUR
+      ".MC": EUR
+      ".MI": EUR
+      ".TO": CAD
+      ".S": CHF
+      default: USD
+    SwissTickerRemap:
+      from_suffix: ".S"
+      to_suffix: ".SW"
