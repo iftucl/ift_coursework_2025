@@ -10,19 +10,19 @@ pipeline:
   frequency: daily           # How often to run: daily, weekly, monthly, quarterly, annual
   backfill_years: 5          # Number of years of historical data to fetch
   company_limit: 20          # Max companies to process (null = no limit, useful for testing)
-  enabled_extractors:        # Pluggable extractor switches
+  enabled_extractors:        # Stage toggles for pluggable extractors
     - source_a
-    - source_b               # run source_a + source_b by default
+    - source_b               # default runs both extractors
 
 # Universe filters
 universe:
-  country_allowlist: ["US", "GB", "CA", "FR", "DE"]
+  country_allowlist: null    # null = no country filtering; use full seeded universe
 
 # Logging
 logging:
   run_log_path: logs/pipeline_runs.jsonl
 
-# Alpha Vantage key is environment-only (.env / ALPHA_VANTAGE_API_KEY).
+# Alpha Vantage key is loaded from environment (.env), not from this file.
 
 # Mongo defaults (match docker-compose host mapping: 27019 -> container 27017)
 mongo:
