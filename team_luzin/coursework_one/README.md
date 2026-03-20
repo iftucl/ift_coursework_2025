@@ -88,7 +88,7 @@ Both accomplish the same goal and can be used interchangeably: `poetry run pytho
 
 ```bash
 poetry run pytest -q              # Run default test suite
-poetry run pytest ./tests/        # Coursework-style command (tests alias)
+poetry run pytest ./test/         # Run test directory explicitly
 poetry run pytest -q -o addopts="--cov=modules --cov=pipeline --cov=run_pipeline --cov=main --cov-report=term-missing --cov-report=html --cov-report=xml"  # Source-only coverage
 poetry run flake8                 # Check linting
 poetry run black --check .        # Check formatting
