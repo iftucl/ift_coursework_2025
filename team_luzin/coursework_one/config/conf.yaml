@@ -1,0 +1,28 @@
+# Configuration for Team Luzin Coursework One
+# IMPORTANT: Do not commit credentials to Git. Use environment variables or .gitignore for sensitive data.
+
+postgres:
+  host: localhost
+  port: 5439
+  user: postgres
+  password: postgres
+  database: fift
+  schema: systematic_equity
+
+minio:
+  endpoint: localhost:9000
+  access_key: ift_bigdata
+  secret_key: minio_password
+  bucket: csreport
+  use_ssl: false
+
+mongodb:
+  host: localhost
+  port: 27019
+  database: investment_data
+
+pipeline:
+  run_frequency: daily
+  historical_years: 5
+  data_source: "https://api.example.com"
+
