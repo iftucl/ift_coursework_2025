@@ -59,7 +59,7 @@ class MongoDBClient:
         database: str = "ift_cw1_sentiment",
     ):
         self.host = host or os.environ.get("MONGO_HOST", "localhost")
-        self.port = port or int(os.environ.get("MONGO_PORT", "27017"))
+        self.port = port or int(os.environ.get("MONGO_PORT", "27019"))
         self.username = username or os.environ.get("MONGO_USERNAME", "ift_bigdata")
         self.password = password or os.environ.get("MONGO_PASSWORD", "mongo_password")
         self.database_name = database

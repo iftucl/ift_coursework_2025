@@ -72,7 +72,7 @@ class PostgresConfig(BaseModel):
     @classmethod
     def resolve_port(cls, v) -> str:
         """Resolve port from environment if not provided."""
-        return v or os.environ.get("POSTGRES_PORT_DEV", os.environ.get("POSTGRES_PORT", "5438"))
+        return v or os.environ.get("POSTGRES_PORT_DEV", os.environ.get("POSTGRES_PORT", "5439"))
 
     @field_validator("database", mode="after")
     @classmethod
@@ -210,7 +210,7 @@ def get_db_client(db_config: dict = None, **kwargs) -> DatabaseClient:
             username=db_config.get("Username"),
             password=db_config.get("Password"),
             host=db_config.get("Host"),
-            port=str(db_config.get("Port", "5438")),
+            port=str(db_config.get("Port", "5439")),
             database=db_config.get("Database"),
         )
     else:

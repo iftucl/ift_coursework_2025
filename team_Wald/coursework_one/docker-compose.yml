@@ -10,14 +10,14 @@ services:
   # ---------------------------------------------------------------------------
   postgres-db:
     image: postgres:16-alpine
-    container_name: postgres_db
+    container_name: postgres_db_cw
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: fift
+      POSTGRES_DB: postgres
     ports:
-      - "5438:5432"
+      - "5439:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -31,14 +31,14 @@ services:
   # ---------------------------------------------------------------------------
   mongodb:
     image: mongo:7.0
-    container_name: mongodb_service
+    container_name: mongo_db_cw
     restart: unless-stopped
     environment:
       MONGO_INITDB_ROOT_USERNAME: ift_bigdata
       MONGO_INITDB_ROOT_PASSWORD: mongo_password
       MONGO_INITDB_DATABASE: ift_cw1_sentiment
     ports:
-      - "27017:27017"
+      - "27019:27017"
     volumes:
       - mongodata:/data/db
     healthcheck:
@@ -52,7 +52,7 @@ services:
   # ---------------------------------------------------------------------------
   mongo-seed:
     image: mongo:7.0
-    container_name: mongo_seed
+    container_name: mongo_seed_cw
     depends_on:
       mongodb:
         condition: service_healthy
@@ -74,9 +74,9 @@ services:
   # ---------------------------------------------------------------------------
   # MinIO — S3-compatible object storage (data lake for raw files)
   # ---------------------------------------------------------------------------
-  minio:
+  miniocw:
     image: minio/minio:latest
-    container_name: minio_service
+    container_name: miniocw
     restart: unless-stopped
     environment:
       MINIO_ROOT_USER: ift_bigdata
@@ -98,15 +98,15 @@ services:
   # ---------------------------------------------------------------------------
   minio-seed:
     image: minio/mc:latest
-    container_name: minio_seed
+    container_name: minio_seed_cw
     depends_on:
-      minio:
+      miniocw:
         condition: service_healthy
     entrypoint:
       - /bin/sh
       - -c
       - |
-        mc alias set myminio http://minio:9000 ift_bigdata minio_password &&
+        mc alias set myminio http://miniocw:9000 ift_bigdata minio_password &&
         mc mb --ignore-existing myminio/iftbigdata &&
         echo "MinIO bucket iftbigdata ready."
     restart: "no"
@@ -165,7 +165,7 @@ services:
   # ---------------------------------------------------------------------------
   postgres-seed:
     image: postgres:16-alpine
-    container_name: postgres_seed
+    container_name: postgres_seed_cw
     depends_on:
       postgres-db:
         condition: service_healthy

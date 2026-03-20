@@ -28,11 +28,11 @@ dev:
         Database: fift
         Username: postgres
         Password: postgres
-        Port: 5438
+        Port: 5439
         Schema: systematic_equity
       MongoDB:
         Host: localhost
-        Port: 27017
+        Port: 27019
         Database: ift_cw1_sentiment
         Username: ift_bigdata
         Password: mongo_password
@@ -133,7 +133,7 @@ docker:
         Port: 5432
         Schema: systematic_equity
       MongoDB:
-        Host: mongodb
+        Host: mongo_db
         Port: 27017
         Database: ift_cw1_sentiment
         Username: ift_bigdata

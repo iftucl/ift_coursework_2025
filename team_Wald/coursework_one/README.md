@@ -297,8 +297,8 @@ docker compose up --build postgres-db mongodb minio zookeeper kafka postgres-see
 
 | Service | Internal Port | External Port | Purpose |
 |---|---|---|---|
-| `postgres-db` | 5432 | 5438 | PostgreSQL 16 database server with `fift` database and `systematic_equity` schema |
-| `mongodb` | 27017 | 27017 | MongoDB 7.0 document database for raw news articles and financial data |
+| `postgres-db` | 5432 | 5439 | PostgreSQL 16 database server with `fift` database and `systematic_equity` schema |
+| `mongodb` | 27017 | 27019 | MongoDB 7.0 document database for raw news articles and financial data |
 | `minio` | 9000 / 9001 | 9000 / 9001 | S3-compatible object storage (API on 9000, web console on 9001) |
 | `kafka` | 29092 | 9092 | Apache Kafka event streaming broker |
 | `zookeeper` | 2181 | 2181 | Kafka coordination service (required by Kafka) |
@@ -654,14 +654,14 @@ docker compose up -d
 ```
 [+] Running 8/8
  ✔ Network coursework_one_default  Created
- ✔ Container postgres-db           Started
- ✔ Container mongodb               Started
- ✔ Container minio                 Started
+ ✔ Container postgres_db_cw         Started
+ ✔ Container mongo_db_cw           Started
+ ✔ Container miniocw               Started
  ✔ Container zookeeper             Started
  ✔ Container kafka                 Started
- ✔ Container postgres-seed         Started
- ✔ Container mongo-seed            Started
- ✔ Container minio-seed            Started
+ ✔ Container postgres_seed_cw      Started
+ ✔ Container mongo_seed_cw         Started
+ ✔ Container minio_seed_cw         Started
 ```
 
 **Wait 15-20 seconds**, then verify all services are running:
@@ -674,18 +674,18 @@ docker compose ps
 ```
 NAME              IMAGE                      STATUS
 kafka             confluentinc/cp-kafka      Up (healthy)
-minio             minio/minio                Up (healthy)
-minio-seed        minio/mc                   Exited (0)
-mongo-seed        mongodb/mongodb-community  Exited (0)
-mongodb           mongodb/mongodb-community  Up (healthy)
-postgres-db       postgres:16                Up (healthy)
-postgres-seed     postgres:16                Exited (0)
+miniocw           minio/minio                Up (healthy)
+minio_seed_cw     minio/mc                   Exited (0)
+mongo_seed_cw     mongodb/mongodb-community  Exited (0)
+mongo_db_cw       mongodb/mongodb-community  Up (healthy)
+postgres_db_cw    postgres:16                Up (healthy)
+postgres_seed_cw  postgres:16                Exited (0)
 zookeeper         confluentinc/cp-zookeeper  Up (healthy)
 ```
 
 **Key things to check:**
-- `postgres-db`, `mongodb`, `minio`, `kafka`, `zookeeper` should all say **"Up (healthy)"**
-- `postgres-seed`, `mongo-seed`, `minio-seed` should say **"Exited (0)"** — this is normal, they run once to initialise the databases and then stop. Exit code 0 means they completed successfully.
+- `postgres_db_cw`, `mongo_db_cw`, `miniocw`, `kafka`, `zookeeper` should all say **"Up (healthy)"**
+- `postgres_seed_cw`, `mongo_seed_cw`, `minio_seed_cw` should say **"Exited (0)"** — this is normal, they run once to initialise the databases and then stop. Exit code 0 means they completed successfully.
 
 **If something shows "Exited (1)" or "Restarting"**, check the logs:
 
@@ -703,7 +703,7 @@ Before installing Python dependencies, let's verify the databases were set up co
 **Check that 678 companies were loaded into PostgreSQL:**
 
 ```bash
-docker exec postgres-db psql -U postgres -d fift -c \
+docker exec postgres_db_cw psql -U postgres -d fift -c \
   "SELECT COUNT(*) AS total_companies FROM systematic_equity.company_static;"
 ```
 
@@ -718,7 +718,7 @@ docker exec postgres-db psql -U postgres -d fift -c \
 **Check the company breakdown by country:**
 
 ```bash
-docker exec postgres-db psql -U postgres -d fift -c \
+docker exec postgres_db_cw psql -U postgres -d fift -c \
   "SELECT country, COUNT(*) AS companies FROM systematic_equity.company_static GROUP BY country ORDER BY companies DESC;"
 ```
 
@@ -736,7 +736,7 @@ docker exec postgres-db psql -U postgres -d fift -c \
 **Check that all 8 PostgreSQL tables exist:**
 
 ```bash
-docker exec postgres-db psql -U postgres -d fift -c \
+docker exec postgres_db_cw psql -U postgres -d fift -c \
   "SELECT table_name FROM information_schema.tables WHERE table_schema = 'systematic_equity' ORDER BY table_name;"
 ```
 
@@ -758,7 +758,7 @@ docker exec postgres-db psql -U postgres -d fift -c \
 **Check that the MinIO bucket was created:**
 
 ```bash
-docker exec minio mc ls local/
+docker exec miniocw mc ls local/
 ```
 
 **Expected output** (should show the `iftbigdata` bucket):
@@ -819,12 +819,12 @@ cat .env.dev
 **Expected output** (the default values work out of the box):
 ```
 POSTGRES_HOST=localhost
-POSTGRES_PORT=5438
+POSTGRES_PORT=5439
 POSTGRES_DB=fift
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=postgres
 MONGO_HOST=localhost
-MONGO_PORT=27017
+MONGO_PORT=27019
 ...
 ```
 
@@ -1023,7 +1023,7 @@ The `--lookback_years` argument controls how far back in history the pipeline fe
 
 The pipeline reads all settings from `config/conf.yaml`. The file contains two environment profiles:
 
-- **`dev`**: For running locally (PostgreSQL on localhost:5438, etc.)
+- **`dev`**: For running locally (PostgreSQL on localhost:5439, etc.)
 - **`docker`**: For running inside Docker containers (PostgreSQL on postgres_db:5432, etc.)
 
 Key configuration sections:
@@ -1033,12 +1033,12 @@ Key configuration sections:
 Database:
   Postgres:
     Host: localhost          # Database server address
-    Port: 5438               # External port (mapped from Docker's internal 5432)
+    Port: 5439               # External port (mapped from Docker's internal 5432)
     Database: fift           # Database name
     Schema: systematic_equity # Schema containing all tables
   MongoDB:
     Host: localhost
-    Port: 27017
+    Port: 27019
     Database: ift_cw1_sentiment
   Minio:
     BucketName: iftbigdata
@@ -1493,12 +1493,12 @@ docker compose down && docker compose up -d
 ### PostgreSQL Connection Refused
 
 - Ensure Docker is running: `docker compose ps`
-- Check the port: default external port is **5438** (not 5432)
+- Check the port: default external port is **5439** (not 5432)
 - Verify credentials match `config/conf.yaml`: user=postgres, password=postgres, database=fift
 
 ### MongoDB Connection Issues
 
-- Default port: 27017
+- Default port: 27019
 - Default credentials: user=ift_bigdata, password=mongo_password
 - Database name: ift_cw1_sentiment
 
@@ -1571,7 +1571,7 @@ After the pipeline has finished running, use these commands to verify that all d
 **Connect to PostgreSQL via Docker:**
 
 ```bash
-docker exec -it postgres-db psql -U postgres -d fift
+docker exec -it postgres_db_cw psql -U postgres -d fift
 ```
 
 This opens an interactive SQL terminal. Type these queries one at a time and press Enter:
@@ -1674,7 +1674,7 @@ ORDER BY run_id DESC;
 **Connect to MongoDB via Docker:**
 
 ```bash
-docker exec -it mongodb mongosh --username ift_bigdata --password mongo_password --authenticationDatabase admin ift_cw1_sentiment
+docker exec -it mongo_db_cw mongosh --username ift_bigdata --password mongo_password --authenticationDatabase admin ift_cw1_sentiment
 ```
 
 **Check how many news articles were stored:**
@@ -1713,23 +1713,23 @@ exit
 **List all files in the MinIO bucket:**
 
 ```bash
-docker exec minio mc ls local/iftbigdata/ --recursive | head -30
+docker exec miniocw mc ls local/iftbigdata/ --recursive | head -30
 ```
 
 **Check specific data folders:**
 
 ```bash
 # Check price files
-docker exec minio mc ls local/iftbigdata/raw-data/prices/ | head -10
+docker exec miniocw mc ls local/iftbigdata/raw-data/prices/ | head -10
 
 # Check financial data files
-docker exec minio mc ls local/iftbigdata/raw-data/financial/ | head -10
+docker exec miniocw mc ls local/iftbigdata/raw-data/financial/ | head -10
 
 # Check company info files
-docker exec minio mc ls local/iftbigdata/raw-data/company_info/ | head -10
+docker exec miniocw mc ls local/iftbigdata/raw-data/company_info/ | head -10
 
 # Check FX rate files
-docker exec minio mc ls local/iftbigdata/raw-data/fx/ | head -10
+docker exec miniocw mc ls local/iftbigdata/raw-data/fx/ | head -10
 ```
 
 ### 23.4 Check All 8 PostgreSQL Tables Have Data
@@ -1737,7 +1737,7 @@ docker exec minio mc ls local/iftbigdata/raw-data/fx/ | head -10
 Run this single query to see row counts for every table:
 
 ```bash
-docker exec postgres-db psql -U postgres -d fift -c "
+docker exec postgres_db_cw psql -U postgres -d fift -c "
 SELECT 'company_static' AS table_name, COUNT(*) AS rows FROM systematic_equity.company_static
 UNION ALL SELECT 'daily_prices', COUNT(*) FROM systematic_equity.daily_prices
 UNION ALL SELECT 'value_metrics', COUNT(*) FROM systematic_equity.value_metrics
@@ -1787,7 +1787,7 @@ You can connect to PostgreSQL using any SQL client:
 | Setting | Value |
 |---|---|
 | Host | `localhost` |
-| Port | `5438` |
+| Port | `5439` |
 | Database | `fift` |
 | Username | `postgres` |
 | Password | `postgres` |
@@ -1799,7 +1799,7 @@ You can connect to MongoDB using MongoDB Compass:
 
 | Setting | Value |
 |---|---|
-| Connection string | `mongodb://ift_bigdata:mongo_password@localhost:27017/ift_cw1_sentiment?authSource=admin` |
+| Connection string | `mongodb://ift_bigdata:mongo_password@localhost:27019/ift_cw1_sentiment?authSource=admin` |
 
 ---
 
@@ -1875,7 +1875,7 @@ sleep 20
 docker compose ps
 
 # 6. Verify 678 companies were seeded
-docker exec postgres-db psql -U postgres -d fift -c \
+docker exec postgres_db_cw psql -U postgres -d fift -c \
   "SELECT COUNT(*) FROM systematic_equity.company_static;"
 
 # 7. Install Python dependencies
@@ -1916,15 +1916,15 @@ poetry run python Main.py --env_type dev --frequency weekly --tickers AAPL MSFT 
 
 ```bash
 # Check prices were loaded
-docker exec postgres-db psql -U postgres -d fift -c \
+docker exec postgres_db_cw psql -U postgres -d fift -c \
   "SELECT symbol, COUNT(*) AS price_rows FROM systematic_equity.daily_prices GROUP BY symbol;"
 
 # Check value scores
-docker exec postgres-db psql -U postgres -d fift -c \
+docker exec postgres_db_cw psql -U postgres -d fift -c \
   "SELECT * FROM systematic_equity.value_metrics;"
 
 # Check composite rankings
-docker exec postgres-db psql -U postgres -d fift -c \
+docker exec postgres_db_cw psql -U postgres -d fift -c \
   "SELECT * FROM systematic_equity.composite_rankings;"
 ```
 
@@ -1951,7 +1951,7 @@ After the pipeline completes, view the investment recommendations:
 
 ```bash
 # See the top 30 investment candidates
-docker exec postgres-db psql -U postgres -d fift -c "
+docker exec postgres_db_cw psql -U postgres -d fift -c "
 SELECT
   cr.company_id,
   cs.security AS company_name,
@@ -1971,7 +1971,7 @@ LIMIT 30;
 
 ```bash
 # See all companies flagged for investment
-docker exec postgres-db psql -U postgres -d fift -c "
+docker exec postgres_db_cw psql -U postgres -d fift -c "
 SELECT
   cr.company_id,
   cs.security AS company_name,
@@ -1987,7 +1987,7 @@ ORDER BY cr.rank ASC;
 
 ```bash
 # View pipeline summary statistics
-docker exec postgres-db psql -U postgres -d fift -c "
+docker exec postgres_db_cw psql -U postgres -d fift -c "
 SELECT
   'Total companies' AS metric, COUNT(*)::TEXT AS value FROM systematic_equity.company_static
 UNION ALL
