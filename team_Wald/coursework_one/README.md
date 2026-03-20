@@ -605,7 +605,7 @@ Open a terminal (Terminal app on Mac, or Command Prompt / PowerShell on Windows)
 
 ```bash
 git clone https://github.com/YOUR-USERNAME/ift_coursework_2025.git
-cd ift_coursework_2025/team_09/coursework_one
+cd ift_coursework_2025/team_Wald/coursework_one
 ```
 
 **What you should see:** The terminal prompt should now show you are inside the `coursework_one` folder. If you type `ls`, you should see files like `Main.py`, `pyproject.toml`, `docker-compose.yml`, and folders like `modules/`, `test/`, `config/`.
@@ -870,8 +870,8 @@ TOTAL                                            2496    159    94%
 ```
 
 **Key things to check:**
-- All 583 tests should say **PASSED** (zero FAILED)
-- Overall coverage should be **84%** or higher (target: 80%+)
+- All 632 tests should say **PASSED** (zero FAILED)
+- Overall coverage should be **94%** or higher (target: 80%+)
 - No errors or warnings
 
 ### Step 7: Run the Pipeline
@@ -1859,7 +1859,7 @@ This section provides a complete, step-by-step walkthrough for running the entir
 
 ```bash
 # 1. Navigate to the project
-cd team_09/coursework_one
+cd team_Wald/coursework_one
 
 # 2. IMPORTANT: Ensure Docker is in your PATH (macOS users)
 #    If "docker" gives "command not found", run this line first:
