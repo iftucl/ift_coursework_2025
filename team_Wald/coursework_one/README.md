@@ -295,16 +295,16 @@ docker compose up -d
 docker compose up --build postgres-db mongodb miniocw zookeeper kafka postgres-seed mongo-seed minio-seed
 ```
 
-| Service | Internal Port | External Port | Purpose |
-|---|---|---|---|
-| `postgres-db` | 5432 | 5439 | PostgreSQL 16 database server with `fift` database and `systematic_equity` schema |
-| `mongodb` | 27017 | 27019 | MongoDB 7.0 document database for raw news articles and financial data |
-| `miniocw` | 9000 / 9001 | 9000 / 9001 | S3-compatible object storage (API on 9000, web console on 9001) |
-| `kafka` | 29092 | 9092 | Apache Kafka event streaming broker |
-| `zookeeper` | 2181 | 2181 | Kafka coordination service (required by Kafka) |
-| `postgres-seed` | — | — | Initialisation container: creates schema, tables, and seeds 678 companies from CSV |
-| `mongo-seed` | — | — | Initialisation container: creates MongoDB indexes |
-| `minio-seed` | — | — | Initialisation container: creates MinIO bucket (`iftbigdata`) |
+| Service | Container Name | Internal Port | External Port | Purpose |
+|---|---|---|---|---|
+| `postgres-db` | `postgres_db_cw` | 5432 | 5439 | PostgreSQL 16 database server with `fift` database and `systematic_equity` schema |
+| `mongodb` | `mongo_db_cw` | 27017 | 27019 | MongoDB 7.0 document database for raw news articles and financial data |
+| `miniocw` | `miniocw` | 9000 / 9001 | 9000 / 9001 | S3-compatible object storage (API on 9000, web console on 9001) |
+| `kafka` | `kafka_service` | 29092 | 9092 | Apache Kafka event streaming broker |
+| `zookeeper` | `zookeeper_service` | 2181 | 2181 | Kafka coordination service (required by Kafka) |
+| `postgres-seed` | `postgres_seed_cw` | — | — | Initialisation container: creates schema, tables, and seeds 678 companies from CSV |
+| `mongo-seed` | `mongo_seed_cw` | — | — | Initialisation container: creates MongoDB indexes |
+| `minio-seed` | `minio_seed_cw` | — | — | Initialisation container: creates MinIO bucket (`iftbigdata`) |
 
 ### MinIO Data Lake Folder Structure
 
@@ -657,8 +657,8 @@ docker compose up -d
  ✔ Container postgres_db_cw         Started
  ✔ Container mongo_db_cw           Started
  ✔ Container miniocw               Started
- ✔ Container zookeeper             Started
- ✔ Container kafka                 Started
+ ✔ Container zookeeper_service     Started
+ ✔ Container kafka_service         Started
  ✔ Container postgres_seed_cw      Started
  ✔ Container mongo_seed_cw         Started
  ✔ Container minio_seed_cw         Started
@@ -673,18 +673,18 @@ docker compose ps
 **Expected output:**
 ```
 NAME              IMAGE                      STATUS
-kafka             confluentinc/cp-kafka      Up (healthy)
+kafka_service     confluentinc/cp-kafka      Up (healthy)
 miniocw           minio/minio                Up (healthy)
 minio_seed_cw     minio/mc                   Exited (0)
 mongo_seed_cw     mongodb/mongodb-community  Exited (0)
 mongo_db_cw       mongodb/mongodb-community  Up (healthy)
 postgres_db_cw    postgres:16                Up (healthy)
 postgres_seed_cw  postgres:16                Exited (0)
-zookeeper         confluentinc/cp-zookeeper  Up (healthy)
+zookeeper_service confluentinc/cp-zookeeper  Up (healthy)
 ```
 
 **Key things to check:**
-- `postgres_db_cw`, `mongo_db_cw`, `miniocw`, `kafka`, `zookeeper` should all say **"Up (healthy)"**
+- `postgres_db_cw`, `mongo_db_cw`, `miniocw`, `kafka_service`, `zookeeper_service` should all say **"Up (healthy)"**
 - `postgres_seed_cw`, `mongo_seed_cw`, `minio_seed_cw` should say **"Exited (0)"** — this is normal, they run once to initialise the databases and then stop. Exit code 0 means they completed successfully.
 
 **If something shows "Exited (1)" or "Restarting"**, check the logs:
