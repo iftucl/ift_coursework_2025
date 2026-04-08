@@ -11,4 +11,4 @@ if __name__ == "__main__":
     postgres.del_table("daily_ohlcv")
     yf_pipeline.update_ohlcv_batch()
     yf_pipeline.update_factors()
-    dolthub_pipeline.setup_dolt_database()
+    dolthub_pipeline.rebuild_dolt_database()
