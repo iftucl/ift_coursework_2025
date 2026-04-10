@@ -15,7 +15,7 @@ def load_config():
         return yaml.safe_load(f)["minio"]
 
 
-def upload_dataframe_to_parquet(df: pd.DataFrame, object_name: str):
+def upload_dataframe_to_parquet(df: pd.DataFrame, bucket_name: str, object_name: str):
     """
     Serializes a Pandas DataFrame to Parquet format and uploads it to MinIO object storage.
 
@@ -44,7 +44,6 @@ def upload_dataframe_to_parquet(df: pd.DataFrame, object_name: str):
     )
 
     try:
-        bucket_name = config["bucket_name"]
         if not client.bucket_exists(bucket_name):
             print(f"Bucket '{bucket_name}' not found. Creating it...")
             client.make_bucket(bucket_name)
@@ -63,3 +62,33 @@ def upload_dataframe_to_parquet(df: pd.DataFrame, object_name: str):
         print(f"MinIO S3 Error: {e}")
     except Exception as e:
         print(f"MinIO Upload Error: {e}")
+
+
+def load_parquet(bucket_name: str, object_name: str):
+    config = load_config()
+    client = Minio(
+        config["endpoint"],
+        access_key=config["access_key"],
+        secret_key=config["secret_key"],
+        secure=config["secure"],
+    )
+
+    """
+    if target_date:
+        object_name = f"portfolio_{target_date}.parquet"
+    else:
+        objects = client.list_objects(bucket_name)
+        object_names = [obj.object_name for obj in objects]
+        if not object_names:
+            print(f"No files found in bucket '{bucket_name}'.")
+            return
+        object_name = sorted(object_names)[-1]
+    """
+
+    print(f"Attempting to read: {object_name} from bucket: {bucket_name}")
+
+    try:
+        response = client.get_object(bucket_name, object_name)
+        df = pd.read_parquet(io.BytesIO(response.read()))
+    except Exception as e:
+        print(f"Error: Could not find or read file '{object_name}'. {e}")

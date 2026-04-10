@@ -216,4 +216,19 @@ def apply_scoring(df: pd.DataFrame):
         df["momentum_score"] + df["fey_score"] + df["trend_score"] + df["risk_score"]
     )
 
+    """
+    Z-score example
+    df["rar_zscore"] = (df["risk_adj_mom_12m"] - df["risk_adj_mom_12m"].mean()) / df["risk_adj_mom_12m"].std()
+
+    Handle outlier
+    df["z_score_capped"] = df["z_score"].clip(-3, 3)
+
+    Combine Z-scores
+    df["composite_z"] = df["z_mom"] + df["z_value"]
+
+    Map back to 0-1 scale using the normal distribution curve
+    from scipy.stats import norm
+    df["final_score_0_1"] = norm.cdf(df["composite_z"])
+    """
+
     return df
