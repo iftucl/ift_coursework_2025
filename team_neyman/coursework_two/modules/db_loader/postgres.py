@@ -356,7 +356,7 @@ def get_all_industries():
         return []
 
 
-def get_ohlcv_data(company_list: list, start_date=None):
+def get_ohlcv_data(company_list: list, start_date=None, end_date=None):
     """
     Retrieves historical OHLCV time-series data for a specific list of companies.
 
@@ -392,6 +392,9 @@ def get_ohlcv_data(company_list: list, start_date=None):
     if start_date is not None:
         query += " AND price_date >= :start_date"
         params["start_date"] = start_date
+    if end_date is not None:
+        query += " AND price_date <= :end_date"
+        params["end_date"] = end_date
 
     query += "\nORDER BY symbol, price_date ASC;"
 

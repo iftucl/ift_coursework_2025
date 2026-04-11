@@ -10,6 +10,7 @@ minio:
   access_key: "ift_bigdata"
   secret_key: "minio_password"
   secure: false
+  bucket_name: "portfolio"
 
 mongodb:
   host: "mongo_db"
