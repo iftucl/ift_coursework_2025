@@ -15,17 +15,11 @@ def load_config():
         return yaml.safe_load(f)["trading"]
 
 
-def establish_portfolio(run_date: str):
+def establish_portfolio(run_date: str, collection_name: str = None):
     factors_df = fetch_factors.get_target_factors(run_date)
     filtered_df = fetch_factors.apply_filter(factors_df)
-    final_df = fetch_factors.apply_scoring(filtered_df)
-
-    # Adjusted for the actual weight calculation
-    total_score_sum = final_df["total_score"].sum()
-    if total_score_sum != 0:
-        final_df["weight"] = final_df["total_score"] / total_score_sum
-    else:
-        final_df["weight"] = 0
+    scored_df = fetch_factors.apply_scoring(filtered_df)
+    final_df = fetch_factors.apply_weight(scored_df)
 
     score_cols = [
         "total_score",
@@ -44,12 +38,14 @@ def establish_portfolio(run_date: str):
         axis=1,
     ).tolist()
 
-    mongodb.save_trade_log(run_date, mongo_documents)
+    mongodb.save_trade_log(run_date, mongo_documents, collection_name)
 
 
-def update_holdings(run_date: str, current_holdings_df=None):
+def update_holdings(
+    run_date: str, current_holdings_df: pd.DataFrame = None, bucket_name: str = None
+):
     if current_holdings_df is None:
-        current_holdings_df = minio_db.load_current_holdings()
+        current_holdings_df = minio_db.load_current_holdings(bucket_name=bucket_name)
     if current_holdings_df.empty:
         print(f"No holdings to update for {run_date}")
         return
@@ -80,25 +76,26 @@ def update_holdings(run_date: str, current_holdings_df=None):
 
     holdings_file_path = f"holdings/{run_date}_holdings.parquet"
     minio_db.upload_dataframe_to_parquet(
-        current_holdings_df, object_name=holdings_file_path
+        current_holdings_df, object_name=holdings_file_path, bucket_name=bucket_name
     )
     print(f"Daily holdings updated and saved for {run_date}")
 
 
-def update_performace_data(
+def update_performance_data(
     run_date: str,
-    performance_df=None,
-    current_holdings_df=None,
-    capital_add=0,
-    cash_change=0,
+    performance_df: pd.DataFrame = None,
+    current_holdings_df: pd.DataFrame = None,
+    capital_add: float = 0,
+    cash_change: float = 0,
+    bucket_name: str = None,
 ):
     file_path = "performance/strategy_daily_stats.parquet"
     if performance_df is None:
         performance_df = minio_db.load_parquet(
-            object_name=file_path,
+            object_name=file_path, bucket_name=bucket_name
         )
     if current_holdings_df is None:
-        current_holdings_df = minio_db.load_current_holdings()
+        current_holdings_df = minio_db.load_current_holdings(bucket_name=bucket_name)
 
     if not performance_df.empty:
         last_capital = performance_df["initial_capital"].iloc[-1]
@@ -128,17 +125,24 @@ def update_performace_data(
     performance_df = pd.concat(
         [performance_df, pd.DataFrame([new_data])], ignore_index=True
     )
-    minio_db.upload_dataframe_to_parquet(performance_df, file_path)
+    minio_db.upload_dataframe_to_parquet(
+        performance_df, file_path, bucket_name=bucket_name
+    )
     print(f"Performance updated for {run_date}.")
 
 
-def execute_trade(fee_rate: float, execute_date: str):
+def execute_trade(
+    execute_date: str,
+    fee_rate: float = load_config()["transaction_fee"],
+    mongodb_collection_name: str = None,
+    minio_bucket_name: str = None,
+):
     config = load_config()
-    portfolio = mongodb.get_pending()
+    portfolio = mongodb.get_pending(collection_name=mongodb_collection_name)
 
     if not portfolio:
         print("Nothing to execute today.")
-        return
+        return False
 
     # Initialize Dataframe and Columns
     trade_df = pd.DataFrame(portfolio["trades"])
@@ -148,7 +152,7 @@ def execute_trade(fee_rate: float, execute_date: str):
             trade_df[col] = np.nan
 
     # Align Current Holdings
-    current_holdings_df = minio_db.load_current_holdings()
+    current_holdings_df = minio_db.load_current_holdings(bucket_name=minio_bucket_name)
     if current_holdings_df is None or current_holdings_df.empty:
         current_holdings_df = pd.DataFrame(
             columns=["symbol", "current_shares", "total_investment", "avg_cost"]
@@ -163,6 +167,7 @@ def execute_trade(fee_rate: float, execute_date: str):
     # Get Capital for Rebalance
     performance_df = minio_db.load_parquet(
         object_name="performance/strategy_daily_stats.parquet",
+        bucket_name=minio_bucket_name,
     )
     capital = (
         performance_df["net_capital"].iloc[-1]
@@ -212,8 +217,8 @@ def execute_trade(fee_rate: float, execute_date: str):
         }
     )
 
-    mongodb.update_trade_log(portfolio)
-    mongodb.check_pending()
+    mongodb.update_trade_log(portfolio, collection_name=mongodb_collection_name)
+    mongodb.check_pending(collection_name=mongodb_collection_name)
 
     # Update MinIO Holdings Snapshot and Perfomance
     holdings_change_df = trade_df.loc[
@@ -246,36 +251,42 @@ def execute_trade(fee_rate: float, execute_date: str):
         updated_holdings["current_shares"] > 0.001
     ].drop(columns=["exec_shares", "exec_price", "fees"])
 
-    update_holdings(execute_date, updated_holdings)
-    update_performace_data(
-        execute_date, performance_df, updated_holdings, cash_change=cash_flow
+    update_holdings(execute_date, updated_holdings, bucket_name=minio_bucket_name)
+    update_performance_data(
+        execute_date,
+        performance_df,
+        updated_holdings,
+        cash_change=cash_flow,
+        bucket_name=minio_bucket_name,
     )
 
+    return True
 
-def initiate_portfolio(init_date: str):
-    config = load_config()
-    fee_rate = config["transaction_fee"]
 
-    minio_db.create_empty_parquet(
-        object_name="performance/strategy_daily_stats.parquet",
-        columns=[
-            "date",
-            "initial_capital",
-            "investment_cost",
-            "investment_value",
-            "cash",
-            "net_capital",
-            "P&L",
-            "percentage_change",
-        ],
-    )
-
-    execute_trade(fee_rate, init_date)
+def initiate_portfolio(
+    init_date: str, minio_bucket_name: str = None, mongodb_collection_name: str = None
+):
+    object_name = "performance/strategy_daily_stats.parquet"
+    columns = [
+        "date",
+        "initial_capital",
+        "investment_cost",
+        "investment_value",
+        "cash",
+        "net_capital",
+        "P&L",
+        "percentage_change",
+    ]
+    if minio_bucket_name is None:
+        minio_db.create_empty_parquet(object_name=object_name, columns=columns)
+    else:
+        minio_db.create_empty_parquet(
+            object_name=object_name, bucket_name=minio_bucket_name, columns=columns
+        )
+    establish_portfolio(init_date, collection_name=mongodb_collection_name)
     print("Sucessfully Initiate Portfolio.")
 
 
-def rebalance(trade_date: str):
-    config = load_config()
-    fee_rate = config["transaction_fee"]
-    execute_trade(fee_rate, trade_date)
+def rebalance(rebalance_date: str, mongodb_collection_name: str = None):
+    establish_portfolio(rebalance_date, collection_name=mongodb_collection_name)
     print("Sucessfully Rebalance Portfolio.")

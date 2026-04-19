@@ -18,6 +18,15 @@ mongodb:
   dbname: "trading_db"
   collection: "trade_logs"
 
+portfolio:
+  momentum_weight: 0.35
+  fey_weight: 0.25
+  trend_weight: 0.2
+  risk_weight: 0.15
+  liquidity_weight: 0.05
+  health_sector_cap: 0.3
+  stock_cap: 0.1
+
 trading:
   transaction_fee: 0.03
   initial_capital: 1000000

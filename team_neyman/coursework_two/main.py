@@ -1,6 +1,7 @@
 import argparse
 import sys
 import time
+import traceback
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -8,6 +9,7 @@ import pandas as pd
 
 from modules.db_loader import postgres, minio_db
 from modules.factors import fetch_factors
+from modules.investment import trading
 
 
 def main():
@@ -19,27 +21,36 @@ def main():
         help="The specific date to run (YYYY-MM-DD). Defaults to yesterday.",
     )
 
+    parser.add_argument(
+        "--action",
+        choices=["update", "initiate", "rebalance", "trade"],
+        default="update",
+        help="The action executing. Defaults to update.",
+    )
+
     args = parser.parse_args()
 
     run_date = (
-        args.date if args.date else (datetime.now() - timedelta(1)).strftime("%Y-%m-%d")
+        args.date
+        if args.date
+        else (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
     )
 
-    print(f"Starting run for date: {run_date}")
+    print(f"Starting {args.action} for date: {run_date}")
 
     try:
-        target_df = fetch_factors.get_target_factors(run_date)
-        if not target_df.empty:
-            filtered_df = fetch_factors.apply_filter(target_df)
-            final_df = fetch_factors.apply_scoring(filtered_df)
-
-            filename = f"target_companies_{run_date}.parquet"
-            minio_db.upload_dataframe_to_parquet(final_df, filename)
-            print(f"SUCCESS: Results stored as {filename}")
+        if args.action == "initiate":
+            trading.initiate_portfolio(run_date)
+        elif args.action == "rebalance":
+            trading.rebalance(run_date)
+        elif args.action == "trade":
+            trading.execute_trade(run_date)
         else:
-            print("No companies passed the filters today.")
+            trading.update_holdings(run_date)
+            trading.update_performance_data(run_date)
     except Exception as e:
         print(f"CRITICAL ERROR: {e}")
+        traceback.print_exc()
         sys.exit(1)
 
 

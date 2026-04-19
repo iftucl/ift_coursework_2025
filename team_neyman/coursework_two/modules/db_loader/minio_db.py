@@ -127,3 +127,17 @@ def load_current_holdings(bucket_name: str = bucket_name):
     print(f"Loading newest holdings: {latest_file}")
     df = load_parquet(latest_file)
     return df
+
+
+def reset_minio():
+
+    buckets = client.list_buckets()
+
+    for bucket in buckets:
+        print(f"Clearing bucket: {bucket.name}...")
+        objects = client.list_objects(bucket.name, recursive=True)
+        for obj in objects:
+            client.remove_object(bucket.name, obj.object_name)
+        client.remove_bucket(bucket.name)
+
+    print("MinIO reset complete.")

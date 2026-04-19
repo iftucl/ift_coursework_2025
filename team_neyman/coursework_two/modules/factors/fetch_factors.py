@@ -1,5 +1,6 @@
 import sys
 import time
+import yaml
 from datetime import datetime, timedelta
 from pathlib import Path
 from functools import reduce
@@ -9,7 +10,13 @@ import pandas as pd
 from modules.db_loader import postgres
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
+CONFIG_PATH = BASE_DIR / "config" / "conf.yaml"
 sys.path.append(str(BASE_DIR))
+
+
+def load_config():
+    with open(CONFIG_PATH, "r") as f:
+        return yaml.safe_load(f)["portfolio"]
 
 
 def wait_for_postgres():
@@ -121,25 +128,19 @@ def get_latest_indicators(symbols: list, as_of_date: str):
     )
     latest_ntm_eps = calculate_ntm_eps(latest_eps_estimate)
 
-    # Put the factor tables in a list so we can loop through them
     factor_dfs = [latest_liquidity, latest_trend, latest_momentum, latest_risk]
 
-    # Drop the redundant 'price_date' columns from the factor tables
     for df in factor_dfs:
         if df is not None and not df.empty and "price_date" in df.columns:
             df.drop(columns=["price_date"], inplace=True)
 
-    # Compile the final list of DataFrames to merge
     all_dfs = [latest_ohlcv] + factor_dfs + [latest_ntm_eps]
 
-    # Filter out any None or empty DataFrames just in case a database table is completely empty
     valid_dfs = [df for df in all_dfs if df is not None and not df.empty]
     if not valid_dfs:
         print("Error: No data retrieved from any tables.")
         return pd.DataFrame()
 
-    # Merge everything on 'symbol' using a LEFT JOIN
-    # This keeps every symbol in OHLCV, and attaches factors if they exist.
     final_merged_df = reduce(
         lambda left, right: pd.merge(left, right, on="symbol", how="left"), valid_dfs
     )
@@ -189,6 +190,8 @@ def apply_filter(df: pd.DataFrame):
 
 
 def apply_scoring(df: pd.DataFrame):
+    config = load_config()
+
     df["rar_rank"] = df["risk_adj_mom_12m"].rank(
         ascending=True, pct=True, na_option="keep"
     )
@@ -212,8 +215,16 @@ def apply_scoring(df: pd.DataFrame):
     df["var_rank"] = df["var_pct"].rank(ascending=False, pct=True, na_option="keep")
     df["risk_score"] = (df["vol_rank"] + df["mdd_rank"] + df["var_rank"]) / 3
 
+    df["adv_rank"] = df["adv_20d"].rank(ascending=False, pct=True, na_option="keep")
+    df["addv_rank"] = df["addv_20d"].rank(ascending=False, pct=True, na_option="keep")
+    df["liquidity_score"] = (df["adv_rank"] + df["addv_rank"]) / 2
+
     df["total_score"] = (
-        df["momentum_score"] + df["fey_score"] + df["trend_score"] + df["risk_score"]
+        config["momentum_weight"] * df["momentum_score"]
+        + config["fey_weight"] * df["fey_score"]
+        + config["trend_weight"] * df["trend_score"]
+        + config["risk_weight"] * df["risk_score"]
+        + config["liquidity_weight"] * df["liquidity_score"]
     )
 
     """
@@ -230,5 +241,84 @@ def apply_scoring(df: pd.DataFrame):
     from scipy.stats import norm
     df["final_score_0_1"] = norm.cdf(df["composite_z"])
     """
+
+    return df
+
+
+def apply_weight(df: pd.DataFrame):
+
+    config = load_config()
+
+    """
+    # Top score selection
+    selection_cutoff = df["total_score"].quantile(0.8)
+    df = df[df["total_score"] >= selection_cutoff].copy()
+    """
+
+    # Apply weights
+    total_score_sum = df["total_score"].sum()
+    if total_score_sum != 0:
+        df["weight"] = df["total_score"] / total_score_sum
+    else:
+        print("No scoring data.")
+        return
+
+    # Cap constraints
+    max_iterations = 100
+    tolerance = 1e-10
+
+    for i in range(max_iterations):
+
+        hc_mask = df["gics_sector"] == "Health Care"
+        non_hc_mask = ~hc_mask
+        hc_total_weight = df.loc[hc_mask, "weight"].sum()
+
+        if hc_total_weight > config["health_sector_cap"] + tolerance:
+            hc_scale_factor = config["health_sector_cap"] / hc_total_weight
+            df.loc[hc_mask, "weight"] *= hc_scale_factor
+
+            released_weight = hc_total_weight - config["health_sector_cap"]
+            non_hc_weight_sum = df.loc[non_hc_mask, "weight"].sum()
+
+            if non_hc_weight_sum > 0:
+                df.loc[non_hc_mask, "weight"] += (
+                    df.loc[non_hc_mask, "weight"] / non_hc_weight_sum
+                ) * released_weight
+
+        if len(df) < 11:
+            print(
+                f"Warning: Only {len(df)} stocks selected. 10% cap might be impossible or cause high concentration."
+            )
+            break
+
+        over_mask = df["weight"] > config["stock_cap"] + tolerance
+        if over_mask.any():
+            under_mask = df["weight"] < config["stock_cap"]
+
+            excess_weight = df.loc[over_mask, "weight"].sum() - (
+                over_mask.sum() * config["stock_cap"]
+            )
+
+            df.loc[over_mask, "weight"] = config["stock_cap"]
+
+            under_weight_sum = df.loc[under_mask, "weight"].sum()
+            if under_weight_sum > 0:
+                df.loc[under_mask, "weight"] += (
+                    df.loc[under_mask, "weight"] / under_weight_sum
+                ) * excess_weight
+
+        current_hc_weight = df[df["gics_sector"] == "Health Care"]["weight"].sum()
+        current_max_stock = df["weight"].max()
+
+        if (
+            current_hc_weight <= config["health_sector_cap"] + tolerance
+            and current_max_stock <= config["stock_cap"] + tolerance
+        ):
+            print(f"Constraints converged after {i+1} iterations.")
+            break
+    else:
+        print("Warning: Weight constraints failed to converge within 100 iterations.")
+
+    df["weight"] = df["weight"] / df["weight"].sum()
 
     return df
