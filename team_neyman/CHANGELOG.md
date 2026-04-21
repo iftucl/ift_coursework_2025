@@ -2,6 +2,37 @@
 
 All notable changes to the **Team Neyman Coursework** will be documented in this file.
 
+## 2026-04-21
+### Changed
+- Adjust the trading and rebalance logic, making it more reasonable.
+
+### Fixed
+- Solved the bug happening when executing trading.
+
+## 2026-04-19
+### Added
+- Constructed backtest logic.
+- Created rebuild.py for cleaning data.
+
+### Changed
+- Adjusted portfolio trading logic.
+
+### Fixed
+- MongoDB connection issue.
+
+## 2026-04-11
+### Added
+- Established basic trading logic.
+- Create data storing and fetching logic within different databases. 
+
+## 2026-04-10
+### Added
+- Constructed connection to MongoDB.
+
+## 2026-04-08
+### Added
+- Initialized coursework two. Establish files should be built.
+
 ## 2026-03-16
 ### Fixed
 - Updated factors calculating logic to ensure alignment across multi-ticker datasets.

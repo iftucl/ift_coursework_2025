@@ -125,7 +125,7 @@ def load_current_holdings(bucket_name: str = bucket_name):
     latest_file = holdings_files[-1]
 
     print(f"Loading newest holdings: {latest_file}")
-    df = load_parquet(latest_file)
+    df = load_parquet(latest_file, bucket_name=bucket_name)
     return df
 
 

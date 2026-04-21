@@ -44,16 +44,20 @@ def establish_portfolio(run_date: str, collection_name: str = None):
 def update_holdings(
     run_date: str, current_holdings_df: pd.DataFrame = None, bucket_name: str = None
 ):
-    if current_holdings_df is None:
+    if current_holdings_df is None or current_holdings_df.empty:
         current_holdings_df = minio_db.load_current_holdings(bucket_name=bucket_name)
-    if current_holdings_df.empty:
+
+    if current_holdings_df is None or current_holdings_df.empty:
         print(f"No holdings to update for {run_date}")
         return
 
+    if "current_price" not in current_holdings_df.columns:
+        current_holdings_df["current_price"] = np.nan
+
     new_prices_data = postgres.get_ohlcv_data(
-        current_holdings_df["symbol"], start_date=run_date, end_date=run_date
+        current_holdings_df["symbol"].tolist(), start_date=run_date, end_date=run_date
     )
-    if not new_prices_data.empty:
+    if new_prices_data is not None and not new_prices_data.empty:
         new_prices_data = new_prices_data.rename(columns={"close_price": "new_price"})
         new_prices_data = new_prices_data[["symbol", "new_price"]]
         current_holdings_df = pd.merge(
@@ -75,6 +79,7 @@ def update_holdings(
     ) - 1
 
     holdings_file_path = f"holdings/{run_date}_holdings.parquet"
+    current_holdings_df.to_csv(f"output/{run_date}_holding_test.csv")
     minio_db.upload_dataframe_to_parquet(
         current_holdings_df, object_name=holdings_file_path, bucket_name=bucket_name
     )
@@ -90,14 +95,14 @@ def update_performance_data(
     bucket_name: str = None,
 ):
     file_path = "performance/strategy_daily_stats.parquet"
-    if performance_df is None:
+    if performance_df is None or performance_df.empty:
         performance_df = minio_db.load_parquet(
             object_name=file_path, bucket_name=bucket_name
         )
-    if current_holdings_df is None:
+    if current_holdings_df is None or current_holdings_df.empty:
         current_holdings_df = minio_db.load_current_holdings(bucket_name=bucket_name)
 
-    if not performance_df.empty:
+    if performance_df is not None and not performance_df.empty:
         last_capital = performance_df["initial_capital"].iloc[-1]
         last_cash = performance_df["cash"].iloc[-1]
     else:
@@ -125,6 +130,7 @@ def update_performance_data(
     performance_df = pd.concat(
         [performance_df, pd.DataFrame([new_data])], ignore_index=True
     )
+    performance_df.to_csv("output/performance_test.csv")
     minio_db.upload_dataframe_to_parquet(
         performance_df, file_path, bucket_name=bucket_name
     )
@@ -155,14 +161,23 @@ def execute_trade(
     current_holdings_df = minio_db.load_current_holdings(bucket_name=minio_bucket_name)
     if current_holdings_df is None or current_holdings_df.empty:
         current_holdings_df = pd.DataFrame(
-            columns=["symbol", "current_shares", "total_investment", "avg_cost"]
+            columns=[
+                "symbol",
+                "current_shares",
+                "total_investment",
+                "avg_cost",
+                "current_price",
+            ]
         )
         current_shares_df = pd.DataFrame(columns=["symbol", "current_shares"])
     else:
         current_shares_df = current_holdings_df[["symbol", "current_shares"]]
 
     trade_df = pd.merge(trade_df, current_shares_df, on="symbol", how="left")
-    trade_df["current_shares"] = trade_df["current_shares"].fillna(0)
+    with pd.option_context("future.no_silent_downcasting", True):
+        trade_df["current_shares"] = (
+            trade_df["current_shares"].fillna(0).infer_objects(copy=False)
+        )
 
     # Get Capital for Rebalance
     performance_df = minio_db.load_parquet(
@@ -171,9 +186,10 @@ def execute_trade(
     )
     capital = (
         performance_df["net_capital"].iloc[-1]
-        if not performance_df.empty
+        if performance_df is not None and not performance_df.empty
         else config["initial_capital"]
     )
+    print(capital)
 
     # Fetch and Merge Prices
     new_prices_data = postgres.get_ohlcv_data(
@@ -189,7 +205,7 @@ def execute_trade(
         )
 
     # Execution Logic
-    to_execute_mask = trade_df["exec_price"].notna() & trade_df["shares"].isna()
+    to_execute_mask = trade_df["exec_price"].notna() & trade_df["exec_shares"].isna()
     target_shares = (
         (trade_df.loc[to_execute_mask, "weight"] * capital * (1 - fee_rate))
         / trade_df.loc[to_execute_mask, "exec_price"]
@@ -201,6 +217,8 @@ def execute_trade(
         trade_df["exec_shares"] * trade_df["exec_price"]
     )
     trade_df.loc[to_execute_mask, "fees"] = abs(trade_df["investment"]) * fee_rate
+
+    trade_df.to_csv(f"output/{execute_date}_trading_test.csv")
 
     # Update MongoDB Trading Info
     missing_symbols = trade_df.loc[trade_df["exec_price"].isna(), "symbol"].tolist()
@@ -224,9 +242,15 @@ def execute_trade(
     holdings_change_df = trade_df.loc[
         trade_df["exec_shares"] != 0, ["symbol", "exec_shares", "exec_price", "fees"]
     ]
-    updated_holdings = pd.merge(
-        current_holdings_df, holdings_change_df, on="symbol", how="outer"
-    ).fillna(0)
+    with pd.option_context("future.no_silent_downcasting", True):
+        updated_holdings = (
+            pd.merge(current_holdings_df, holdings_change_df, on="symbol", how="outer")
+            .fillna(0)
+            .infer_objects(copy=False)
+        )
+    updated_holdings["total_investment"] = updated_holdings["total_investment"].astype(
+        float
+    )
     updated_holdings["current_shares"] = (
         updated_holdings["current_shares"] + updated_holdings["exec_shares"]
     )
@@ -236,26 +260,38 @@ def execute_trade(
         updated_holdings["exec_shares"] * updated_holdings["exec_price"]
     ) + updated_holdings["fees"]
 
-    is_sell = updated_holdings["exec_shares"] < 0
-    updated_holdings.loc[is_sell, "total_investment"] = updated_holdings[
-        "total_investment"
-    ] * (
-        updated_holdings["current_shares"]
-        / (updated_holdings["current_shares"] + updated_holdings["exec_shares"])
+    is_total_exit = (updated_holdings["current_shares"] <= 0.001) & (
+        updated_holdings["exec_shares"] < 0
     )
+    is_partial_sell = (updated_holdings["current_shares"] > 0.001) & (
+        updated_holdings["exec_shares"] < 0
+    )
+    if is_partial_sell.any():
+        denom = updated_holdings.loc[is_partial_sell, "current_shares"] + abs(
+            updated_holdings.loc[is_partial_sell, "exec_shares"]
+        )
+        updated_holdings.loc[is_partial_sell, "total_investment"] *= (
+            updated_holdings.loc[is_partial_sell, "current_shares"] / denom
+        )
+    updated_holdings.loc[is_total_exit, "total_investment"] = 0
 
+    updated_holdings = updated_holdings[
+        updated_holdings["current_shares"] > 0.001
+    ].copy()
     updated_holdings["avg_cost"] = (
         updated_holdings["total_investment"] / updated_holdings["current_shares"]
     )
-    updated_holdings = updated_holdings[
-        updated_holdings["current_shares"] > 0.001
-    ].drop(columns=["exec_shares", "exec_price", "fees"])
+    updated_holdings = updated_holdings.drop(
+        columns=["exec_shares", "exec_price", "fees"]
+    )
+
+    print("Updating holdings...")
 
     update_holdings(execute_date, updated_holdings, bucket_name=minio_bucket_name)
+
     update_performance_data(
         execute_date,
         performance_df,
-        updated_holdings,
         cash_change=cash_flow,
         bucket_name=minio_bucket_name,
     )

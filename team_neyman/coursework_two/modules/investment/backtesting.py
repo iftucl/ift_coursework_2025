@@ -1,4 +1,5 @@
 import yaml
+import sys
 import argparse
 import pandas as pd
 from pathlib import Path
@@ -21,8 +22,11 @@ def backtest(start_date: str, end_date: str, fee_rate: float):
 
     date_range = pd.date_range(start=start_date, end=end_date, freq="B")
 
+    last_month = None
+
     for i, current_ts in enumerate(date_range):
         run_date = current_ts.strftime("%Y-%m-%d")
+        current_month = current_ts.month
         print(f"\n [BACKTEST] Processing Date: {run_date}")
 
         try:
@@ -33,26 +37,33 @@ def backtest(start_date: str, end_date: str, fee_rate: float):
                     minio_bucket_name=minio_bucket_name,
                     mongodb_collection_name=mongodb_collection_name,
                 )
-            elif current_ts.is_month_start:
-                trading.rebalance(
-                    run_date, mongodb_collection_name=mongodb_collection_name
-                )
+                last_month = current_month
             else:
                 trade_execution = trading.execute_trade(
-                    fee_rate,
-                    run_date,
+                    execute_date=run_date,
+                    fee_rate=fee_rate,
                     mongodb_collection_name=mongodb_collection_name,
                     minio_bucket_name=minio_bucket_name,
                 )
+                # Update is handled within the trade_execution function.
                 if not trade_execution:
                     trading.update_holdings(run_date, bucket_name=minio_bucket_name)
                     trading.update_performance_data(
                         run_date, bucket_name=minio_bucket_name
                     )
+                if current_month != last_month:
+                    print(
+                        f"Month changed ({last_month} -> {current_month}). Rebalancing..."
+                    )
+                    trading.rebalance(
+                        run_date, mongodb_collection_name=mongodb_collection_name
+                    )
+                last_month = current_month
 
         except Exception as e:
             print(f"Error on {run_date}: {e}")
-            continue
+            # continue
+            sys.exit(1)
 
     print("\n Backtest Complete.")
 

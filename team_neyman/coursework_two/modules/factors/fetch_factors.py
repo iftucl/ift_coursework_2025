@@ -192,6 +192,7 @@ def apply_filter(df: pd.DataFrame):
 def apply_scoring(df: pd.DataFrame):
     config = load_config()
 
+    # Momentum score
     df["rar_rank"] = df["risk_adj_mom_12m"].rank(
         ascending=True, pct=True, na_option="keep"
     )
@@ -200,14 +201,17 @@ def apply_scoring(df: pd.DataFrame):
     )
     df["momentum_score"] = 0.7 * df["rar_rank"] + 0.3 * df["stability_rank"]
 
+    # Forward earnings yield score
     df["fey_score"] = df["forward_earning_yields"].rank(
         ascending=True, pct=True, na_option="top"
     )
 
+    # Trend score
     df["trend_score"] = df["ma200_20d_roc"].rank(
         ascending=True, pct=True, na_option="keep"
     )
 
+    # Risk score
     df["vol_rank"] = df["vol_60d"].rank(ascending=False, pct=True, na_option="keep")
     df["mdd_rank"] = df["max_drawdown_1y"].rank(
         ascending=False, pct=True, na_option="keep"
@@ -215,10 +219,12 @@ def apply_scoring(df: pd.DataFrame):
     df["var_rank"] = df["var_pct"].rank(ascending=False, pct=True, na_option="keep")
     df["risk_score"] = (df["vol_rank"] + df["mdd_rank"] + df["var_rank"]) / 3
 
+    # Liquidity score
     df["adv_rank"] = df["adv_20d"].rank(ascending=False, pct=True, na_option="keep")
     df["addv_rank"] = df["addv_20d"].rank(ascending=False, pct=True, na_option="keep")
     df["liquidity_score"] = (df["adv_rank"] + df["addv_rank"]) / 2
 
+    # Total score
     df["total_score"] = (
         config["momentum_weight"] * df["momentum_score"]
         + config["fey_weight"] * df["fey_score"]

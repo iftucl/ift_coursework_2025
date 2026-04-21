@@ -63,6 +63,7 @@ def check_pending(collection_name: str = None):
 def update_trade_log(trade_info: dict, collection_name: str = None):
     collection = get_collection(collection_name)
     collection.replace_one({"_id": trade_info["_id"]}, trade_info)
+    print("Trading complete!")
 
 
 def reset_mongodb():
