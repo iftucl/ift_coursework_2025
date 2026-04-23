@@ -119,7 +119,7 @@ def fetch_ohlcv_data(
 
 def get_ticker_currencies():
     df_companies = postgres.get_table(name="company_static")
-    ticker_list = df_companies["symbol"].tolist()
+    ticker_list = [s.strip() for s in df_companies["symbol"].tolist()]
 
     currency_map = []
 
@@ -127,14 +127,27 @@ def get_ticker_currencies():
         try:
             t = yf.Ticker(symbol)
             curr = t.info.get("currency", "Unknown")
-            currency_map.append({"symbol": symbol, "currency": curr})
+            currency_map.append({"symbol": symbol.strip(), "currency": curr.strip()})
             print(f"Fetched {symbol}: {curr}")
             time.sleep(0.1)
         except Exception as e:
             print(f"Could not fetch {symbol}: {e}")
 
+    currency_df = pd.DataFrame(currency_map)
+    is_unknown = currency_df["currency"] == "Unknown"
+    conditions = [
+        is_unknown & currency_df["symbol"].str.endswith(".L"),
+        is_unknown & currency_df["symbol"].str.endswith(".S"),
+        is_unknown,
+    ]
+    choices = ["GBp", "CHF", "USD"]
+    currency_df["currency"] = np.select(
+        conditions, choices, default=currency_df["currency"]
+    )
+    print(f"Cleaned {is_unknown.sum()} Unknown currencies.")
+
     postgres.add_new_column(
-        pd.DataFrame(currency_map),
+        currency_df,
         column_name="currency",
         column_type="VARCHAR(10)",
         table_name="company_static",

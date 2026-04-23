@@ -16,5 +16,5 @@ yf_pipeline:
   batch_size: 50
   fetch_years: 10
   fx_list: ["EURUSD=X", "GBPUSD=X", "USDJPY=X", "USDCHF=X", "USDCAD=X", "AUDUSD=X", "NZDUSD=X"]
-  invert_fx_list: ["USDJPY=X", "USDCHF=X", "USDCAD=X"]
+  invert_fx_list: ["EURUSD=X", "GBPUSD=X", "AUDUSD=X", "NZDUSD=X"]
   extra_tickers: ["ACWI", "URTH", "XLP", "^892400-USD-STRD", "^990100-USD-STRD", "^704853-USD-STRD"]

@@ -2,6 +2,14 @@
 
 All notable changes to the **Team Neyman Coursework** will be documented in this file.
 
+## 2026-04-23
+### Added
+- Established analysis functions.
+
+### Fixed
+- Fixed trading logic realated to currency an fx.
+- Rebuild database to handle missing values.
+
 ## 2026-04-22
 ### Added
 - Added foreign exchange and currency data.

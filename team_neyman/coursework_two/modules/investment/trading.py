@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import yaml
 import sys
+from datetime import timedelta
 from pathlib import Path
 from modules.factors import fetch_factors
 from modules.db_loader import postgres, minio_db, mongodb
@@ -77,24 +78,30 @@ def update_holdings(
         ].combine_first(current_holdings_df["current_price"])
         current_holdings_df = current_holdings_df.drop(columns=["new_price"])
 
-    new_fx_data = postgres.get_fx_data(start_date=run_date, end_date=run_date)
+    lookback_start = (pd.to_datetime(run_date) - timedelta(days=7)).strftime("%Y-%m-%d")
+    new_fx_data = postgres.get_fx_data(start_date=lookback_start, end_date=run_date)
     if new_fx_data is not None and not new_fx_data.empty:
+        new_fx_data = new_fx_data.sort_values(
+            ["usd_to", "price_date"], ascending=[True, False]
+        )
+        new_fx_data = new_fx_data.drop_duplicates(subset="usd_to", keep="first")
         new_fx_data = new_fx_data.rename(
-            columns={"USD_to": "currency", "close_price": "new_fx_rate"}
+            columns={"usd_to": "currency", "close_price": "new_fx_rate"}
         )[["currency", "new_fx_rate"]]
+        current_holdings_df["currency"] = (
+            current_holdings_df["currency"].astype(str).str.strip()
+        )
         current_holdings_df = pd.merge(
             current_holdings_df, new_fx_data, on="currency", how="left"
         )
         current_holdings_df.loc[
             current_holdings_df["currency"] == "USD", "new_fx_rate"
         ] = 1.0
-        gbp_lookup = new_fx_data.loc[
-            new_fx_data["currency"] == "GBP", "new_fx_rate"
-        ].iloc[0]
+        gbp_lookup = new_fx_data.loc[new_fx_data["currency"] == "GBP", "new_fx_rate"]
         if not gbp_lookup.empty:
             current_holdings_df.loc[
                 current_holdings_df["currency"] == "GBp", "new_fx_rate"
-            ] = (gbp_lookup * 100)
+            ] = (gbp_lookup.iloc[0] * 100)
         current_holdings_df["fx_rate"] = current_holdings_df[
             "new_fx_rate"
         ].combine_first(current_holdings_df["fx_rate"])
@@ -209,11 +216,21 @@ def execute_trade(
                 "current_price",
             ]
         )
-        current_shares_df = pd.DataFrame(columns=["symbol", "current_shares"])
+        current_shares_df = pd.DataFrame(
+            columns=["symbol", "currency", "current_shares"]
+        )
     else:
-        current_shares_df = current_holdings_df[["symbol", "current_shares"]]
+        current_shares_df = current_holdings_df[
+            ["symbol", "currency", "current_shares"]
+        ]
 
-    trade_df = pd.merge(trade_df, current_shares_df, on="symbol", how="left")
+    trade_df = pd.merge(
+        trade_df, current_shares_df, on="symbol", how="outer", suffixes=("", "_old")
+    )
+    if "currency_old" in trade_df.columns:
+        trade_df["currency"] = trade_df["currency"].fillna(trade_df["currency_old"])
+        trade_df = trade_df.drop(columns=["currency_old"])
+    trade_df["weight"] = trade_df["weight"].fillna(0.0)
     with pd.option_context("future.no_silent_downcasting", True):
         trade_df["current_shares"] = (
             trade_df["current_shares"].fillna(0).infer_objects(copy=False)
@@ -245,21 +262,28 @@ def execute_trade(
         )
 
     # Fetch and Merge FX
-    new_fx_data = postgres.get_fx_data(start_date=execute_date, end_date=execute_date)
+    lookback_start = (pd.to_datetime(execute_date) - timedelta(days=7)).strftime(
+        "%Y-%m-%d"
+    )
+    new_fx_data = postgres.get_fx_data(start_date=lookback_start, end_date=execute_date)
     if new_fx_data is not None and not new_fx_data.empty:
-        fx_rates = new_fx_data.rename(
-            columns={"USD_to": "currency", "close_price": "fx_rate"}
+        new_fx_data = new_fx_data.sort_values("price_date", ascending=False)
+        new_fx_data = new_fx_data.drop_duplicates(subset="usd_to", keep="first")
+        new_fx_data = new_fx_data.rename(
+            columns={"usd_to": "currency", "close_price": "fx_rate"}
         )[["currency", "fx_rate"]]
 
-        trade_df = pd.merge(trade_df, fx_rates, on="currency", how="left")
+        trade_df = pd.merge(trade_df, new_fx_data, on="currency", how="left")
 
-    gbp_lookup = fx_rates.loc[fx_rates["currency"] == "GBP", "fx_rate"].iloc[0]
+    gbp_lookup = new_fx_data.loc[new_fx_data["currency"] == "GBP", "fx_rate"]
     if not gbp_lookup.empty:
-        trade_df.loc[trade_df["currency"] == "GBp", "fx_rate"] = gbp_lookup * 100
+        trade_df.loc[trade_df["currency"] == "GBp", "fx_rate"] = (
+            gbp_lookup.iloc[0] * 100
+        )
     else:
         print("Warning: GBp stocks found but no GBP rate in database!")
     trade_df.loc[trade_df["currency"] == "USD", "fx_rate"] = 1.0
-    trade_df["fx_rate"] = trade_df["fx_rate"].fillna(1.0)
+    trade_df["fx_rate"] = trade_df["fx_rate"].replace(0, np.nan).fillna(1.0)
 
     # Execution Logic
     to_execute_mask = trade_df["exec_price"].notna() & trade_df["exec_shares"].isna()
@@ -306,14 +330,30 @@ def execute_trade(
     # Update MinIO Holdings Snapshot and Perfomance
     holdings_change_df = trade_df.loc[
         trade_df["exec_shares"] != 0,
-        ["symbol", "exec_shares", "exec_price", "fees", "currency", "fx_rate"],
+        ["symbol", "currency", "exec_shares", "exec_price", "fees", "fx_rate"],
     ]
     with pd.option_context("future.no_silent_downcasting", True):
-        updated_holdings = (
-            pd.merge(current_holdings_df, holdings_change_df, on="symbol", how="outer")
-            .fillna(0)
-            .infer_objects(copy=False)
+        updated_holdings = pd.merge(
+            current_holdings_df,
+            holdings_change_df,
+            on="symbol",
+            how="outer",
+            suffixes=("", "_new"),
+        ).infer_objects(copy=False)
+    updated_holdings["currency"] = updated_holdings["currency"].fillna(
+        updated_holdings["currency_new"]
+    )
+    if "fx_rate_new" in updated_holdings.columns:
+        updated_holdings["fx_rate"] = updated_holdings["fx_rate_new"].combine_first(
+            updated_holdings["fx_rate"]
         )
+    updated_holdings = updated_holdings.drop(
+        columns=["currency_new", "fx_rate_new"], errors="ignore"
+    ).fillna(0)
+    updated_holdings["fx_rate"] = (
+        updated_holdings["fx_rate"].replace(0, np.nan).fillna(1.0)
+    )
+
     updated_holdings["total_investment"] = updated_holdings["total_investment"].astype(
         float
     )

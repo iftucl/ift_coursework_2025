@@ -275,12 +275,13 @@ def add_new_column(
         UPDATE "{schema}"."{table_name}" AS main
         SET "{column_name}" = temp."{column_name}"
         FROM "{schema}"."{temp_table}" AS temp
-        WHERE main.symbol = temp.symbol
+        WHERE TRIM(main.symbol) = TRIM(temp.symbol)
         {date_join};
         """
 
         with engine.begin() as conn:
-            conn.execute(text(update_query))
+            result = conn.execute(text(update_query))
+            print(f"Successfully updated {result.rowcount} rows in '{table_name}'.")
             conn.execute(text(f'DROP TABLE "{schema}"."{temp_table}";'))
 
         print(f"Successfully populated '{column_name}' with data!")
@@ -503,7 +504,6 @@ def create_ohlcv_table():
         id SERIAL PRIMARY KEY,
         symbol VARCHAR(30) NOT NULL,
         price_date DATE NOT NULL,
-        currency VARCHAR(10),
         open_price NUMERIC(14, 4),
         high_price NUMERIC(14, 4),
         low_price NUMERIC(14, 4),

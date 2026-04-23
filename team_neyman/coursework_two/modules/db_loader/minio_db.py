@@ -22,11 +22,11 @@ client = Minio(
     secret_key=config["secret_key"],
     secure=config["secure"],
 )
-bucket_name = config["bucket_name"]
+BUCKET_NAME = config["bucket_name"]
 
 
 def upload_dataframe_to_parquet(
-    df: pd.DataFrame, object_name: str, bucket_name: str = bucket_name
+    df: pd.DataFrame, object_name: str, bucket_name: str = BUCKET_NAME
 ):
     """
     Serializes a Pandas DataFrame to Parquet format and uploads it to MinIO object storage.
@@ -70,7 +70,7 @@ def upload_dataframe_to_parquet(
 
 
 def create_empty_parquet(
-    object_name: str, bucket_name: str = bucket_name, columns: list = None
+    object_name: str, bucket_name: str = BUCKET_NAME, columns: list = None
 ):
     df_empty = pd.DataFrame(columns=columns)
 
@@ -92,7 +92,7 @@ def create_empty_parquet(
 
 
 def load_parquet(
-    object_name: str, bucket_name: str = bucket_name, create: bool = False
+    object_name: str, bucket_name: str = BUCKET_NAME, create: bool = False
 ):
     try:
         print(f"Attempting to read: {object_name} from bucket: {bucket_name}")
@@ -111,7 +111,7 @@ def load_parquet(
             return None
 
 
-def load_current_holdings(bucket_name: str = bucket_name):
+def load_current_holdings(bucket_name: str = BUCKET_NAME):
     objects = client.list_objects(bucket_name, prefix="holdings/", recursive=True)
     holdings_files = [
         obj.object_name for obj in objects if obj.object_name.endswith(".parquet")

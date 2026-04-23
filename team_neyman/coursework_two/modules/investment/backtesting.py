@@ -87,7 +87,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--fee",
         type=float,
-        help="Transaction fee apply to trading. Defaults to 0.03",
+        help="Transaction fee apply to trading. Defaults to 0.01",
     )
 
     args = parser.parse_args()
