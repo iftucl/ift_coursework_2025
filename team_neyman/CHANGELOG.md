@@ -2,6 +2,15 @@
 
 All notable changes to the **Team Neyman Coursework** will be documented in this file.
 
+## 2026-04-22
+### Added
+- Added foreign exchange and currency data.
+- Integrated foreign exchange function into trading.
+
+### Changed
+- Adjusted traing logic to avoid negative cash holding.
+- Applied rounding for better interpretability of data.
+
 ## 2026-04-21
 ### Changed
 - Adjust the trading and rebalance logic, making it more reasonable.

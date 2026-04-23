@@ -27,11 +27,18 @@ def establish_portfolio(run_date: str, collection_name: str = None):
         "fey_score",
         "trend_score",
         "risk_score",
+        "liquidity_score",
     ]
+
+    currency_df = postgres.get_currency(final_df["symbol"].to_list())
+    final_df = pd.merge(final_df, currency_df, on="symbol", how="left")
+    final_df["currency"] = final_df["currency"].fillna("USD")
+
     mongo_documents = final_df.apply(
         lambda x: {
             "symbol": x["symbol"],
             "gics_sector": x["gics_sector"],
+            "currency": x["currency"],
             "scores": x[score_cols].to_dict(),
             "weight": x["weight"],
         },
@@ -39,6 +46,7 @@ def establish_portfolio(run_date: str, collection_name: str = None):
     ).tolist()
 
     mongodb.save_trade_log(run_date, mongo_documents, collection_name)
+    print(f"Portfolio established and logged for {run_date}")
 
 
 def update_holdings(
@@ -51,8 +59,9 @@ def update_holdings(
         print(f"No holdings to update for {run_date}")
         return
 
-    if "current_price" not in current_holdings_df.columns:
-        current_holdings_df["current_price"] = np.nan
+    for col in ["current_price", "fx_rate"]:
+        if col not in current_holdings_df.columns:
+            current_holdings_df[col] = np.nan
 
     new_prices_data = postgres.get_ohlcv_data(
         current_holdings_df["symbol"].tolist(), start_date=run_date, end_date=run_date
@@ -68,15 +77,41 @@ def update_holdings(
         ].combine_first(current_holdings_df["current_price"])
         current_holdings_df = current_holdings_df.drop(columns=["new_price"])
 
+    new_fx_data = postgres.get_fx_data(start_date=run_date, end_date=run_date)
+    if new_fx_data is not None and not new_fx_data.empty:
+        new_fx_data = new_fx_data.rename(
+            columns={"USD_to": "currency", "close_price": "new_fx_rate"}
+        )[["currency", "new_fx_rate"]]
+        current_holdings_df = pd.merge(
+            current_holdings_df, new_fx_data, on="currency", how="left"
+        )
+        current_holdings_df.loc[
+            current_holdings_df["currency"] == "USD", "new_fx_rate"
+        ] = 1.0
+        gbp_lookup = new_fx_data.loc[
+            new_fx_data["currency"] == "GBP", "new_fx_rate"
+        ].iloc[0]
+        if not gbp_lookup.empty:
+            current_holdings_df.loc[
+                current_holdings_df["currency"] == "GBp", "new_fx_rate"
+            ] = (gbp_lookup * 100)
+        current_holdings_df["fx_rate"] = current_holdings_df[
+            "new_fx_rate"
+        ].combine_first(current_holdings_df["fx_rate"])
+        current_holdings_df = current_holdings_df.drop(columns=["new_fx_rate"])
+    current_holdings_df["fx_rate"] = current_holdings_df["fx_rate"].fillna(1.0)
+
     current_holdings_df["current_value"] = (
-        current_holdings_df["current_price"] * current_holdings_df["current_shares"]
-    )
+        (current_holdings_df["current_price"] / current_holdings_df["fx_rate"])
+        * current_holdings_df["current_shares"]
+    ).round(4)
     current_holdings_df["P&L"] = (
         current_holdings_df["current_value"] - current_holdings_df["total_investment"]
-    )
+    ).round(4)
     current_holdings_df["percentage_change"] = (
-        current_holdings_df["current_price"] / current_holdings_df["avg_cost"]
-    ) - 1
+        (current_holdings_df["current_price"] / current_holdings_df["fx_rate"])
+        / current_holdings_df["avg_cost"]
+    ).round(6) - 1
 
     holdings_file_path = f"holdings/{run_date}_holdings.parquet"
     current_holdings_df.to_csv(f"output/{run_date}_holding_test.csv")
@@ -110,12 +145,16 @@ def update_performance_data(
         last_cash = load_config()["initial_capital"]
 
     initial_capital = last_capital + capital_add
-    investment_cost = current_holdings_df["total_investment"].sum()
-    investment_value = current_holdings_df["current_value"].sum()
-    cash = last_cash + cash_change
+    investment_cost = current_holdings_df["total_investment"].sum().round(4)
+    investment_value = current_holdings_df["current_value"].sum().round(4)
+    if last_cash + cash_change < 0:
+        print(f"ALERT: Cash went negative on {run_date}! Setting to 0 for accounting.")
+        cash = 0
+    else:
+        cash = last_cash + cash_change
     net_capital = investment_value + cash
     pnl = net_capital - initial_capital
-    pct_change = pnl / initial_capital if initial_capital != 0 else 0
+    pct_change = (pnl / initial_capital).round(6) if initial_capital != 0 else 0
 
     new_data = {
         "date": run_date,
@@ -163,6 +202,7 @@ def execute_trade(
         current_holdings_df = pd.DataFrame(
             columns=[
                 "symbol",
+                "currency",
                 "current_shares",
                 "total_investment",
                 "avg_cost",
@@ -188,8 +228,8 @@ def execute_trade(
         performance_df["net_capital"].iloc[-1]
         if performance_df is not None and not performance_df.empty
         else config["initial_capital"]
-    )
-    print(capital)
+    ) * 0.99  # 1% buffer
+    print(f"Trading capital: {capital}")
 
     # Fetch and Merge Prices
     new_prices_data = postgres.get_ohlcv_data(
@@ -204,21 +244,44 @@ def execute_trade(
             trade_df["new_price"]
         )
 
+    # Fetch and Merge FX
+    new_fx_data = postgres.get_fx_data(start_date=execute_date, end_date=execute_date)
+    if new_fx_data is not None and not new_fx_data.empty:
+        fx_rates = new_fx_data.rename(
+            columns={"USD_to": "currency", "close_price": "fx_rate"}
+        )[["currency", "fx_rate"]]
+
+        trade_df = pd.merge(trade_df, fx_rates, on="currency", how="left")
+
+    gbp_lookup = fx_rates.loc[fx_rates["currency"] == "GBP", "fx_rate"].iloc[0]
+    if not gbp_lookup.empty:
+        trade_df.loc[trade_df["currency"] == "GBp", "fx_rate"] = gbp_lookup * 100
+    else:
+        print("Warning: GBp stocks found but no GBP rate in database!")
+    trade_df.loc[trade_df["currency"] == "USD", "fx_rate"] = 1.0
+    trade_df["fx_rate"] = trade_df["fx_rate"].fillna(1.0)
+
     # Execution Logic
     to_execute_mask = trade_df["exec_price"].notna() & trade_df["exec_shares"].isna()
+    usd_price = (
+        trade_df.loc[to_execute_mask, "exec_price"]
+        / trade_df.loc[to_execute_mask, "fx_rate"]
+    )
     target_shares = (
-        (trade_df.loc[to_execute_mask, "weight"] * capital * (1 - fee_rate))
-        / trade_df.loc[to_execute_mask, "exec_price"]
-    ).round()
+        (trade_df.loc[to_execute_mask, "weight"] * capital * (1 - 2 * fee_rate))
+        / usd_price
+    ).apply(
+        np.floor
+    )  # Using floor to ensure affordability
     trade_df.loc[to_execute_mask, "exec_shares"] = (
         target_shares - trade_df.loc[to_execute_mask, "current_shares"]
     )
     trade_df.loc[to_execute_mask, "investment"] = (
-        trade_df["exec_shares"] * trade_df["exec_price"]
-    )
-    trade_df.loc[to_execute_mask, "fees"] = abs(trade_df["investment"]) * fee_rate
-
-    trade_df.to_csv(f"output/{execute_date}_trading_test.csv")
+        trade_df["exec_shares"] * (trade_df["exec_price"] / trade_df["fx_rate"])
+    ).round(4)
+    trade_df.loc[to_execute_mask, "fees"] = (
+        abs(trade_df["investment"]) * fee_rate
+    ).round(4)
 
     # Update MongoDB Trading Info
     missing_symbols = trade_df.loc[trade_df["exec_price"].isna(), "symbol"].tolist()
@@ -235,12 +298,15 @@ def execute_trade(
         }
     )
 
+    trade_info_df.to_csv(f"output/{execute_date}_trading_test.csv")
+
     mongodb.update_trade_log(portfolio, collection_name=mongodb_collection_name)
     mongodb.check_pending(collection_name=mongodb_collection_name)
 
     # Update MinIO Holdings Snapshot and Perfomance
     holdings_change_df = trade_df.loc[
-        trade_df["exec_shares"] != 0, ["symbol", "exec_shares", "exec_price", "fees"]
+        trade_df["exec_shares"] != 0,
+        ["symbol", "exec_shares", "exec_price", "fees", "currency", "fx_rate"],
     ]
     with pd.option_context("future.no_silent_downcasting", True):
         updated_holdings = (
@@ -257,8 +323,12 @@ def execute_trade(
 
     is_buy = updated_holdings["exec_shares"] > 0
     updated_holdings.loc[is_buy, "total_investment"] += (
-        updated_holdings["exec_shares"] * updated_holdings["exec_price"]
-    ) + updated_holdings["fees"]
+        (
+            updated_holdings["exec_shares"]
+            * (updated_holdings["exec_price"] / updated_holdings["fx_rate"])
+        )
+        + updated_holdings["fees"]
+    ).round(4)
 
     is_total_exit = (updated_holdings["current_shares"] <= 0.001) & (
         updated_holdings["exec_shares"] < 0
@@ -280,9 +350,9 @@ def execute_trade(
     ].copy()
     updated_holdings["avg_cost"] = (
         updated_holdings["total_investment"] / updated_holdings["current_shares"]
-    )
+    ).round(4)
     updated_holdings = updated_holdings.drop(
-        columns=["exec_shares", "exec_price", "fees"]
+        columns=["exec_shares", "exec_price", "fees", "fx_rate"]
     )
 
     print("Updating holdings...")

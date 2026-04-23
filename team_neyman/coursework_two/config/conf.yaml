@@ -28,5 +28,5 @@ portfolio:
   stock_cap: 0.1
 
 trading:
-  transaction_fee: 0.03
+  transaction_fee: 0.001
   initial_capital: 1000000

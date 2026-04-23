@@ -405,3 +405,77 @@ def get_ohlcv_data(company_list: list, start_date=None, end_date=None):
     except Exception as e:
         print(f"Database Error: {e}")
         return None
+
+
+def get_fx_data(start_date=None, end_date=None):
+    """
+    Retrieves historical foreign exchange time-series data.
+
+    This function dynamically constructs a SQL query to fetch foreign exchange data for multiple
+    currencies simultaneously. It supports optional chronological filtering to limit memory
+    usage, and strictly orders the resulting DataFrame into a classic 'Panel Data'
+    format (sorted by symbol, then chronologically by date). It also ensures the
+    date column is ready for immediate quantitative analysis.
+
+    Args:
+        start_date (str or datetime.date, optional): The earliest date to retrieve data for
+                                                     (e.g., '2023-01-01'). Defaults to None.
+        end_date (str or datetime.date, optional): The final date to retrieve data for
+                                                     (e.g., '2023-12-31'). Defaults to None.
+
+    Returns:
+        pd.DataFrame: A formatted DataFrame containing the requested foreign exchange data.
+                      Returns an empty DataFrame if the input list is empty or no
+                      records are found, and None if a database error occurs.
+    """
+
+    query = """
+    SELECT *
+    FROM systematic_equity.daily_fx
+    """
+
+    conditions = []
+    params = {}
+
+    if start_date:
+        conditions.append("price_date >= :start_date")
+        params["start_date"] = start_date
+    if end_date:
+        conditions.append("price_date <= :end_date")
+        params["end_date"] = end_date
+    if conditions:
+        query += " WHERE " + " AND ".join(conditions)
+
+    query += "\nORDER BY symbol, price_date ASC;"
+
+    try:
+        df = pd.read_sql(text(query), engine, params=params)
+        df["price_date"] = pd.to_datetime(df["price_date"])
+        return df
+    except Exception as e:
+        print(f"Database Error: {e}")
+        return None
+
+
+def get_currency(company_list: list):
+
+    if not company_list:
+        print("Warning: Received empty company list.")
+        return pd.DataFrame(columns=["symbol", "currency"])
+
+    clean_company_list = [str(s).strip() for s in company_list]
+
+    query = """
+    SELECT symbol, currency
+    FROM systematic_equity.company_static
+    WHERE symbol = ANY(:symbols);
+    """
+
+    try:
+        df = pd.read_sql(text(query), engine, params={"symbols": clean_company_list})
+        if not df.empty:
+            df["symbol"] = df["symbol"].str.strip()
+        return df
+    except Exception as e:
+        print(f"Database Error fetching currencies: {e}")
+        return None

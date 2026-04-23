@@ -9,6 +9,21 @@ if __name__ == "__main__":
     postgres.del_table("risk_factors")
     postgres.del_table("mean_reversion_factors")
     postgres.del_table("daily_ohlcv")
+
+    print("Initializing Database...")
+    postgres.create_ohlcv_table()
+    postgres.create_fx_table()
+    postgres.create_liquidity_table()
+    postgres.create_trend_table()
+    postgres.create_momentum_table()
+    postgres.create_risk_table()
+    postgres.create_mean_reversion_table()
+
+    # print("Fetching Ticker Currencies...")
+    # yf_pipeline.get_ticker_currencies()
+
+    print("Initialization Complete.")
+
     yf_pipeline.update_ohlcv_batch()
     yf_pipeline.update_factors()
     dolthub_pipeline.rebuild_dolt_database()

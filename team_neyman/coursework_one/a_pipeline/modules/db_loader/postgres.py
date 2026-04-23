@@ -33,11 +33,6 @@ def check_connection():
         return False
 
 
-# engine = create_engine(
-#    "postgresql+psycopg://postgres:postgres@postgres_db_cw:5432/fift"
-# )
-
-
 def get_table(name: str, columns: list = None, schema: str = "systematic_equity"):
     """
     Retrieves specified columns from a given database table.
@@ -269,19 +264,19 @@ def add_new_column(
         return
 
     temp_table = f"temp_{table_name}_update"
-    upload_df = df[["symbol", "price_date", column_name]]
+    date_join = (
+        "AND main.price_date = temp.price_date" if "price_date" in df.columns else ""
+    )
 
     try:
-        upload_df.to_sql(
-            temp_table, engine, schema=schema, if_exists="replace", index=False
-        )
+        df.to_sql(temp_table, engine, schema=schema, if_exists="replace", index=False)
 
         update_query = f"""
         UPDATE "{schema}"."{table_name}" AS main
         SET "{column_name}" = temp."{column_name}"
         FROM "{schema}"."{temp_table}" AS temp
         WHERE main.symbol = temp.symbol
-          AND main.price_date = temp.price_date;
+        {date_join};
         """
 
         with engine.begin() as conn:
@@ -506,8 +501,9 @@ def create_ohlcv_table():
     query = """
     CREATE TABLE IF NOT EXISTS systematic_equity.daily_ohlcv (
         id SERIAL PRIMARY KEY,
-        symbol VARCHAR(10) NOT NULL,
+        symbol VARCHAR(30) NOT NULL,
         price_date DATE NOT NULL,
+        currency VARCHAR(10),
         open_price NUMERIC(14, 4),
         high_price NUMERIC(14, 4),
         low_price NUMERIC(14, 4),
@@ -636,6 +632,91 @@ def get_close_price(symbol: str):
         print(f"Database Error: {e}")
         return None
 """
+
+
+def create_fx_table():
+    """
+    Creates the 'daily_fx' table and its optimized time-series index.
+
+    This function executes a SQL schema definition for storing daily Open, High, Low,
+    Close, and data. It enforces data integrity by utilizing a UNIQUE
+    constraint on (symbol, price_date) to prevent duplicate daily records. It also
+    builds a composite B-Tree index sorted by descending date to massively accelerate
+    time-series retrieval queries.
+
+    Args:
+        None
+
+    Returns:
+        None: Executes database commands directly. Prints a success or error message.
+    """
+
+    query = """
+    CREATE TABLE IF NOT EXISTS systematic_equity.daily_fx (
+        id SERIAL PRIMARY KEY,
+        symbol VARCHAR(30) NOT NULL,
+        price_date DATE NOT NULL,
+        open_price NUMERIC(14, 4),
+        high_price NUMERIC(14, 4),
+        low_price NUMERIC(14, 4),
+        close_price NUMERIC(14, 4),
+        usd_to VARCHAR(3),
+        UNIQUE (symbol, price_date)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_ohlc_symbol_date
+    ON systematic_equity.daily_fx (symbol, price_date DESC);
+    """
+    try:
+        with engine.connect() as conn:
+            conn.execute(text(query))
+            conn.commit()
+            print("Table and Index created successfully.")
+    except Exception as e:
+        print(f"Database Error: {e}")
+
+
+def update_fx_data(data: pd.DataFrame):
+    """
+    Performs an idempotent bulk upsert of daily foriegn exchange data into the database.
+
+    This function utilizes a temporary staging table to efficiently upload large Pandas
+    DataFrames. It executes a PostgreSQL 'INSERT ... ON CONFLICT DO UPDATE' command
+    (an upsert). If a row for a specific ticker and date does not exist, it inserts it.
+    If the row already exists, it updates the existing prices and volume. This ensures
+    the ETL pipeline can be run safely multiple times without creating duplicate records.
+
+    Args:
+        data (pd.DataFrame): The DataFrame containing 'symbol', 'price_date', 'open_price',
+                             'high_price', 'low_price', 'close_price', and 'usd_to.
+
+    Returns:
+        None: Executes database commands directly. Prints a success or error message.
+    """
+
+    temp_table = "temp_fx"
+    data.to_sql(
+        temp_table, engine, schema="systematic_equity", if_exists="replace", index=False
+    )
+    query = """
+    INSERT INTO systematic_equity.daily_fx (symbol, price_date, open_price, high_price, low_price, close_price, usd_to)
+    SELECT symbol, price_date, open_price, high_price, low_price, close_price, usd_to
+    FROM systematic_equity.temp_fx
+    ON CONFLICT (symbol, price_date)
+    DO UPDATE SET
+        open_price = EXCLUDED.open_price,
+        high_price = EXCLUDED.high_price,
+        low_price = EXCLUDED.low_price,
+        close_price = EXCLUDED.close_price,
+        usd_to = EXCLUDED.usd_to;
+    """
+    try:
+        with engine.begin() as conn:
+            conn.execute(text(query))
+            conn.execute(text(f"DROP TABLE systematic_equity.{temp_table};"))
+        print("Fx table updated successfully.")
+    except Exception as e:
+        print(f"Database Error: {e}")
 
 
 def create_liquidity_table():
