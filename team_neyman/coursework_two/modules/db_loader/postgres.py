@@ -467,7 +467,7 @@ def get_currency(company_list: list):
 
     query = """
     SELECT symbol, currency
-    FROM systematic_equity.company_static
+    FROM systematic_equity.company_currency
     WHERE symbol = ANY(:symbols);
     """
 

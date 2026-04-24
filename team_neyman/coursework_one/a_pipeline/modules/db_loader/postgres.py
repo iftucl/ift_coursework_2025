@@ -1369,3 +1369,41 @@ def update_eps_estimate(data: pd.DataFrame):
         print("EPS estimate table updated successfully.")
     except Exception as e:
         print(f"Database Error: {e}")
+
+
+def create_company_currency():
+    query = """
+    CREATE TABLE IF NOT EXISTS systematic_equity.company_currency (
+        id SERIAL PRIMARY KEY,
+        symbol VARCHAR(30) NOT NULL UNIQUE, 
+        currency VARCHAR(10)
+    );
+    """
+    try:
+        with engine.connect() as conn:
+            conn.execute(text(query))
+            conn.commit()
+            print("Table and Index created successfully.")
+    except Exception as e:
+        print(f"Database Error: {e}")
+
+
+def update_company_currency(data: pd.DataFrame):
+    temp_table = "temp_company_currency"
+    data.to_sql(
+        temp_table, engine, schema="systematic_equity", if_exists="replace", index=False
+    )
+    query = """
+    INSERT INTO systematic_equity.company_currency (symbol, currency)
+    SELECT symbol, currency
+    FROM systematic_equity.temp_company_currency
+    ON CONFLICT (symbol)
+    DO UPDATE SET currency = EXCLUDED.currency;
+    """
+    try:
+        with engine.begin() as conn:
+            conn.execute(text(query))
+            conn.execute(text(f"DROP TABLE systematic_equity.{temp_table};"))
+        print("Company currency table updated successfully.")
+    except Exception as e:
+        print(f"Database Error: {e}")

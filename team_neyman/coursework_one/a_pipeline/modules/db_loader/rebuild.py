@@ -31,7 +31,10 @@ if __name__ == "__main__":
     yf_pipeline.update_ohlcv_batch()
     yf_pipeline.update_factors()
     dolthub_pipeline.rebuild_dolt_database()
-    """
+
     postgres.del_table("daily_fx")
     postgres.create_fx_table()
     yf_pipeline.fetch_fx_data()
+    """
+    postgres.create_company_currency()
+    yf_pipeline.get_ticker_currencies()

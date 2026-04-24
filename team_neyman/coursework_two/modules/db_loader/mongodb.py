@@ -29,7 +29,9 @@ def get_collection(collection_name: str = None):
     return db[target_collection]
 
 
-def save_trade_log(portfolio_date: str, trades_list: list, collection_name: str = None):
+def save_trade_log(
+    portfolio_date: str, capital: float, trades_list: list, collection_name: str = None
+):
     date_obj = pd.to_datetime(portfolio_date)
     document = {
         "portfolio_date": portfolio_date,
@@ -37,6 +39,7 @@ def save_trade_log(portfolio_date: str, trades_list: list, collection_name: str 
         "month": int(date_obj.month),
         "timestamp": datetime.datetime.now(),
         "status": "PENDING",
+        "capital": capital,
         "trades": trades_list,
     }
     collection = get_collection(collection_name)

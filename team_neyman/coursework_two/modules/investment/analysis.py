@@ -186,8 +186,8 @@ def get_benchmark_volatility(benchmark_symbol: str, from_date: str, to_date: str
 def generate_return_chart():
     port_perform_df = load_portfolio_perforamance(bucket_name="backtest")
 
-    base_date = datetime.now()
-    base_date_str = base_date.strftime("%Y-%m-%d")
+    base_date_str = "2026-04-06"
+    base_date = pd.to_datetime(base_date_str)
     periods = {
         "1-month": base_date - pd.DateOffset(months=1),
         "3-months": base_date - pd.DateOffset(months=3),

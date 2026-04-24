@@ -16,7 +16,9 @@ def load_config():
         return yaml.safe_load(f)["trading"]
 
 
-def establish_portfolio(run_date: str, collection_name: str = None):
+def establish_portfolio(
+    run_date: str, mongodb_collection_name: str = None, minio_bucket_name: str = None
+):
     factors_df = fetch_factors.get_target_factors(run_date)
     filtered_df = fetch_factors.apply_filter(factors_df)
     scored_df = fetch_factors.apply_scoring(filtered_df)
@@ -46,7 +48,20 @@ def establish_portfolio(run_date: str, collection_name: str = None):
         axis=1,
     ).tolist()
 
-    mongodb.save_trade_log(run_date, mongo_documents, collection_name)
+    # Get Capital
+    config = load_config()
+    performance_df = minio_db.load_parquet(
+        object_name="performance/strategy_daily_stats.parquet",
+        bucket_name=minio_bucket_name,
+    )
+    capital = (
+        performance_df["net_capital"].iloc[-1]
+        if performance_df is not None and not performance_df.empty
+        else config["initial_capital"]
+    ) * 0.98  # 2% buffer
+    print(f"Trading capital: {capital}")
+
+    mongodb.save_trade_log(run_date, capital, mongo_documents, mongodb_collection_name)
     print(f"Portfolio established and logged for {run_date}")
 
 
@@ -130,19 +145,24 @@ def update_holdings(
 
 def update_performance_data(
     run_date: str,
-    performance_df: pd.DataFrame = None,
     current_holdings_df: pd.DataFrame = None,
     capital_add: float = 0,
     cash_change: float = 0,
     bucket_name: str = None,
 ):
     file_path = "performance/strategy_daily_stats.parquet"
-    if performance_df is None or performance_df.empty:
-        performance_df = minio_db.load_parquet(
-            object_name=file_path, bucket_name=bucket_name
-        )
+    performance_df = minio_db.load_parquet(
+        object_name=file_path, bucket_name=bucket_name
+    )
+    if performance_df is None:
+        performance_df = pd.DataFrame()
+
     if current_holdings_df is None or current_holdings_df.empty:
         current_holdings_df = minio_db.load_current_holdings(bucket_name=bucket_name)
+    if current_holdings_df is None:
+        current_holdings_df = pd.DataFrame(
+            columns=["total_investment", "current_value"]
+        )
 
     if performance_df is not None and not performance_df.empty:
         last_capital = performance_df["initial_capital"].iloc[-1]
@@ -152,16 +172,21 @@ def update_performance_data(
         last_cash = load_config()["initial_capital"]
 
     initial_capital = last_capital + capital_add
-    investment_cost = current_holdings_df["total_investment"].sum().round(4)
-    investment_value = current_holdings_df["current_value"].sum().round(4)
+    investment_cost = 0.0
+    if "total_investment" in current_holdings_df.columns:
+        investment_cost = round(current_holdings_df["total_investment"].sum(), 4)
+    investment_value = 0.0
+    if "current_value" in current_holdings_df.columns:
+        investment_value = round(current_holdings_df["current_value"].sum(), 4)
+    elif not current_holdings_df.empty:
+        investment_value = investment_cost
+
     if last_cash + cash_change < 0:
-        print(f"ALERT: Cash went negative on {run_date}! Setting to 0 for accounting.")
-        cash = 0
-    else:
-        cash = last_cash + cash_change
+        print(f"ALERT: Cash went negative on {run_date}!")
+    cash = last_cash + cash_change
     net_capital = investment_value + cash
     pnl = net_capital - initial_capital
-    pct_change = (pnl / initial_capital).round(6) if initial_capital != 0 else 0
+    pct_change = round((pnl / initial_capital), 6) if initial_capital != 0 else 0
 
     new_data = {
         "date": run_date,
@@ -236,30 +261,23 @@ def execute_trade(
             trade_df["current_shares"].fillna(0).infer_objects(copy=False)
         )
 
-    # Get Capital for Rebalance
-    performance_df = minio_db.load_parquet(
-        object_name="performance/strategy_daily_stats.parquet",
-        bucket_name=minio_bucket_name,
-    )
-    capital = (
-        performance_df["net_capital"].iloc[-1]
-        if performance_df is not None and not performance_df.empty
-        else config["initial_capital"]
-    ) * 0.99  # 1% buffer
-    print(f"Trading capital: {capital}")
-
     # Fetch and Merge Prices
     new_prices_data = postgres.get_ohlcv_data(
         trade_df["symbol"].tolist(), start_date=execute_date, end_date=execute_date
     )
+    trade_df["new_price"] = np.nan
     if not new_prices_data.empty:
         new_prices_data = new_prices_data.rename(columns={"close_price": "new_price"})[
             ["symbol", "new_price"]
         ]
+        trade_df = trade_df.drop(columns=["new_price"])
         trade_df = pd.merge(trade_df, new_prices_data, on="symbol", how="left")
         trade_df["exec_price"] = trade_df["exec_price"].combine_first(
             trade_df["new_price"]
         )
+    else:
+        print(f"No market data for {execute_date}")
+        return False
 
     # Fetch and Merge FX
     lookback_start = (pd.to_datetime(execute_date) - timedelta(days=7)).strftime(
@@ -272,6 +290,9 @@ def execute_trade(
         new_fx_data = new_fx_data.rename(
             columns={"usd_to": "currency", "close_price": "fx_rate"}
         )[["currency", "fx_rate"]]
+
+        if "fx_rate" in trade_df.columns:
+            trade_df = trade_df.drop(columns=["fx_rate"])
 
         trade_df = pd.merge(trade_df, new_fx_data, on="currency", how="left")
 
@@ -286,6 +307,7 @@ def execute_trade(
     trade_df["fx_rate"] = trade_df["fx_rate"].replace(0, np.nan).fillna(1.0)
 
     # Execution Logic
+    capital = portfolio["capital"]
     to_execute_mask = trade_df["exec_price"].notna() & trade_df["exec_shares"].isna()
     usd_price = (
         trade_df.loc[to_execute_mask, "exec_price"]
@@ -300,6 +322,7 @@ def execute_trade(
     trade_df.loc[to_execute_mask, "exec_shares"] = (
         target_shares - trade_df.loc[to_execute_mask, "current_shares"]
     )
+    just_executed_mask = to_execute_mask & trade_df["exec_shares"].notna()
     trade_df.loc[to_execute_mask, "investment"] = (
         trade_df["exec_shares"] * (trade_df["exec_price"] / trade_df["fx_rate"])
     ).round(4)
@@ -309,8 +332,11 @@ def execute_trade(
 
     # Update MongoDB Trading Info
     missing_symbols = trade_df.loc[trade_df["exec_price"].isna(), "symbol"].tolist()
-    trade_info_df = trade_df.drop(columns=["new_price", "current_shares"])
-    cash_flow = -(trade_df["investment"].sum() + trade_df["fees"].sum())
+    trade_info_df = trade_df.drop(
+        columns=["new_price", "current_shares"], errors="ignore"
+    )
+    todays_trades = trade_df.loc[just_executed_mask]
+    cash_flow = -(todays_trades["investment"].sum() + todays_trades["fees"].sum())
 
     portfolio.update(
         {
@@ -329,7 +355,7 @@ def execute_trade(
 
     # Update MinIO Holdings Snapshot and Perfomance
     holdings_change_df = trade_df.loc[
-        trade_df["exec_shares"] != 0,
+        just_executed_mask & trade_df["exec_shares"] != 0,
         ["symbol", "currency", "exec_shares", "exec_price", "fees", "fx_rate"],
     ]
     with pd.option_context("future.no_silent_downcasting", True):
@@ -401,7 +427,6 @@ def execute_trade(
 
     update_performance_data(
         execute_date,
-        performance_df,
         cash_change=cash_flow,
         bucket_name=minio_bucket_name,
     )
@@ -429,10 +454,22 @@ def initiate_portfolio(
         minio_db.create_empty_parquet(
             object_name=object_name, bucket_name=minio_bucket_name, columns=columns
         )
-    establish_portfolio(init_date, collection_name=mongodb_collection_name)
+    establish_portfolio(
+        init_date,
+        mongodb_collection_name=mongodb_collection_name,
+        minio_bucket_name=minio_bucket_name,
+    )
     print("Sucessfully Initiate Portfolio.")
 
 
-def rebalance(rebalance_date: str, mongodb_collection_name: str = None):
-    establish_portfolio(rebalance_date, collection_name=mongodb_collection_name)
+def rebalance(
+    rebalance_date: str,
+    minio_bucket_name: str = None,
+    mongodb_collection_name: str = None,
+):
+    establish_portfolio(
+        rebalance_date,
+        mongodb_collection_name=mongodb_collection_name,
+        minio_bucket_name=minio_bucket_name,
+    )
     print("Sucessfully Rebalance Portfolio.")

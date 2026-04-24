@@ -56,7 +56,9 @@ def backtest(start_date: str, end_date: str, fee_rate: float):
                         f"Month changed ({last_month} -> {current_month}). Rebalancing..."
                     )
                     trading.rebalance(
-                        run_date, mongodb_collection_name=mongodb_collection_name
+                        run_date,
+                        minio_bucket_name=minio_bucket_name,
+                        mongodb_collection_name=mongodb_collection_name,
                     )
                 last_month = current_month
 

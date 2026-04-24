@@ -2,6 +2,14 @@
 
 All notable changes to the **Team Neyman Coursework** will be documented in this file.
 
+## 2026-04-24
+### Changed
+- Adjusted the base capital getting logic.
+
+### Fixed
+- Rebuild currency data to ensure postgres_seed work well.
+- Fixed trading bug.
+
 ## 2026-04-23
 ### Added
 - Established analysis functions.

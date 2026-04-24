@@ -146,12 +146,7 @@ def get_ticker_currencies():
     )
     print(f"Cleaned {is_unknown.sum()} Unknown currencies.")
 
-    postgres.add_new_column(
-        currency_df,
-        column_name="currency",
-        column_type="VARCHAR(10)",
-        table_name="company_static",
-    )
+    postgres.update_company_currency(currency_df)
 
 
 def fetch_fx_data(fx_list: list = FX_LIST, start_date=None, end_date=None):
