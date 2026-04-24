@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import yaml
+import argparse
 
 from pathlib import Path
 from datetime import datetime
@@ -183,10 +184,9 @@ def get_benchmark_volatility(benchmark_symbol: str, from_date: str, to_date: str
         return np.nan
 
 
-def generate_return_chart():
-    port_perform_df = load_portfolio_perforamance(bucket_name="backtest")
+def generate_return_chart(bucket_name: str, base_date_str: str):
+    port_perform_df = load_portfolio_perforamance(bucket_name=bucket_name)
 
-    base_date_str = "2026-04-06"
     base_date = pd.to_datetime(base_date_str)
     periods = {
         "1-month": base_date - pd.DateOffset(months=1),
@@ -199,7 +199,7 @@ def generate_return_chart():
         "Total": pd.to_datetime(port_perform_df["date"]).min(),
     }
 
-    benchmark_symbol = "^892400-USD-STRD"
+    benchmark_symbol = load_config()["portfolio"]["benchmark_symbol"]
     results = []
     for label, start_dt in periods.items():
         start_str = start_dt.strftime("%Y-%m-%d")
@@ -228,6 +228,88 @@ def generate_return_chart():
     return summary_df
 
 
+def generate_return_graph(
+    bucket_list: list, base_date_str: str, include_benchmark: bool = False
+):
+    plt.figure(figsize=(12, 6))
+    base_dt = pd.to_datetime(base_date_str)
+    earliest_dt = base_dt
+
+    for bucket in bucket_list:
+        df = load_portfolio_perforamance(bucket)
+
+        if df is None or df.empty:
+            print(f"Skipping {bucket}: No data found.")
+            continue
+
+        df["date"] = pd.to_datetime(df["date"])
+        df = df[df["date"] <= base_dt].sort_values("date")
+
+        if df["date"].iloc[0] < earliest_dt:
+            earliest_dt = df["date"].iloc[0]
+
+        initial_val = df["net_capital"].iloc[0]
+        df["indexed_performance"] = (df["net_capital"] / initial_val) * 100
+
+        plt.plot(df["date"], df["indexed_performance"], label=f"Bucket: {bucket}")
+
+    earliest_date_str = earliest_dt.strftime("%Y-%m-%d")
+    if include_benchmark:
+        benchmark_symbol = load_config()["portfolio"]["benchmark_symbol"]
+        bench_df = postgres.get_ohlcv_data(
+            [benchmark_symbol], start_date=earliest_date_str, end_date=base_date_str
+        )
+
+        if not bench_df.empty:
+            bench_df["price_date"] = pd.to_datetime(bench_df["price_date"])
+            bench_df = bench_df.sort_values("price_date")
+
+            b_initial = bench_df["close_price"].iloc[0]
+            bench_df["indexed_bench"] = (bench_df["close_price"] / b_initial) * 100
+
+            plt.plot(
+                bench_df["price_date"],
+                bench_df["indexed_bench"],
+                label=f"Benchmark ({benchmark_symbol})",
+                color="black",
+                linestyle="--",
+                linewidth=2,
+                zorder=10,
+            )
+
+    plt.axhline(100, color="gray", linestyle=":", alpha=0.5)
+    plt.title(f"Strategy Performance Comparison (To {base_date_str})")
+    plt.xlabel("Date")
+    plt.ylabel("Indexed Performance (Base 100)")
+    plt.legend(loc="upper left")
+    plt.grid(True, which="both", linestyle="--", alpha=0.5)
+    plt.tight_layout()
+
+    plt.savefig(f"output/comparison_{base_date_str}.png")
+
+
 if __name__ == "__main__":
-    summary_df = generate_return_chart()
-    summary_df.to_csv("output/summary.csv")
+
+    parser = argparse.ArgumentParser(description="Analyse Portfolio Performance")
+
+    parser.add_argument(
+        "--bucket_name",
+        type=str,
+        help="The MinIO bucket name stroing portfolio data",
+    )
+
+    parser.add_argument(
+        "--base_date",
+        type=str,
+        help="The specific date to calculate performance (YYYY-MM-DD).",
+    )
+
+    args = parser.parse_args()
+
+    summary_df = generate_return_chart(args.bucket_name, args.base_date)
+    summary_df.to_csv(f"output/{args.bucket_name}_{args.base_date}_summary.csv")
+    generate_return_graph(
+        bucket_list=[args.bucket_name],
+        base_date_str=args.base_date,
+        include_benchmark=True,
+    )

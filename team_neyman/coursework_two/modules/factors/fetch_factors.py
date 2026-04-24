@@ -189,8 +189,22 @@ def apply_filter(df: pd.DataFrame):
     return df
 
 
-def apply_scoring(df: pd.DataFrame):
+def apply_scoring(df: pd.DataFrame, omit_factor: str = None):
     config = load_config()
+
+    weights = {
+        "momentum": config.get("momentum_weight"),
+        "fey": config.get("fey_weight"),
+        "trend": config.get("trend_weight"),
+        "risk": config.get("risk_weight"),
+        "liquidity": config.get("liquidity_weight"),
+    }
+
+    if omit_factor and omit_factor in weights:
+        weights[omit_factor] = 0.0
+        total_remaining = sum(weights.values())
+        if total_remaining > 0:
+            weights = {k: v / total_remaining for k, v in weights.items()}
 
     # Momentum score
     df["rar_rank"] = df["risk_adj_mom_12m"].rank(
@@ -220,17 +234,17 @@ def apply_scoring(df: pd.DataFrame):
     df["risk_score"] = (df["vol_rank"] + df["mdd_rank"] + df["var_rank"]) / 3
 
     # Liquidity score
-    df["adv_rank"] = df["adv_20d"].rank(ascending=False, pct=True, na_option="keep")
-    df["addv_rank"] = df["addv_20d"].rank(ascending=False, pct=True, na_option="keep")
+    df["adv_rank"] = df["adv_20d"].rank(ascending=True, pct=True, na_option="keep")
+    df["addv_rank"] = df["addv_20d"].rank(ascending=True, pct=True, na_option="keep")
     df["liquidity_score"] = (df["adv_rank"] + df["addv_rank"]) / 2
 
     # Total score
     df["total_score"] = (
-        config["momentum_weight"] * df["momentum_score"]
-        + config["fey_weight"] * df["fey_score"]
-        + config["trend_weight"] * df["trend_score"]
-        + config["risk_weight"] * df["risk_score"]
-        + config["liquidity_weight"] * df["liquidity_score"]
+        weights["momentum"] * df["momentum_score"]
+        + weights["fey"] * df["fey_score"]
+        + weights["trend"] * df["trend_score"]
+        + weights["risk"] * df["risk_score"]
+        + weights["liquidity"] * df["liquidity_score"]
     )
 
     """

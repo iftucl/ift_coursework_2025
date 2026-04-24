@@ -17,11 +17,14 @@ def load_config():
 
 
 def establish_portfolio(
-    run_date: str, mongodb_collection_name: str = None, minio_bucket_name: str = None
+    run_date: str,
+    mongodb_collection_name: str = None,
+    minio_bucket_name: str = None,
+    omit_factor: str = None,
 ):
     factors_df = fetch_factors.get_target_factors(run_date)
     filtered_df = fetch_factors.apply_filter(factors_df)
-    scored_df = fetch_factors.apply_scoring(filtered_df)
+    scored_df = fetch_factors.apply_scoring(filtered_df, omit_factor)
     final_df = fetch_factors.apply_weight(scored_df)
 
     score_cols = [
@@ -435,7 +438,10 @@ def execute_trade(
 
 
 def initiate_portfolio(
-    init_date: str, minio_bucket_name: str = None, mongodb_collection_name: str = None
+    init_date: str,
+    minio_bucket_name: str = None,
+    mongodb_collection_name: str = None,
+    omit_factor: str = None,
 ):
     object_name = "performance/strategy_daily_stats.parquet"
     columns = [
@@ -458,6 +464,7 @@ def initiate_portfolio(
         init_date,
         mongodb_collection_name=mongodb_collection_name,
         minio_bucket_name=minio_bucket_name,
+        omit_factor=omit_factor,
     )
     print("Sucessfully Initiate Portfolio.")
 
@@ -466,10 +473,12 @@ def rebalance(
     rebalance_date: str,
     minio_bucket_name: str = None,
     mongodb_collection_name: str = None,
+    omit_factor: str = None,
 ):
     establish_portfolio(
         rebalance_date,
         mongodb_collection_name=mongodb_collection_name,
         minio_bucket_name=minio_bucket_name,
+        omit_factor=omit_factor,
     )
     print("Sucessfully Rebalance Portfolio.")

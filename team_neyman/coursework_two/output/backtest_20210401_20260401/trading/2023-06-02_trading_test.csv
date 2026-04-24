@@ -1,74 +1,74 @@
 ,symbol,gics_sector,currency,scores,weight,exec_price,exec_shares,investment,fees,fx_rate
-0,ABBV,,USD,,0.0,122.9159,-117.0,-14381.1603,14.3812,1.0
-1,ABF.L,Consumer Staples,GBp,"{'total_score': 0.2584503205128205, 'momentum_score': 0.2954807692307692, 'fey_score': 0.1375, 'trend_score': 0.175, 'risk_score': 0.3752136752136752, 'liquidity_score': 0.5875}",0.016095486122002282,1867.8569,-123.0,-2877.9456,2.8779,79.83
-2,ABT,,USD,,0.0,98.1179,-66.0,-6475.7814,6.4758,1.0
-3,AEE,,USD,,0.0,73.9491,-210.0,-15529.311,15.5293,1.0
-4,AEP,,USD,,0.0,75.2295,-167.0,-12563.3265,12.5633,1.0
-5,ALGN,,USD,,0.0,302.0,-39.0,-11778.0,11.778,1.0
-6,ATO,Utilities,USD,"{'total_score': 0.42386538461538464, 'momentum_score': 0.32679487179487177, 'fey_score': 0.75, 'trend_score': 0.125, 'risk_score': 0.35491452991452993, 'liquidity_score': 0.875}",0.026397024395779997,107.0451,265.0,28366.9515,28.367,1.0
-7,AZN.L,Health Care,GBp,"{'total_score': 0.36112980769230774, 'momentum_score': 0.3988782051282051, 'fey_score': 0.1375, 'trend_score': 0.45, 'risk_score': 0.5476495726495726, 'liquidity_score': 0.3}",0.012094516976978137,11741.0078,9.0,1323.6762,1.3237,79.83
-8,BAYN.DE,,EUR,,0.0,52.1481,-151.0,-8473.435,8.4734,0.9293
-9,BDX,Health Care,USD,"{'total_score': 0.41765224358974357, 'momentum_score': 0.2552884615384615, 'fey_score': 0.825, 'trend_score': 0.05, 'risk_score': 0.5636752136752136, 'liquidity_score': 0.55}",0.01398749713530434,187.2227,9.0,1685.0043,1.685,1.0
-10,BIIB,,USD,,0.0,300.2,-55.0,-16511.0,16.511,1.0
-11,BSX,Health Care,USD,"{'total_score': 0.6411730769230768, 'momentum_score': 0.7575641025641026, 'fey_score': 0.5, 'trend_score': 0.725, 'risk_score': 0.6235042735042735, 'liquidity_score': 0.25}",0.021473382974342165,51.82,127.0,6581.14,6.5811,1.0
-12,CAG,,USD,,0.0,30.0413,-755.0,-22681.1815,22.6812,1.0
-13,CAH,Health Care,USD,"{'total_score': 0.7703589743589744, 'momentum_score': 0.7991025641025641, 'fey_score': 0.925, 'trend_score': 0.825, 'risk_score': 0.42115384615384616, 'liquidity_score': 0.625}",0.0257999187419348,80.5015,112.0,9016.168,9.0162,1.0
-14,CCH.L,Consumer Staples,GBp,"{'total_score': 0.6747147435897436, 'momentum_score': 0.8832051282051282, 'fey_score': 0.1375, 'trend_score': 0.9, 'risk_score': 0.8331196581196582, 'liquidity_score': 0.525}",0.04201914615625457,2387.5623,666.0,19918.7836,19.9188,79.83
-15,CHD,Consumer Staples,USD,"{'total_score': 0.4698301282051282, 'momentum_score': 0.3683333333333333, 'fey_score': 0.425, 'trend_score': 0.575, 'risk_score': 0.576923076923077, 'liquidity_score': 0.6625}",0.02925956637708666,90.8052,178.0,16163.3256,16.1633,1.0
-16,CL,,USD,,0.0,70.8457,-190.0,-13460.683,13.4607,1.0
-17,CLX,Consumer Staples,USD,"{'total_score': 0.48718589743589735, 'momentum_score': 0.43692307692307686, 'fey_score': 0.45, 'trend_score': 0.5, 'risk_score': 0.54508547008547, 'liquidity_score': 0.8}",0.030340429972984816,144.4738,98.0,14158.4324,14.1584,1.0
-18,CMS,,USD,,0.0,53.4707,-217.0,-11603.1419,11.6031,1.0
-19,CNA.L,Utilities,GBp,"{'total_score': 0.5919102564102563, 'momentum_score': 0.8848076923076923, 'fey_score': 0.1375, 'trend_score': 0.975, 'risk_score': 0.33568376068376066, 'liquidity_score': 0.05}",0.03686233895403313,120.3239,10577.0,15942.2008,15.9422,79.83
-20,COO,Health Care,USD,"{'total_score': 0.5931153846153846, 'momentum_score': 0.2753846153846154, 'fey_score': 1.0, 'trend_score': 0.6, 'risk_score': 0.5948717948717949, 'liquidity_score': 0.75}",0.019863893635303713,89.1106,240.0,21386.544,21.3865,1.0
-21,COST,Consumer Staples,USD,"{'total_score': 0.34501923076923074, 'momentum_score': 0.43448717948717946, 'fey_score': 0.35, 'trend_score': 0.025, 'risk_score': 0.5446581196581196, 'liquidity_score': 0.375}",0.021486729943500243,493.1811,46.0,22686.3306,22.6863,1.0
-22,CPB,,USD,,0.0,45.3631,-466.0,-21139.2046,21.1392,1.0
+0,ABBV,,USD,,0.0,122.9159,-122.0,-14995.7398,14.9957,1.0
+1,ABF.L,Consumer Staples,GBp,"{'total_score': 0.2509503205128205, 'momentum_score': 0.2954807692307692, 'fey_score': 0.1375, 'trend_score': 0.175, 'risk_score': 0.3752136752136752, 'liquidity_score': 0.4375}",0.015597187542865017,1867.8569,-156.0,-3650.0774,3.6501,79.83
+2,ABT,,USD,,0.0,98.1179,-72.0,-7064.4888,7.0645,1.0
+3,AEE,,USD,,0.0,73.9491,-190.0,-14050.329,14.0503,1.0
+4,AEP,,USD,,0.0,75.2295,-163.0,-12262.4085,12.2624,1.0
+5,ALGN,,USD,,0.0,302.0,-37.0,-11174.0,11.174,1.0
+6,ATO,Utilities,USD,"{'total_score': 0.38761538461538464, 'momentum_score': 0.32679487179487177, 'fey_score': 0.75, 'trend_score': 0.125, 'risk_score': 0.35491452991452993, 'liquidity_score': 0.15}",0.02409126171264263,107.0451,242.0,25904.9142,25.9049,1.0
+7,AZN.L,Health Care,GBp,"{'total_score': 0.3823798076923077, 'momentum_score': 0.3988782051282051, 'fey_score': 0.1375, 'trend_score': 0.45, 'risk_score': 0.5476495726495726, 'liquidity_score': 0.725}",0.01290524328073328,11741.0078,11.0,1617.8265,1.6178,79.83
+8,BAYN.DE,,EUR,,0.0,52.1481,-140.0,-7856.1649,7.8562,0.9293
+9,BDX,Health Care,USD,"{'total_score': 0.41390224358974353, 'momentum_score': 0.2552884615384615, 'fey_score': 0.825, 'trend_score': 0.05, 'risk_score': 0.5636752136752136, 'liquidity_score': 0.475}",0.013969119290590672,187.2227,11.0,2059.4497,2.0594,1.0
+10,BIIB,,USD,,0.0,300.2,-53.0,-15910.6,15.9106,1.0
+11,BSX,Health Care,USD,"{'total_score': 0.6674230769230769, 'momentum_score': 0.7575641025641026, 'fey_score': 0.5, 'trend_score': 0.725, 'risk_score': 0.6235042735042735, 'liquidity_score': 0.775}",0.02252539753824752,51.82,133.0,6892.06,6.8921,1.0
+12,CAG,,USD,,0.0,30.0413,-748.0,-22470.8924,22.4709,1.0
+13,CAH,Health Care,USD,"{'total_score': 0.7591089743589744, 'momentum_score': 0.7991025641025641, 'fey_score': 0.925, 'trend_score': 0.825, 'risk_score': 0.42115384615384616, 'liquidity_score': 0.39999999999999997}",0.025619778538550585,80.5015,115.0,9257.6725,9.2577,1.0
+14,CCH.L,Consumer Staples,GBp,"{'total_score': 0.6734647435897436, 'momentum_score': 0.8832051282051282, 'fey_score': 0.1375, 'trend_score': 0.9, 'risk_score': 0.8331196581196582, 'liquidity_score': 0.5}",0.04185751143019599,2387.5623,664.0,19858.9674,19.859,79.83
+15,CHD,Consumer Staples,USD,"{'total_score': 0.4548301282051282, 'momentum_score': 0.3683333333333333, 'fey_score': 0.425, 'trend_score': 0.575, 'risk_score': 0.576923076923077, 'liquidity_score': 0.36250000000000004}",0.028268825460210176,90.8052,178.0,16163.3256,16.1633,1.0
+16,CL,,USD,,0.0,70.8457,-197.0,-13956.6029,13.9566,1.0
+17,CLX,Consumer Staples,USD,"{'total_score': 0.45843589743589735, 'momentum_score': 0.43692307692307686, 'fey_score': 0.45, 'trend_score': 0.5, 'risk_score': 0.54508547008547, 'liquidity_score': 0.225}",0.028492932999956175,144.4738,93.0,13436.0634,13.4361,1.0
+18,CMS,,USD,,0.0,53.4707,-203.0,-10854.5521,10.8546,1.0
+19,CNA.L,Utilities,GBp,"{'total_score': 0.6381602564102563, 'momentum_score': 0.8848076923076923, 'fey_score': 0.1375, 'trend_score': 0.975, 'risk_score': 0.33568376068376066, 'liquidity_score': 0.975}",0.03966324960770509,120.3239,11430.0,17227.8865,17.2279,79.83
+20,COO,Health Care,USD,"{'total_score': 0.5693653846153847, 'momentum_score': 0.2753846153846154, 'fey_score': 1.0, 'trend_score': 0.6, 'risk_score': 0.5948717948717949, 'liquidity_score': 0.275}",0.019215969714599622,89.1106,232.0,20673.6592,20.6737,1.0
+21,COST,Consumer Staples,USD,"{'total_score': 0.35876923076923073, 'momentum_score': 0.43448717948717946, 'fey_score': 0.35, 'trend_score': 0.025, 'risk_score': 0.5446581196581196, 'liquidity_score': 0.65}",0.022298401394674584,493.1811,48.0,23672.6928,23.6727,1.0
+22,CPB,,USD,,0.0,45.3631,-441.0,-20005.1271,20.0051,1.0
 23,DUK,,USD,,0.0,80.5978,-156.0,-12573.2568,12.5733,1.0
-24,ED,,USD,,0.0,83.4692,-211.0,-17612.0012,17.612,1.0
-25,EW,Health Care,USD,"{'total_score': 0.24366185897435896, 'momentum_score': 0.11169871794871794, 'fey_score': 0.375, 'trend_score': 0.1, 'risk_score': 0.41794871794871796, 'liquidity_score': 0.5625}",0.008160424388225345,85.34,44.0,3754.96,3.755,1.0
-26,EXC,,USD,,0.0,35.7939,-381.0,-13637.4759,13.6375,1.0
-27,GILD,,USD,,0.0,70.3574,-253.0,-17800.4222,17.8004,1.0
-28,GIS,Consumer Staples,USD,"{'total_score': 0.6317996794871795, 'momentum_score': 0.6724038461538462, 'fey_score': 0.725, 'trend_score': 0.525, 'risk_score': 0.563888888888889, 'liquidity_score': 0.5125}",0.03934652877540906,74.4025,241.0,17931.0025,17.931,1.0
-29,HCA,Health Care,USD,"{'total_score': 0.6940592948717949, 'momentum_score': 0.7147115384615385, 'fey_score': 0.85, 'trend_score': 0.65, 'risk_score': 0.43440170940170936, 'liquidity_score': 0.7250000000000001}",0.0232445833770902,267.9098,21.0,5626.1058,5.6261,1.0
-30,HLN.L,Health Care,GBp,"{'total_score': nan, 'momentum_score': nan, 'fey_score': 0.1375, 'trend_score': 0.25, 'risk_score': nan, 'liquidity_score': 0.05}",0.0,327.0199,0.0,0.0,0.0,79.83
-31,HOLX,Health Care,USD,"{'total_score': 0.4803717948717949, 'momentum_score': 0.5046794871794872, 'fey_score': 0.65, 'trend_score': 0.15, 'risk_score': 0.4790598290598291, 'liquidity_score': 0.7875}",0.016088023487910313,79.06,25.0,1976.5,1.9765,1.0
-32,HSY,Consumer Staples,USD,"{'total_score': 0.6801522435897436, 'momentum_score': 0.775801282051282, 'fey_score': 0.525, 'trend_score': 0.7, 'risk_score': 0.6408119658119658, 'liquidity_score': 0.825}",0.042357776828542894,241.035,88.0,21211.08,21.2111,1.0
-33,HUM,,USD,,0.0,502.3969,-24.0,-12057.5256,12.0575,1.0
-34,IMB.L,,GBp,,0.0,1727.8743,-520.0,-11255.1,11.2551,79.83
-35,ISRG,Health Care,USD,"{'total_score': 0.5942467948717949, 'momentum_score': 0.6948717948717948, 'fey_score': 0.275, 'trend_score': 0.925, 'risk_score': 0.4527777777777777, 'liquidity_score': 0.5875}",0.01990178544113809,312.18,30.0,9365.4,9.3654,1.0
-36,KHC,,USD,,0.0,32.9602,-476.0,-15689.0552,15.6891,1.0
-37,KMB,Consumer Staples,USD,"{'total_score': 0.534125, 'momentum_score': 0.476025641025641, 'fey_score': 0.7, 'trend_score': 0.35, 'risk_score': 0.6126068376068375, 'liquidity_score': 0.6125}",0.03326365201581559,121.1676,145.0,17569.302,17.5693,1.0
-38,KO,,USD,,0.0,55.9277,-264.0,-14764.9128,14.7649,1.0
-39,KR,,USD,,0.0,43.2108,-420.0,-18148.536,18.1485,1.0
-40,LLY,Health Care,USD,"{'total_score': 0.5990128205128205, 'momentum_score': 0.7157692307692307, 'fey_score': 0.3, 'trend_score': 1.0, 'risk_score': 0.39829059829059826, 'liquidity_score': 0.275}",0.02006140333143755,433.7484,11.0,4771.2324,4.7712,1.0
-41,LW,Consumer Staples,USD,"{'total_score': 0.799875, 'momentum_score': 0.9175, 'fey_score': 0.55, 'trend_score': 0.95, 'risk_score': 0.7333333333333334, 'liquidity_score': 0.825}",0.049813739585584826,106.8462,218.0,23292.4716,23.2925,1.0
-42,MCK,Health Care,USD,"{'total_score': 0.5480352564102564, 'momentum_score': 0.3324358974358974, 'fey_score': 0.9, 'trend_score': 0.55, 'risk_score': 0.4153846153846154, 'liquidity_score': 0.6875}",0.018354125224367617,385.2882,11.0,4238.1702,4.2382,1.0
-43,MDLZ,Consumer Staples,USD,"{'total_score': 0.6855160256410257, 'momentum_score': 0.7380128205128206, 'fey_score': 0.625, 'trend_score': 0.8, 'risk_score': 0.6230769230769231, 'liquidity_score': 0.35}",0.04269181657512379,68.3029,358.0,24452.4382,24.4524,1.0
-44,MDT,,USD,,0.0,75.9824,-86.0,-6534.4864,6.5345,1.0
-45,MKC,Consumer Staples,USD,"{'total_score': 0.35960256410256414, 'momentum_score': 0.27134615384615385, 'fey_score': 0.4, 'trend_score': 0.375, 'risk_score': 0.31837606837606836, 'liquidity_score': 0.8375}",0.022394934811706464,82.1556,149.0,12241.1844,12.2412,1.0
-46,MKS.L,Consumer Staples,GBp,"{'total_score': 0.35132051282051285, 'momentum_score': 0.2785897435897436, 'fey_score': 0.1375, 'trend_score': 0.775, 'risk_score': 0.35876068376068376, 'liquidity_score': 0.2125}",0.02187915428875155,186.0064,765.0,1782.474,1.7825,79.83
-47,MNST,Consumer Staples,USD,"{'total_score': 0.6394903846153845, 'momentum_score': 0.7918589743589743, 'fey_score': 0.325, 'trend_score': 0.85, 'risk_score': 0.5989316239316239, 'liquidity_score': 0.425}",0.039825482089971866,59.48,362.0,21531.76,21.5318,1.0
-48,MO,,USD,,0.0,35.8544,-472.0,-16923.2768,16.9233,1.0
-49,MRK,Health Care,USD,"{'total_score': 0.6622419871794871, 'momentum_score': 0.5976602564102563, 'fey_score': 0.95, 'trend_score': 0.625, 'risk_score': 0.5120726495726496, 'liquidity_score': 0.275}",0.022178997098002917,102.6423,56.0,5747.9688,5.748,1.0
-50,NG.L,,GBp,,0.0,1053.7374,-902.0,-11906.1898,11.9062,79.83
-51,PEG,,USD,,0.0,55.2659,-303.0,-16745.5677,16.7456,1.0
-52,PEP,Consumer Staples,USD,"{'total_score': 0.5518317307692308, 'momentum_score': 0.6608653846153846, 'fey_score': 0.575, 'trend_score': 0.325, 'risk_score': 0.6493589743589744, 'liquidity_score': 0.2875}",0.03436637241019037,167.5122,106.0,17756.2932,17.7563,1.0
-53,PG,,USD,,0.0,136.5712,-111.0,-15159.4032,15.1594,1.0
-54,PM,,USD,,0.0,80.3104,-233.0,-18712.3232,18.7123,1.0
-55,PPL,,USD,,0.0,23.9503,-662.0,-15855.0986,15.8551,1.0
-56,SAN.PA,Health Care,EUR,"{'total_score': 0.3013509615384616, 'momentum_score': 0.2659935897435897, 'fey_score': 0.1375, 'trend_score': 0.425, 'risk_score': 0.31752136752136756, 'liquidity_score': 0.825}",0.010092477116873682,87.3469,-11.0,-1033.9136,1.0339,0.9293
-57,SBRY.L,Consumer Staples,GBp,"{'total_score': 0.4024615384615384, 'momentum_score': 0.37397435897435893, 'fey_score': 0.1375, 'trend_score': 0.75, 'risk_score': 0.5271367521367522, 'liquidity_score': 0.16249999999999998}",0.025064059096905025,278.011,2527.0,8800.3733,8.8004,79.83
-58,SN.L,Health Care,GBp,"{'total_score': 0.25030128205128205, 'momentum_score': 0.13314102564102565, 'fey_score': 0.1375, 'trend_score': 0.4, 'risk_score': 0.5121794871794871, 'liquidity_score': 0.25}",0.008382783809715152,1207.9883,165.0,2496.7815,2.4968,79.83
-59,SO,Utilities,USD,"{'total_score': 0.4252291666666667, 'momentum_score': 0.28394230769230766, 'fey_score': 0.775, 'trend_score': 0.2, 'risk_score': 0.4598290598290598, 'liquidity_score': 0.4625}",0.026481956521367193,63.0171,180.0,11343.078,11.3431,1.0
-60,SRE,,USD,,0.0,65.7245,-243.0,-15971.0535,15.9711,1.0
-61,STZ,Consumer Staples,USD,"{'total_score': 0.3655817307692308, 'momentum_score': 0.2121474358974359, 'fey_score': 0.675, 'trend_score': 0.075, 'risk_score': 0.48386752136752137, 'liquidity_score': 0.7}",0.022767298807671008,232.3654,46.0,10688.8084,10.6888,1.0
-62,SYK,Health Care,USD,"{'total_score': 0.5823429487179487, 'momentum_score': 0.7216666666666667, 'fey_score': 0.475, 'trend_score': 0.475, 'risk_score': 0.5442307692307692, 'liquidity_score': 0.6875}",0.01950311641318098,270.3214,18.0,4865.7852,4.8658,1.0
-63,TAP,Consumer Staples,USD,"{'total_score': 0.609533653846154, 'momentum_score': 0.3643269230769231, 'fey_score': 0.875, 'trend_score': 0.875, 'risk_score': 0.3634615384615385, 'liquidity_score': 0.675}",0.03795986960630389,58.3173,320.0,18661.536,18.6615,1.0
-64,TSCO.L,Consumer Staples,GBp,"{'total_score': 0.2915448717948718, 'momentum_score': 0.3112820512820513, 'fey_score': 0.1375, 'trend_score': 0.3, 'risk_score': 0.558974358974359, 'liquidity_score': 0.0875}",0.018156512356433768,262.1684,1646.0,5405.6017,5.4056,79.83
-65,ULVR.L,,GBp,,0.0,4334.0225,-321.0,-17427.2983,17.4273,79.83
-66,UU.L,,GBp,,0.0,1035.0826,-561.0,-7273.9739,7.274,79.83
-67,VRTX,Health Care,USD,"{'total_score': 0.6312916666666668, 'momentum_score': 0.7262179487179488, 'fey_score': 0.6, 'trend_score': 0.675, 'risk_score': 0.42243589743589743, 'liquidity_score': 0.575}",0.021142446891091835,333.78,24.0,8010.72,8.0107,1.0
-68,WEC,,USD,,0.0,78.8614,-169.0,-13327.5766,13.3276,1.0
-69,WMT,Consumer Staples,USD,"{'total_score': 0.6610817307692307, 'momentum_score': 0.7040064102564102, 'fey_score': 0.975, 'trend_score': 0.225, 'risk_score': 0.7728632478632479, 'liquidity_score': 0.2}",0.04117012430858092,48.1046,499.0,24004.1954,24.0042,1.0
-70,XEL,,USD,,0.0,56.9705,-208.0,-11849.864,11.8499,1.0
-71,ZBH,Health Care,USD,"{'total_score': 0.5873445512820512, 'momentum_score': 0.5890705128205128, 'fey_score': 0.8, 'trend_score': 0.275, 'risk_score': 0.6119658119658119, 'liquidity_score': 0.6875}",0.019670623957103183,126.3606,52.0,6570.7512,6.5708,1.0
-72,ZTS,,USD,,0.0,165.7616,-61.0,-10111.4576,10.1115,1.0
+24,ED,,USD,,0.0,83.4692,-200.0,-16693.84,16.6938,1.0
+25,EW,Health Care,USD,"{'total_score': 0.23866185897435896, 'momentum_score': 0.11169871794871794, 'fey_score': 0.375, 'trend_score': 0.1, 'risk_score': 0.41794871794871796, 'liquidity_score': 0.4625}",0.008054790786375823,85.34,42.0,3584.28,3.5843,1.0
+26,EXC,,USD,,0.0,35.7939,-393.0,-14067.0027,14.067,1.0
+27,GILD,,USD,,0.0,70.3574,-260.0,-18292.924,18.2929,1.0
+28,GIS,Consumer Staples,USD,"{'total_score': 0.6317996794871795, 'momentum_score': 0.6724038461538462, 'fey_score': 0.725, 'trend_score': 0.525, 'risk_score': 0.563888888888889, 'liquidity_score': 0.5125}",0.03926792390759314,74.4025,244.0,18154.21,18.1542,1.0
+29,HCA,Health Care,USD,"{'total_score': 0.6728092948717949, 'momentum_score': 0.7147115384615385, 'fey_score': 0.85, 'trend_score': 0.65, 'risk_score': 0.43440170940170936, 'liquidity_score': 0.3}",0.022707181334339573,267.9098,19.0,5090.2862,5.0903,1.0
+30,HLN.L,Health Care,GBp,"{'total_score': nan, 'momentum_score': nan, 'fey_score': 0.1375, 'trend_score': 0.25, 'risk_score': nan, 'liquidity_score': 0.975}",0.0,327.0199,0.0,0.0,0.0,79.83
+31,HOLX,Health Care,USD,"{'total_score': 0.4528717948717949, 'momentum_score': 0.5046794871794872, 'fey_score': 0.65, 'trend_score': 0.15, 'risk_score': 0.4790598290598291, 'liquidity_score': 0.2375}",0.015284333979543508,79.06,24.0,1897.44,1.8974,1.0
+32,HSY,Consumer Staples,USD,"{'total_score': 0.6489022435897436, 'momentum_score': 0.775801282051282, 'fey_score': 0.525, 'trend_score': 0.7, 'risk_score': 0.6408119658119658, 'liquidity_score': 0.2}",0.0403308908694462,241.035,84.0,20246.94,20.2469,1.0
+33,HUM,,USD,,0.0,502.3969,-23.0,-11555.1287,11.5551,1.0
+34,IMB.L,,GBp,,0.0,1727.8743,-547.0,-11839.4995,11.8395,79.83
+35,ISRG,Health Care,USD,"{'total_score': 0.5867467948717948, 'momentum_score': 0.6948717948717948, 'fey_score': 0.275, 'trend_score': 0.925, 'risk_score': 0.4527777777777777, 'liquidity_score': 0.4375}",0.019802588891158504,312.18,29.0,9053.22,9.0532,1.0
+36,KHC,,USD,,0.0,32.9602,-478.0,-15754.9756,15.755,1.0
+37,KMB,Consumer Staples,USD,"{'total_score': 0.524125, 'momentum_score': 0.476025641025641, 'fey_score': 0.7, 'trend_score': 0.35, 'risk_score': 0.6126068376068375, 'liquidity_score': 0.4125}",0.032575674357373414,121.1676,144.0,17448.1344,17.4481,1.0
+38,KO,,USD,,0.0,55.9277,-285.0,-15939.3945,15.9394,1.0
+39,KR,,USD,,0.0,43.2108,-423.0,-18278.1684,18.2782,1.0
+40,LLY,Health Care,USD,"{'total_score': 0.6227628205128204, 'momentum_score': 0.7157692307692307, 'fey_score': 0.3, 'trend_score': 1.0, 'risk_score': 0.39829059829059826, 'liquidity_score': 0.75}",0.02101812267079933,433.7484,13.0,5638.7292,5.6387,1.0
+41,LW,Consumer Staples,USD,"{'total_score': 0.768625, 'momentum_score': 0.9175, 'fey_score': 0.55, 'trend_score': 0.95, 'risk_score': 0.7333333333333334, 'liquidity_score': 0.2}",0.047771958412470575,106.8462,206.0,22010.3172,22.0103,1.0
+42,MCK,Health Care,USD,"{'total_score': 0.5305352564102563, 'momentum_score': 0.3324358974358974, 'fey_score': 0.9, 'trend_score': 0.55, 'risk_score': 0.4153846153846154, 'liquidity_score': 0.33749999999999997}",0.01790546052706303,385.2882,12.0,4623.4584,4.6235,1.0
+43,MDLZ,Consumer Staples,USD,"{'total_score': 0.7017660256410256, 'momentum_score': 0.7380128205128206, 'fey_score': 0.625, 'trend_score': 0.8, 'risk_score': 0.6230769230769231, 'liquidity_score': 0.675}",0.043616506608824636,68.3029,362.0,24725.6498,24.7256,1.0
+44,MDT,,USD,,0.0,75.9824,-94.0,-7142.3456,7.1423,1.0
+45,MKC,Consumer Staples,USD,"{'total_score': 0.32710256410256416, 'momentum_score': 0.27134615384615385, 'fey_score': 0.4, 'trend_score': 0.375, 'risk_score': 0.31837606837606836, 'liquidity_score': 0.1875}",0.020330239178949664,82.1556,137.0,11255.3172,11.2553,1.0
+46,MKS.L,Consumer Staples,GBp,"{'total_score': 0.3813205128205129, 'momentum_score': 0.2785897435897436, 'fey_score': 0.1375, 'trend_score': 0.775, 'risk_score': 0.35876068376068376, 'liquidity_score': 0.8125}",0.023700019749921607,186.0064,1090.0,2539.7341,2.5397,79.83
+47,MNST,Consumer Staples,USD,"{'total_score': 0.6482403846153846, 'momentum_score': 0.7918589743589743, 'fey_score': 0.325, 'trend_score': 0.85, 'risk_score': 0.5989316239316239, 'liquidity_score': 0.6}",0.04028975468548393,59.48,373.0,22186.04,22.186,1.0
+48,MO,,USD,,0.0,35.8544,-491.0,-17604.5104,17.6045,1.0
+49,MRK,Health Care,USD,"{'total_score': 0.6859919871794871, 'momentum_score': 0.5976602564102563, 'fey_score': 0.95, 'trend_score': 0.625, 'risk_score': 0.5120726495726496, 'liquidity_score': 0.75}",0.023152094606179275,102.6423,59.0,6055.8957,6.0559,1.0
+50,NG.L,,GBp,,0.0,1053.7374,-1013.0,-13371.364,13.3714,79.83
+51,PEG,,USD,,0.0,55.2659,-292.0,-16137.6428,16.1376,1.0
+52,PEP,Consumer Staples,USD,"{'total_score': 0.5743317307692307, 'momentum_score': 0.6608653846153846, 'fey_score': 0.575, 'trend_score': 0.325, 'risk_score': 0.6493589743589744, 'liquidity_score': 0.7375}",0.035696147740796796,167.5122,110.0,18426.342,18.4263,1.0
+53,PG,,USD,,0.0,136.5712,-119.0,-16251.9728,16.252,1.0
+54,PM,,USD,,0.0,80.3104,-237.0,-19033.5648,19.0336,1.0
+55,PPL,,USD,,0.0,23.9503,-646.0,-15471.8938,15.4719,1.0
+56,SAN.PA,Health Care,EUR,"{'total_score': 0.2701009615384616, 'momentum_score': 0.2659935897435897, 'fey_score': 0.1375, 'trend_score': 0.425, 'risk_score': 0.31752136752136756, 'liquidity_score': 0.2}",0.009115854312628107,87.3469,-18.0,-1691.8586,1.6919,0.9293
+57,SBRY.L,Consumer Staples,GBp,"{'total_score': 0.43746153846153846, 'momentum_score': 0.37397435897435893, 'fey_score': 0.1375, 'trend_score': 0.75, 'risk_score': 0.5271367521367522, 'liquidity_score': 0.8625}",0.02718932434209142,278.011,2846.0,9911.3028,9.9113,79.83
+58,SN.L,Health Care,GBp,"{'total_score': 0.2765512820512821, 'momentum_score': 0.13314102564102565, 'fey_score': 0.1375, 'trend_score': 0.4, 'risk_score': 0.5121794871794871, 'liquidity_score': 0.775}",0.009333551360908535,1207.9883,190.0,2875.0818,2.8751,79.83
+59,SO,Utilities,USD,"{'total_score': 0.4302291666666667, 'momentum_score': 0.28394230769230766, 'fey_score': 0.775, 'trend_score': 0.2, 'risk_score': 0.4598290598290598, 'liquidity_score': 0.5625}",0.02673981441903643,63.0171,183.0,11532.1293,11.5321,1.0
+60,SRE,,USD,,0.0,65.7245,-236.0,-15510.982,15.511,1.0
+61,STZ,Consumer Staples,USD,"{'total_score': 0.3468317307692308, 'momentum_score': 0.2121474358974359, 'fey_score': 0.675, 'trend_score': 0.075, 'risk_score': 0.48386752136752137, 'liquidity_score': 0.325}",0.02155645603308881,232.3654,44.0,10224.0776,10.2241,1.0
+62,SYK,Health Care,USD,"{'total_score': 0.5648429487179486, 'momentum_score': 0.7216666666666667, 'fey_score': 0.475, 'trend_score': 0.475, 'risk_score': 0.5442307692307692, 'liquidity_score': 0.3375}",0.019063338392799025,270.3214,17.0,4595.4638,4.5955,1.0
+63,TAP,Consumer Staples,USD,"{'total_score': 0.5932836538461539, 'momentum_score': 0.3643269230769231, 'fey_score': 0.875, 'trend_score': 0.875, 'risk_score': 0.3634615384615385, 'liquidity_score': 0.35}",0.03687405696970181,58.3173,316.0,18428.2668,18.4283,1.0
+64,TSCO.L,Consumer Staples,GBp,"{'total_score': 0.3340448717948718, 'momentum_score': 0.3112820512820513, 'fey_score': 0.1375, 'trend_score': 0.3, 'risk_score': 0.558974358974359, 'liquidity_score': 0.9375}",0.020761720895473974,262.1684,2025.0,6650.2694,6.6503,79.83
+65,ULVR.L,,GBp,,0.0,4334.0225,-339.0,-18404.53,18.4045,79.83
+66,UU.L,,GBp,,0.0,1035.0826,-590.0,-7649.9904,7.65,79.83
+67,VRTX,Health Care,USD,"{'total_score': 0.6250416666666667, 'momentum_score': 0.7262179487179488, 'fey_score': 0.6, 'trend_score': 0.675, 'risk_score': 0.42243589743589743, 'liquidity_score': 0.45}",0.02109503328015456,333.78,25.0,8344.5,8.3445,1.0
+68,WEC,,USD,,0.0,78.8614,-152.0,-11986.9328,11.9869,1.0
+69,WMT,Consumer Staples,USD,"{'total_score': 0.6923317307692307, 'momentum_score': 0.7040064102564102, 'fey_score': 0.975, 'trend_score': 0.225, 'risk_score': 0.7728632478632479, 'liquidity_score': 0.825}",0.04303014168149809,48.1046,513.0,24677.6598,24.6777,1.0
+70,XEL,,USD,,0.0,56.9705,-201.0,-11451.0705,11.4511,1.0
+71,ZBH,Health Care,USD,"{'total_score': 0.5698445512820511, 'momentum_score': 0.5890705128205128, 'fey_score': 0.8, 'trend_score': 0.275, 'risk_score': 0.6119658119658119, 'liquidity_score': 0.3375}",0.01923214149532902,126.3606,54.0,6823.4724,6.8235,1.0
+72,ZTS,,USD,,0.0,165.7616,-59.0,-9779.9344,9.7799,1.0

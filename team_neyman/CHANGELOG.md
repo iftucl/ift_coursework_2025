@@ -3,6 +3,9 @@
 All notable changes to the **Team Neyman Coursework** will be documented in this file.
 
 ## 2026-04-24
+### Added
+- Built graph generation for different portfolio and benchmark.
+
 ### Changed
 - Adjusted the base capital getting logic.
 
