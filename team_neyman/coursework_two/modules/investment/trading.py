@@ -139,7 +139,7 @@ def update_holdings(
     ).round(6) - 1
 
     holdings_file_path = f"holdings/{run_date}_holdings.parquet"
-    current_holdings_df.to_csv(f"output/{run_date}_holding_test.csv")
+    # current_holdings_df.to_csv(f"output/{run_date}_holding_test.csv")
     minio_db.upload_dataframe_to_parquet(
         current_holdings_df, object_name=holdings_file_path, bucket_name=bucket_name
     )
@@ -204,7 +204,7 @@ def update_performance_data(
     performance_df = pd.concat(
         [performance_df, pd.DataFrame([new_data])], ignore_index=True
     )
-    performance_df.to_csv("output/performance_test.csv")
+    performance_df.to_csv(f"output/performance_{bucket_name}.csv")
     minio_db.upload_dataframe_to_parquet(
         performance_df, file_path, bucket_name=bucket_name
     )
@@ -351,7 +351,7 @@ def execute_trade(
         }
     )
 
-    trade_info_df.to_csv(f"output/{execute_date}_trading_test.csv")
+    # trade_info_df.to_csv(f"output/{execute_date}_trading_test.csv")
 
     mongodb.update_trade_log(portfolio, collection_name=mongodb_collection_name)
     mongodb.check_pending(collection_name=mongodb_collection_name)

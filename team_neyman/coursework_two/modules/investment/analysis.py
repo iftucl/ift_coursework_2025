@@ -285,7 +285,9 @@ def generate_return_graph(
     plt.grid(True, which="both", linestyle="--", alpha=0.5)
     plt.tight_layout()
 
-    plt.savefig(f"output/comparison_{base_date_str}.png")
+    png_path = f"output/comparison_{base_date_str}.png"
+    plt.savefig(png_path)
+    print(f"Saved graph to {png_path}")
 
 
 if __name__ == "__main__":
@@ -293,23 +295,32 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Analyse Portfolio Performance")
 
     parser.add_argument(
-        "--bucket_name",
-        type=str,
+        "--bucket_list",
+        nargs="+",
+        required=True,
         help="The MinIO bucket name stroing portfolio data",
     )
 
     parser.add_argument(
         "--base_date",
         type=str,
+        required=True,
         help="The specific date to calculate performance (YYYY-MM-DD).",
     )
 
     args = parser.parse_args()
 
-    summary_df = generate_return_chart(args.bucket_name, args.base_date)
-    summary_df.to_csv(f"output/{args.bucket_name}_{args.base_date}_summary.csv")
+    for bucket in args.bucket_list:
+        try:
+            summary_df = generate_return_chart(bucket, args.base_date)
+            csv_path = f"output/{bucket}_{args.base_date}_summary.csv"
+            summary_df.to_csv(csv_path)
+            print(f"Saved summary to {csv_path}")
+        except Exception as e:
+            print(f"Failed to generate chart for {bucket}: {e}")
+
     generate_return_graph(
-        bucket_list=[args.bucket_name],
+        bucket_list=args.bucket_list,
         base_date_str=args.base_date,
         include_benchmark=True,
     )
