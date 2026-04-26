@@ -75,7 +75,7 @@ def backtest_with_omit_factor(
     start_date: str, end_date: str, fee_rate: float, omit_factor: str
 ):
     fee_bps_str = f"{fee_rate * 10000:g}".replace(".", "")
-    minio_bucket_name = f"backtest{fee_bps_str}bpsOmit{omit_factor}"
+    minio_bucket_name = f"backtest{fee_bps_str}bpsomit{omit_factor}"
     mongodb_collection_name = f"backtest{fee_bps_str}bpsOmit{omit_factor}"
 
     date_range = pd.date_range(start=start_date, end=end_date, freq="B")
