@@ -2,6 +2,14 @@
 
 All notable changes to the **Team Neyman Coursework** will be documented in this file.
 
+## 2026-04-27
+### Added
+- Constructed sectors return analysis.
+- Added stock holdings analysis.
+
+### Changed
+- Adjusted return analysis parameters.
+
 ## 2026-04-25
 ### Changed
 - Adjusted functions to run sensetivity test properly.

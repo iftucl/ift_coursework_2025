@@ -184,41 +184,68 @@ def get_benchmark_volatility(benchmark_symbol: str, from_date: str, to_date: str
         return np.nan
 
 
-def generate_return_chart(bucket_name: str, base_date_str: str):
+def generate_return_chart(
+    bucket_name: str, start_date_str: str = None, end_date_str: str = None
+):
     port_perform_df = load_portfolio_perforamance(bucket_name=bucket_name)
+    if port_perform_df is None or port_perform_df.empty:
+        print(f"No data for {bucket_name}")
+        return pd.DataFrame()
 
-    base_date = pd.to_datetime(base_date_str)
+    port_perform_df["date"] = pd.to_datetime(port_perform_df["date"])
+    actual_start = port_perform_df["date"].min()
+    actual_end = port_perform_df["date"].max()
+
+    end_date = pd.to_datetime(end_date_str) if end_date_str else actual_end
+    total_start = pd.to_datetime(start_date_str) if start_date_str else actual_start
+    end_date_fmt = end_date.strftime("%Y-%m-%d")
+
     periods = {
-        "1-month": base_date - pd.DateOffset(months=1),
-        "3-months": base_date - pd.DateOffset(months=3),
-        "6-months": base_date - pd.DateOffset(months=6),
-        "1-year": base_date - pd.DateOffset(years=1),
-        "2-years": base_date - pd.DateOffset(years=2),
-        "3-years": base_date - pd.DateOffset(years=3),
-        "5-years": base_date - pd.DateOffset(years=5),
-        "Total": pd.to_datetime(port_perform_df["date"]).min(),
+        "1-month": end_date - pd.DateOffset(months=1),
+        "3-months": end_date - pd.DateOffset(months=3),
+        "6-months": end_date - pd.DateOffset(months=6),
+        "1-year": end_date - pd.DateOffset(years=1),
+        "2-years": end_date - pd.DateOffset(years=2),
+        "3-years": end_date - pd.DateOffset(years=3),
+        "5-years": end_date - pd.DateOffset(years=5),
+        "Total": total_start,
     }
 
     benchmark_symbol = load_config()["portfolio"]["benchmark_symbol"]
     results = []
     for label, start_dt in periods.items():
+
+        if label != "Total" and start_dt < actual_start:
+            continue
+
         start_str = start_dt.strftime("%Y-%m-%d")
 
-        p_ret = get_portfolio_return(start_str, base_date_str, port_perform_df)
-        b_ret = get_benchmark_return(benchmark_symbol, start_str, base_date_str)
-        p_vol = get_portfolio_volatility(start_str, base_date_str, port_perform_df)
-        b_vol = get_benchmark_volatility(benchmark_symbol, start_str, base_date_str)
+        try:
+            p_ret = get_portfolio_return(start_str, end_date_fmt, port_perform_df)
+            b_ret = get_benchmark_return(benchmark_symbol, start_str, end_date_fmt)
+            p_vol = get_portfolio_volatility(start_str, end_date_fmt, port_perform_df)
+            b_vol = get_benchmark_volatility(benchmark_symbol, start_str, end_date_fmt)
 
-        results.append(
-            {
-                "Period": label,
-                "Portfolio Return": p_ret,
-                "Portfolio Volatility": p_vol,
-                "Benchmark Return": b_ret,
-                "Benchmark Volatility": b_vol,
-                "Alpha": p_ret - b_ret,
-            }
-        )
+            results.append(
+                {
+                    "Period": label,
+                    "Portfolio Return": p_ret,
+                    "Portfolio Volatility": p_vol,
+                    "Benchmark Return": b_ret,
+                    "Benchmark Volatility": b_vol,
+                    "Alpha": (
+                        p_ret - b_ret
+                        if (p_ret is not None and b_ret is not None)
+                        else None
+                    ),
+                    "Sharpe Ratio": p_ret / p_vol if p_vol > 0 else 0,
+                }
+            )
+        except Exception as e:
+            print(f"Skipping period {label} for {bucket_name} due to error: {e}")
+
+    if not results:
+        return pd.DataFrame()
 
     summary_df = pd.DataFrame(results).set_index("Period").T
 
@@ -228,14 +255,79 @@ def generate_return_chart(bucket_name: str, base_date_str: str):
     return summary_df
 
 
+def get_sectors_total_return(
+    portfolio_name: str, start_date: str = None, end_date: str = None
+):
+
+    all_sectors = load_config()["portfolio"]["sectors"]
+    sector_df = postgres.get_companies_by_sector(all_sectors)
+    sector_map = sector_df.set_index("symbol")["gics_sector"].to_dict()
+
+    if start_date is None:
+        start_date = minio_db.get_initial_date(portfolio_name)
+    if end_date is None:
+        end_date = minio_db.get_latest_date(portfolio_name)
+
+    v0_df = minio_db.load_parquet(
+        f"holdings/{start_date}_holdings.parquet", portfolio_name
+    )
+    v0_df["sector"] = v0_df["symbol"].map(sector_map).fillna("Unknown")
+    v0_stats = v0_df.groupby("sector")["current_value"].sum()
+
+    v1_df = minio_db.load_parquet(
+        f"holdings/{end_date}_holdings.parquet", portfolio_name
+    )
+    v1_df["sector"] = v1_df["symbol"].map(sector_map).fillna("Unknown")
+    v1_stats = v1_df.groupby("sector")["current_value"].sum()
+
+    collection = mongodb.get_collection(portfolio_name)
+    trades_cursor = collection.find(
+        {"portfolio_date": {"$gt": start_date, "$lte": end_date}, "status": "EXECUTED"}
+    )
+
+    cash_flows = []
+    for doc in trades_cursor:
+        for trade in doc["trades"]:
+            symbol = trade["symbol"]
+            sector = trade.get("gics_sector") or sector_map.get(symbol, "Unknown")
+            cash_flows.append(
+                {
+                    "sector": sector,
+                    "investment": trade.get("investment", 0) + trade.get("fees", 0),
+                }
+            )
+
+    flow_df = pd.DataFrame(cash_flows)
+    net_flows = (
+        flow_df.groupby("sector")["investment"].sum()
+        if not flow_df.empty
+        else pd.Series()
+    )
+
+    results = pd.DataFrame(index=all_sectors)
+    results["v0"] = v0_stats.reindex(results.index).fillna(0)
+    results["v1"] = v1_stats.reindex(results.index).fillna(0)
+    results["net_flow"] = net_flows.reindex(results.index).fillna(0)
+    results["pnl"] = results["v1"] - results["v0"] - results["net_flow"]
+
+    denominator = results["v0"] + results["net_flow"].clip(lower=0)
+    results["return_pct"] = (results["pnl"] / denominator).fillna(0)
+
+    return results.sort_values("return_pct", ascending=False)
+
+
 def generate_return_graph(
-    bucket_list: list, base_date_str: str, include_benchmark: bool = False
+    portfolio_list: list,
+    start_date_str: str = None,
+    end_date_str: str = None,
+    include_benchmark: bool = False,
 ):
     plt.figure(figsize=(12, 6))
-    base_dt = pd.to_datetime(base_date_str)
-    earliest_dt = base_dt
+    portfolio_dfs = {}
+    global_min_dt = None
+    global_max_dt = None
 
-    for bucket in bucket_list:
+    for bucket in portfolio_list:
         df = load_portfolio_perforamance(bucket)
 
         if df is None or df.empty:
@@ -243,21 +335,51 @@ def generate_return_graph(
             continue
 
         df["date"] = pd.to_datetime(df["date"])
-        df = df[df["date"] <= base_dt].sort_values("date")
+        df = df.sort_values("date")
 
-        if df["date"].iloc[0] < earliest_dt:
-            earliest_dt = df["date"].iloc[0]
+        if global_min_dt is None or df["date"].min() < global_min_dt:
+            global_min_dt = df["date"].min()
+        if global_max_dt is None or df["date"].max() > global_max_dt:
+            global_max_dt = df["date"].max()
 
-        initial_val = df["net_capital"].iloc[0]
-        df["indexed_performance"] = (df["net_capital"] / initial_val) * 100
+        portfolio_dfs[bucket] = df
 
-        plt.plot(df["date"], df["indexed_performance"], label=f"Bucket: {bucket}")
+    if not portfolio_dfs:
+        print("No valid portfolio data found to plot.")
+        return
 
-    earliest_date_str = earliest_dt.strftime("%Y-%m-%d")
+    start_dt = pd.to_datetime(start_date_str) if start_date_str else global_min_dt
+    end_dt = pd.to_datetime(end_date_str) if end_date_str else global_max_dt
+
+    final_start_str = start_dt.strftime("%Y-%m-%d")
+    final_end_str = end_dt.strftime("%Y-%m-%d")
+
+    for bucket, df in portfolio_dfs.items():
+
+        mask = (df["date"] >= start_dt) & (df["date"] <= end_dt)
+        filtered_df = df.loc[mask].copy()
+
+        if filtered_df.empty:
+            print(
+                f"No data for {bucket} within the range {final_start_str} to {final_end_str}."
+            )
+            continue
+
+        initial_val = filtered_df["net_capital"].iloc[0]
+        filtered_df["indexed_performance"] = (
+            filtered_df["net_capital"] / initial_val
+        ) * 100
+
+        plt.plot(
+            filtered_df["date"],
+            filtered_df["indexed_performance"],
+            label=f"Bucket: {bucket}",
+        )
+
     if include_benchmark:
         benchmark_symbol = load_config()["portfolio"]["benchmark_symbol"]
         bench_df = postgres.get_ohlcv_data(
-            [benchmark_symbol], start_date=earliest_date_str, end_date=base_date_str
+            [benchmark_symbol], start_date=final_start_str, end_date=final_end_str
         )
 
         if not bench_df.empty:
@@ -278,14 +400,14 @@ def generate_return_graph(
             )
 
     plt.axhline(100, color="gray", linestyle=":", alpha=0.5)
-    plt.title(f"Strategy Performance Comparison (To {base_date_str})")
+    plt.title(f"Strategy Performance Comparison ({final_start_str} to {final_end_str})")
     plt.xlabel("Date")
     plt.ylabel("Indexed Performance (Base 100)")
     plt.legend(loc="upper left")
     plt.grid(True, which="both", linestyle="--", alpha=0.5)
     plt.tight_layout()
 
-    png_path = f"output/comparison_{base_date_str}.png"
+    png_path = f"output/comparison_{final_start_str}_to_{final_end_str}.png"
     plt.savefig(png_path)
     print(f"Saved graph to {png_path}")
 
@@ -295,32 +417,60 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Analyse Portfolio Performance")
 
     parser.add_argument(
-        "--bucket_list",
+        "--portfolio_list",
         nargs="+",
         required=True,
-        help="The MinIO bucket name stroing portfolio data",
+        help="The portfolio name stroing in MongoDB and MinIO.",
     )
 
     parser.add_argument(
-        "--base_date",
+        "--start_date",
         type=str,
-        required=True,
-        help="The specific date to calculate performance (YYYY-MM-DD).",
+        help="The specific starting date to calculate performance (YYYY-MM-DD). Default to initial date",
+    )
+
+    parser.add_argument(
+        "--end_date",
+        type=str,
+        help="The specific ending date to calculate performance (YYYY-MM-DD). Default to latest date.",
     )
 
     args = parser.parse_args()
 
-    for bucket in args.bucket_list:
+    start_date = args.start_date
+    end_date = args.end_date
+
+    if start_date and end_date:
+        file_date_name = f"{start_date}_to_{end_date}"
+    elif start_date:
+        file_date_name = f"{start_date}_to_latest"
+    elif end_date:
+        file_date_name = f"initial_to_{end_date}"
+    else:
+        file_date_name = "all_time"
+
+    for portfolio in args.portfolio_list:
         try:
-            summary_df = generate_return_chart(bucket, args.base_date)
-            csv_path = f"output/{bucket}_{args.base_date}_summary.csv"
-            summary_df.to_csv(csv_path)
-            print(f"Saved summary to {csv_path}")
+            summary_df = generate_return_chart(portfolio, start_date, end_date)
+            summary_csv_path = f"output/{portfolio}_{file_date_name}_summary.csv"
+            summary_df.to_csv(summary_csv_path)
+            print(f"Saved summary to {summary_csv_path}")
+
+            sectors_return_df = get_sectors_total_return(
+                portfolio, start_date, end_date
+            )
+            sectors_return_csv_path = (
+                f"output/{portfolio}_{file_date_name}_sectors_return.csv"
+            )
+            sectors_return_df.to_csv(sectors_return_csv_path)
+            print(f"Saved sectors return to {sectors_return_csv_path}")
+
         except Exception as e:
-            print(f"Failed to generate chart for {bucket}: {e}")
+            print(f"Failed to generate chart for {portfolio}: {e}")
 
     generate_return_graph(
-        bucket_list=args.bucket_list,
-        base_date_str=args.base_date,
+        portfolio_list=args.portfolio_list,
+        start_date_str=start_date,
+        end_date_str=end_date,
         include_benchmark=True,
     )

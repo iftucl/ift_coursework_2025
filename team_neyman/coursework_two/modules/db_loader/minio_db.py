@@ -1,4 +1,5 @@
 import io
+import re
 from pathlib import Path
 
 import pandas as pd
@@ -127,6 +128,36 @@ def load_current_holdings(bucket_name: str = BUCKET_NAME):
     print(f"Loading newest holdings: {latest_file}")
     df = load_parquet(latest_file, bucket_name=bucket_name)
     return df
+
+
+def get_initial_date(bucket_name: str = BUCKET_NAME):
+    all_files = client.list_objects(bucket_name, prefix="holdings/", recursive=True)
+    file_names = [obj.object_name for obj in all_files]
+    dates = sorted(
+        [
+            re.search(r"(\d{4}-\d{2}-\d{2})", f).group(1)
+            for f in file_names
+            if "_holdings.parquet" in f
+        ]
+    )
+    if len(dates) < 5:
+        raise ValueError(
+            f"Found only {len(dates)} files. Need at least 5 to use the default start_date logic."
+        )
+    return dates[4]
+
+
+def get_latest_date(bucket_name: str = BUCKET_NAME):
+    all_files = client.list_objects(bucket_name, prefix="holdings/", recursive=True)
+    file_names = [obj.object_name for obj in all_files]
+    dates = sorted(
+        [
+            re.search(r"(\d{4}-\d{2}-\d{2})", f).group(1)
+            for f in file_names
+            if "_holdings.parquet" in f
+        ]
+    )
+    return dates[-1]
 
 
 def reset_minio():

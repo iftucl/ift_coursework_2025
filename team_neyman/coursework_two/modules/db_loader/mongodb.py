@@ -69,6 +69,53 @@ def update_trade_log(trade_info: dict, collection_name: str = None):
     print("Trading complete!")
 
 
+def get_sector_weights(year: str, month: str, collection_name: str):
+    collection = get_collection(collection_name)
+    date_pattern = f"^{year}-{month.zfill(2)}"
+    cursor = (
+        collection.find({"portfolio_date": {"$regex": date_pattern}})
+        .sort("portfolio_date", -1)
+        .limit(1)
+    )
+    latest_portfolio = next(cursor, None)
+
+    if not latest_portfolio:
+        print(f"No portfolio data found for {year}-{month}")
+        return pd.Series(dtype=float)
+
+    trades_df = pd.DataFrame(latest_portfolio["trades"])
+
+    if trades_df.empty or "gics_sector" not in trades_df.columns:
+        return pd.Series(dtype=float)
+
+    sector_weights = trades_df.groupby("gics_sector")["weight"].sum()
+    sector_weights = sector_weights.sort_values(ascending=False)
+
+    return sector_weights
+
+
+def get_initial_date(collection_name: str):
+    collection = get_collection(collection_name)
+    result = (
+        collection.find({}, {"portfolio_date": 1, "_id": 0})
+        .sort("portfolio_date", 1)
+        .limit(1)
+    )
+    doc = next(result, None)
+    return doc["portfolio_date"] if doc else None
+
+
+def get_latest_date(collection_name: str):
+    collection = get_collection(collection_name)
+    result = (
+        collection.find({}, {"portfolio_date": 1, "_id": 0})
+        .sort("portfolio_date", -1)
+        .limit(1)
+    )
+    doc = next(result, None)
+    return doc["portfolio_date"] if doc else None
+
+
 def reset_mongodb():
     config = load_config()
     url = f"mongodb://{config['host']}:{config['port']}/"

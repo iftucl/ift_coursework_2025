@@ -19,6 +19,7 @@ mongodb:
   collection: "trade_logs"
 
 portfolio:
+  sectors: ["Consumer Staples", "Utilities", "Health Care"]
   momentum_weight: 0.35
   fey_weight: 0.25
   trend_weight: 0.2

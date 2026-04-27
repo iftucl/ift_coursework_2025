@@ -158,7 +158,7 @@ def get_latest_indicators(symbols: list, as_of_date: str):
 
 
 def get_target_factors(run_date: str):
-    target_sectors = ["Consumer Staples", "Utilities", "Health Care"]
+    target_sectors = load_config()["sectors"]
     target_companies = postgres.get_companies_by_sector(target_sectors)
     latest_indicators = get_latest_indicators(
         list(target_companies["symbol"]), as_of_date=run_date
