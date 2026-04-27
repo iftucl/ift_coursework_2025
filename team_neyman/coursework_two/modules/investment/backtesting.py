@@ -16,10 +16,9 @@ def load_config():
         return yaml.safe_load(f)["trading"]
 
 
-def backtest(start_date: str, end_date: str, fee_rate: float):
+def backtest(start_date: str, end_date: str, fee_rate: float, suffix: str = ""):
     fee_bps_str = f"{fee_rate * 10000:g}".replace(".", "")
-    minio_bucket_name = f"backtest{fee_bps_str}bps"
-    mongodb_collection_name = f"backtest{fee_bps_str}bps"
+    portfolio_name = f"backtest{fee_bps_str}bps{suffix}"
 
     date_range = pd.date_range(start=start_date, end=end_date, freq="B")
 
@@ -35,22 +34,22 @@ def backtest(start_date: str, end_date: str, fee_rate: float):
                 print(f"Initializing strategy on {run_date}")
                 trading.initiate_portfolio(
                     run_date,
-                    minio_bucket_name=minio_bucket_name,
-                    mongodb_collection_name=mongodb_collection_name,
+                    minio_bucket_name=portfolio_name,
+                    mongodb_collection_name=portfolio_name,
                 )
                 last_month = current_month
             else:
                 trade_execution = trading.execute_trade(
                     execute_date=run_date,
                     fee_rate=fee_rate,
-                    mongodb_collection_name=mongodb_collection_name,
-                    minio_bucket_name=minio_bucket_name,
+                    mongodb_collection_name=portfolio_name,
+                    minio_bucket_name=portfolio_name,
                 )
                 # Update is handled within the trade_execution function.
                 if not trade_execution:
-                    trading.update_holdings(run_date, bucket_name=minio_bucket_name)
+                    trading.update_holdings(run_date, bucket_name=portfolio_name)
                     trading.update_performance_data(
-                        run_date, bucket_name=minio_bucket_name
+                        run_date, bucket_name=portfolio_name
                     )
                 if current_month != last_month:
                     print(
@@ -58,8 +57,8 @@ def backtest(start_date: str, end_date: str, fee_rate: float):
                     )
                     trading.rebalance(
                         run_date,
-                        minio_bucket_name=minio_bucket_name,
-                        mongodb_collection_name=mongodb_collection_name,
+                        minio_bucket_name=portfolio_name,
+                        mongodb_collection_name=portfolio_name,
                     )
                 last_month = current_month
 
@@ -159,6 +158,12 @@ if __name__ == "__main__":
         help="Backtesting without a specific factor. Default to None",
     )
 
+    parser.add_argument(
+        "--suffix",
+        type=str,
+        help="The suffix of portfolio name to identify clearly.",
+    )
+
     args = parser.parse_args()
 
     end_date = (
@@ -168,8 +173,9 @@ if __name__ == "__main__":
     )
 
     fee_rate = args.fee if args.fee else load_config()["transaction_fee"]
+    suffix = args.suffix if args.suffix else ""
 
     if args.omit_factor:
         backtest_with_omit_factor(args.start_date, end_date, fee_rate, args.omit_factor)
     else:
-        backtest(args.start_date, end_date, fee_rate)
+        backtest(args.start_date, end_date, fee_rate, suffix)
