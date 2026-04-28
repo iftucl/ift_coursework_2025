@@ -238,7 +238,6 @@ def generate_return_chart(
                         if (p_ret is not None and b_ret is not None)
                         else None
                     ),
-                    "Sharpe Ratio": p_ret / p_vol if p_vol > 0 else 0,
                 }
             )
         except Exception as e:

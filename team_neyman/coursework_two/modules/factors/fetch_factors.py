@@ -180,11 +180,13 @@ def apply_filter(df: pd.DataFrame):
     liquidity_mask = (df["adv_20d"] > adv_cutoff) & (df["addv_20d"] > addv_cutoff)
     df = df[liquidity_mask].copy()
     print(f"Liquidity mask count: {len(df)}")
+    """
 
     # 2. Trend Filter
     trend_mask = df["close_price"] > df["ma200"]
     df = df[trend_mask].copy()
     print(f"Trend mask count: {len(df)}")
+    """
 
     return df
 
