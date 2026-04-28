@@ -180,13 +180,11 @@ def apply_filter(df: pd.DataFrame):
     liquidity_mask = (df["adv_20d"] > adv_cutoff) & (df["addv_20d"] > addv_cutoff)
     df = df[liquidity_mask].copy()
     print(f"Liquidity mask count: {len(df)}")
-    """
 
     # 2. Trend Filter
-    trend_mask = df["close_price"] > df["ma200"]
+    trend_mask = df["close_price"] > df["ma200"] * 0.8
     df = df[trend_mask].copy()
     print(f"Trend mask count: {len(df)}")
-    """
 
     return df
 
@@ -271,11 +269,10 @@ def apply_weight(df: pd.DataFrame):
 
     config = load_config()
 
-    """
     # Top score selection
-    selection_cutoff = df["total_score"].quantile(0.8)
-    df = df[df["total_score"] >= selection_cutoff].copy()
-    """
+    df["rank"] = df["total_score"].rank(ascending=False, method="first")
+    cutoff_rank = max(30, len(df) * 0.5)
+    df = df[df["rank"] <= cutoff_rank].copy()
 
     # Apply weights
     total_score_sum = df["total_score"].sum()
