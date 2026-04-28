@@ -20,11 +20,11 @@ mongodb:
 
 portfolio:
   sectors: ["Consumer Staples", "Utilities", "Health Care"]
-  momentum_weight: 0.2
-  fey_weight: 0.2
+  momentum_weight: 0.35
+  fey_weight: 0.25
   trend_weight: 0.2
-  risk_weight: 0.2
-  liquidity_weight: 0.2
+  risk_weight: 0.15
+  liquidity_weight: 0.05
   health_sector_cap: 0.3
   stock_cap: 0.1
   benchmark_symbol: "^892400-USD-STRD"
