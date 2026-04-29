@@ -1,11 +1,12 @@
-import yaml
-import sys
 import argparse
-import pandas as pd
-from pathlib import Path
+import sys
 from datetime import datetime, timedelta
-from modules.investment import trading
+from pathlib import Path
 
+import pandas as pd
+import yaml
+
+from modules.investment import trading
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 CONFIG_PATH = BASE_DIR / "config" / "conf.yaml"
@@ -17,6 +18,24 @@ def load_config():
 
 
 def backtest(start_date: str, end_date: str, fee_rate: float, suffix: str = ""):
+    """
+    Orchestrates a comprehensive portfolio simulation over a specified date range.
+
+    Iterates through business days to simulate daily portfolio maintenance and trade execution.
+    Handles initial portfolio setup on 'Day 0', performs daily mark-to-market updates
+    (holdings and performance), and triggers a full strategy rebalance whenever
+    a calendar month rolls over.
+
+    Args:
+        start_date (str): Simulation start (YYYY-MM-DD).
+        end_date (str): Simulation end (YYYY-MM-DD).
+        fee_rate (float): Transaction fee rate (e.g., 0.001 for 10bps).
+        suffix (str, optional): Custom string appended to the portfolio/collection name.
+
+    Returns:
+        None: Records results to MinIO and MongoDB; exits on critical error.
+    """
+
     fee_bps_str = f"{fee_rate * 10000:g}".replace(".", "")
     portfolio_name = f"backtest{fee_bps_str}bps{suffix}"
 
@@ -73,6 +92,26 @@ def backtest(start_date: str, end_date: str, fee_rate: float, suffix: str = ""):
 def backtest_with_omit_factor(
     start_date: str, end_date: str, fee_rate: float, omit_factor: str
 ):
+    """
+    Executes a factor-attribution backtest by simulating portfolio performance
+    with one specific alpha factor excluded from the scoring model.
+
+    This function facilitates "ablation studies," allowing you to isolate the
+    marginal contribution of individual components (e.g., Momentum, Risk) to
+    the strategy's total return. It creates isolated storage namespaces in
+    both MinIO and MongoDB to ensure that results from different factor-omitted
+    runs remain distinct.
+
+    Args:
+        start_date (str): Simulation start date (YYYY-MM-DD).
+        end_date (str): Simulation end date (YYYY-MM-DD).
+        fee_rate (float): Transaction fee rate (e.g., 0.001 for 10bps).
+        omit_factor (str): The specific factor key to be ignored (e.g., 'momentum').
+
+    Returns:
+        None: Orchestrates the simulation and writes results to external storage.
+    """
+
     fee_bps_str = f"{fee_rate * 10000:g}".replace(".", "")
     minio_bucket_name = f"backtest{fee_bps_str}bpsomit{omit_factor}"
     mongodb_collection_name = f"backtest{fee_bps_str}bpsOmit{omit_factor}"

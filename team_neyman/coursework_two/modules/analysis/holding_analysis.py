@@ -1,6 +1,6 @@
-import numpy as np
-import pandas as pd
 import argparse
+
+import pandas as pd
 
 from modules.db_loader import mongodb
 
@@ -8,6 +8,21 @@ from modules.db_loader import mongodb
 def generate_sector_weights(
     collection_name: str, start_date_str: str = None, end_date_str: str = None
 ):
+    """
+    Generates a monthly time-series of GICS sector allocations from MongoDB trade logs.
+
+    The function pivots trade data into an analysis-ready DataFrame indexed by 'YYYY-MM'.
+    It automatically resolves date boundaries, fills gaps for unheld sectors with 0.0,
+    and reindexes columns alphabetically to ensure stable visualizations (e.g., area charts).
+
+    Args:
+        collection_name (str): MongoDB collection containing trade logs.
+        start_date_str (str, optional): Start boundary. Defaults to inception.
+        end_date_str (str, optional): End boundary. Defaults to latest record.
+
+    Returns:
+        pd.DataFrame: Monthly sector weights (0.0~1.0). Returns empty if no data.
+    """
 
     if not start_date_str:
         start_date_str = mongodb.get_initial_date(collection_name)

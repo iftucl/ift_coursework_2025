@@ -458,6 +458,18 @@ def get_fx_data(start_date=None, end_date=None):
 
 
 def get_currency(company_list: list):
+    """
+    Retrieves reporting currencies for a list of company symbols from PostgreSQL.
+
+    Cleans input strings and executes a vectorized SQL query to map symbols to
+    their respective currencies. Handles empty inputs and database errors gracefully.
+
+    Args:
+        company_list (list): A list of ticker symbols (e.g., ['AAPL', 'TSLA']).
+
+    Returns:
+        pd.DataFrame: Contains 'symbol' and 'currency' columns. Returns None on error.
+    """
 
     if not company_list:
         print("Warning: Received empty company list.")

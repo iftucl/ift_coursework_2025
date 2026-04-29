@@ -1,13 +1,12 @@
+import argparse
+from pathlib import Path
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 import yaml
-import argparse
 
-from pathlib import Path
-from datetime import datetime
 from modules.db_loader import minio_db, mongodb, postgres
-
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 CONFIG_PATH = BASE_DIR / "config" / "conf.yaml"
@@ -18,7 +17,19 @@ def load_config():
         return yaml.safe_load(f)
 
 
-def load_portfolio_perforamance(bucket_name: str = None):
+def load_portfolio_performance(bucket_name: str = None):
+    """
+    Fetches daily portfolio performance metrics from the 'strategy_daily_stats.parquet' file in MinIO.
+
+    Acts as a standardized accessor for strategy health data (e.g., net capital, daily returns), allowing for flexible bucket targeting across different backtest iterations.
+
+    Args:
+        bucket_name (str, optional): The MinIO bucket identifier.
+
+    Returns:
+        pd.DataFrame: Portfolio performance statistics or None if the object is not found.
+    """
+
     load_kwargs = {"object_name": "performance/strategy_daily_stats.parquet"}
     if bucket_name:
         load_kwargs["bucket_name"] = bucket_name
@@ -27,6 +38,20 @@ def load_portfolio_perforamance(bucket_name: str = None):
 
 
 def get_portfolio_return(from_date: str, to_date: str, performance_df: pd.DataFrame):
+    """
+    Calculates cumulative point-to-point portfolio returns between two specific dates.
+
+    Determines performance by comparing the 'net_capital' at the closest available timestamps within the provided range. Includes robust safety logic to handle chronological errors, missing historical baselines, and data gaps.
+
+    Args:
+        from_date (str): The starting date for return calculation (YYYY-MM-DD).
+        to_date (str): The terminal date for return calculation (YYYY-MM-DD).
+        performance_df (pd.DataFrame): Time-series containing 'date' and 'net_capital'.
+
+    Returns:
+        float: Rounded cumulative return (decimal). Returns np.nan if data is missing or dates are invalid.
+    """
+
     from_dt = pd.to_datetime(from_date)
     to_dt = pd.to_datetime(to_date)
     if from_dt > to_dt:
@@ -65,6 +90,20 @@ def get_portfolio_return(from_date: str, to_date: str, performance_df: pd.DataFr
 def get_portfolio_volatility(
     from_date: str, to_date: str, performance_df: pd.DataFrame
 ):
+    """
+    Computes the annualized realized volatility of portfolio returns for a specified date range.
+
+    By prepending a baseline capital record, the function ensures the first daily return in the analysis period is calculated accurately via percentage change. The standard deviation of these returns is subsequently scaled by the square root of 252 trading days to provide a normalized annual risk metric.
+
+    Args:
+        from_date (str): The starting date for the observation period (YYYY-MM-DD).
+        to_date (str): The terminal date for the observation period (YYYY-MM-DD).
+        performance_df (pd.DataFrame): Time-series containing 'date' and 'net_capital'.
+
+    Returns:
+        float: Annualized volatility (decimal). Returns np.nan if insufficient data points exist or date ranges are invalid.
+    """
+
     from_dt = pd.to_datetime(from_date)
     to_dt = pd.to_datetime(to_date)
     if from_dt > to_dt:
@@ -106,6 +145,20 @@ def get_portfolio_volatility(
 
 
 def get_benchmark_return(benchmark_symbol: str, from_date: str, to_date: str):
+    """
+    Calculates cumulative benchmark returns by retrieving historical OHLCV data from PostgreSQL.
+
+    To ensure robust performance tracking across non-trading days, the function implements a 7-day look-back buffer to secure a valid baseline price. It determines the relative change between the final closing prices available prior to the 'from' and 'to' timestamps.
+
+    Args:
+        benchmark_symbol (str): The ticker symbol (e.g., 'SPY').
+        from_date (str): Start date for the return calculation (YYYY-MM-DD).
+        to_date (str): Terminal date for the return calculation (YYYY-MM-DD).
+
+    Returns:
+        float: Cumulative benchmark return (decimal). Returns np.nan if data is unavailable or chronological errors occur.
+    """
+
     from_dt = pd.to_datetime(from_date)
     to_dt = pd.to_datetime(to_date)
     if from_dt > to_dt:
@@ -126,7 +179,7 @@ def get_benchmark_return(benchmark_symbol: str, from_date: str, to_date: str):
         start_mask = benchmark_data["price_date"] < from_dt
         end_mask = benchmark_data["price_date"] < to_dt
         if not start_mask.any() or not end_mask.any():
-            print(f"Insufficient historical buffer to find prices before target dates.")
+            print("Insufficient historical buffer to find prices before target dates.")
             return np.nan
         start_price = benchmark_data.loc[start_mask, "close_price"].iloc[-1]
         end_price = benchmark_data.loc[end_mask, "close_price"].iloc[-1]
@@ -140,6 +193,20 @@ def get_benchmark_return(benchmark_symbol: str, from_date: str, to_date: str):
 
 
 def get_benchmark_volatility(benchmark_symbol: str, from_date: str, to_date: str):
+    """
+    Calculates the annualized realized volatility of a benchmark symbol using historical OHLCV data from PostgreSQL.
+
+    The function establishes a valid price baseline via a 7-day look-back buffer to ensure accurate daily return calculations. It computes the standard deviation of returns for the observation period and annualizes the metric using the square root of 252 trading days.
+
+    Args:
+        benchmark_symbol (str): Ticker symbol for analysis (e.g., 'SPY').
+        from_date (str): Start date for the observation period (YYYY-MM-DD).
+        to_date (str): End date for the observation period (YYYY-MM-DD).
+
+    Returns:
+        float: Annualized volatility (decimal). Returns np.nan if data is insufficient or invalid.
+    """
+
     from_dt = pd.to_datetime(from_date)
     to_dt = pd.to_datetime(to_date)
     if from_dt > to_dt:
@@ -187,7 +254,21 @@ def get_benchmark_volatility(benchmark_symbol: str, from_date: str, to_date: str
 def generate_return_chart(
     bucket_name: str, start_date_str: str = None, end_date_str: str = None
 ):
-    port_perform_df = load_portfolio_perforamance(bucket_name=bucket_name)
+    """
+    Constructs a comparative performance and risk summary table across standardized financial time horizons.
+
+    The function computes cumulative returns, annualized volatility, and excess return (Alpha) relative to a benchmark for periods ranging from 1 month to 5 years. It features a critical inception-guard logic that dynamically omits look-back periods pre-dating the portfolio's actual start date. The resulting DataFrame is transposed and reordered to provide a professional vertical summary with 'Total' performance as the terminal anchor.
+
+    Args:
+        bucket_name (str): The MinIO bucket containing strategy performance logs.
+        start_date_str (str, optional): Overrides the baseline for the 'Total' period calculation (YYYY-MM-DD).
+        end_date_str (str, optional): The anchor date for all look-back periods (YYYY-MM-DD). Defaults to the latest record.
+
+    Returns:
+        pd.DataFrame: A transposed summary of metrics per horizon. Returns an empty DataFrame if no data exists.
+    """
+
+    port_perform_df = load_portfolio_performance(bucket_name=bucket_name)
     if port_perform_df is None or port_perform_df.empty:
         print(f"No data for {bucket_name}")
         return pd.DataFrame()
@@ -257,6 +338,21 @@ def generate_return_chart(
 def get_sectors_total_return(
     portfolio_name: str, start_date: str = None, end_date: str = None
 ):
+    """
+    Calculates sector PnL and ROI adjusted for intra-period trades.
+
+    Combines MinIO snapshots and MongoDB logs to capture realized gains from exited
+    positions and net investment flows. Returns are capital-weighted to account
+    for intra-period deployment.
+
+    Args:
+        portfolio_name (str): Portfolio ID.
+        start_date (str, optional): Start YYYY-MM-DD. Defaults to inception.
+        end_date (str, optional): End YYYY-MM-DD. Defaults to latest.
+
+    Returns:
+        pd.DataFrame: Sector-level PnL, flows, and capital-adjusted returns.
+    """
 
     all_sectors = load_config()["portfolio"]["sectors"]
     sector_df = postgres.get_companies_by_sector(all_sectors)
@@ -321,13 +417,28 @@ def generate_return_graph(
     end_date_str: str = None,
     include_benchmark: bool = False,
 ):
+    """
+    Plots indexed cumulative performance for multiple portfolios and an optional benchmark.
+
+    Normalizes net capital to a base of 100 at the start date to enable relative growth comparison. Dynamically resolves global date boundaries across portfolios and saves the resulting chart as a PNG.
+
+    Args:
+        portfolio_list (list): List of portfolio identifiers to compare.
+        start_date_str (str, optional): Plot start date. Defaults to earliest inception.
+        end_date_str (str, optional): Plot end date. Defaults to latest record.
+        include_benchmark (bool): If True, overlays indexed benchmark performance.
+
+    Returns:
+        None: Saves the visualization to the 'output/' directory.
+    """
+
     plt.figure(figsize=(12, 6))
     portfolio_dfs = {}
     global_min_dt = None
     global_max_dt = None
 
     for bucket in portfolio_list:
-        df = load_portfolio_perforamance(bucket)
+        df = load_portfolio_performance(bucket)
 
         if df is None or df.empty:
             print(f"Skipping {bucket}: No data found.")

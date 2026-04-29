@@ -1,11 +1,12 @@
+from datetime import timedelta
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import yaml
-import sys
-from datetime import timedelta
-from pathlib import Path
+
+from modules.db_loader import minio_db, mongodb, postgres
 from modules.factors import fetch_factors
-from modules.db_loader import postgres, minio_db, mongodb
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 CONFIG_PATH = BASE_DIR / "config" / "conf.yaml"
@@ -22,6 +23,24 @@ def establish_portfolio(
     minio_bucket_name: str = None,
     omit_factor: str = None,
 ):
+    """
+    Constructs a target portfolio for a specific date and logs it as a pending trade event.
+
+    This function serves as the "brain" of the rebalancing process. It orchestrates the
+    entire pipeline: selecting the universe, filtering for liquidity/trends, scoring
+    factors, and calculating constrained weights. It then calculates available trading
+    capital (including a safety buffer) and archives the plan to MongoDB.
+
+    Args:
+        run_date (str): The date for portfolio construction (YYYY-MM-DD).
+        mongodb_collection_name (str, optional): Target collection for trade logs.
+        minio_bucket_name (str, optional): Source bucket for performance history.
+        omit_factor (str, optional): Specific factor to exclude from the scoring model.
+
+    Returns:
+        None: Records the trade log and prints status updates to the console.
+    """
+
     factors_df = fetch_factors.get_target_factors(run_date)
     filtered_df = fetch_factors.apply_filter(factors_df)
     scored_df = fetch_factors.apply_scoring(filtered_df, omit_factor)
@@ -71,6 +90,23 @@ def establish_portfolio(
 def update_holdings(
     run_date: str, current_holdings_df: pd.DataFrame = None, bucket_name: str = None
 ):
+    """
+    Performs daily 'Mark-to-Market' (MTM) updates on current portfolio holdings.
+
+    Synchronizes the latest asset prices and FX rates from PostgreSQL to calculate
+    real-time valuations, profit and loss (P&L), and percentage performance. The
+    updated snapshot is then archived as a Parquet file in MinIO.
+
+    Args:
+        run_date (str): The valuation date (YYYY-MM-DD).
+        current_holdings_df (pd.DataFrame, optional): Existing holdings. If None,
+                                                      loads from the latest MinIO file.
+        bucket_name (str, optional): Target MinIO bucket.
+
+    Returns:
+        None: Updates the state and writes to MinIO.
+    """
+
     if current_holdings_df is None or current_holdings_df.empty:
         current_holdings_df = minio_db.load_current_holdings(bucket_name=bucket_name)
 
@@ -153,6 +189,25 @@ def update_performance_data(
     cash_change: float = 0,
     bucket_name: str = None,
 ):
+    """
+    Computes and archives daily portfolio performance metrics to track the strategy's NAV.
+
+    Aggregates investment values and cash balances to determine total net capital,
+    calculates absolute P&L and percentage returns relative to initial capital,
+    and maintains a historical time-series in MinIO.
+
+    Args:
+        run_date (str): The valuation date (YYYY-MM-DD).
+        current_holdings_df (pd.DataFrame, optional): Latest asset snapshot.
+                                                      Loads from MinIO if omitted.
+        capital_add (float): External capital injections or withdrawals.
+        cash_change (float): Net movement in cash (from trades, dividends, or fees).
+        bucket_name (str, optional): Target MinIO bucket.
+
+    Returns:
+        None: Appends a new performance record to the historical log.
+    """
+
     file_path = "performance/strategy_daily_stats.parquet"
     performance_df = minio_db.load_parquet(
         object_name=file_path, bucket_name=bucket_name
@@ -217,7 +272,25 @@ def execute_trade(
     mongodb_collection_name: str = None,
     minio_bucket_name: str = None,
 ):
-    config = load_config()
+    """
+    Simulates the transition from a target portfolio signal to realized market positions.
+
+    This function acts as the Order Management System (OMS). It reconciles current
+    holdings with desired weights, fetches real-time execution prices/FX rates,
+    calculates net share changes, and updates the account's cost basis and cash
+    balances.
+
+    Args:
+        execute_date (str): The date the trades are executed (YYYY-MM-DD).
+        fee_rate (float): The transaction cost percentage (e.g., 0.001 for 10bps).
+        mongodb_collection_name (str, optional): Target collection for trade logs.
+        minio_bucket_name (str, optional): Target bucket for holdings snapshots.
+
+    Returns:
+        bool: True if execution was attempted (success or partial),
+              False if no pending trades or market data were found.
+    """
+
     portfolio = mongodb.get_pending(collection_name=mongodb_collection_name)
 
     if not portfolio:
@@ -443,6 +516,23 @@ def initiate_portfolio(
     mongodb_collection_name: str = None,
     omit_factor: str = None,
 ):
+    """
+    Initializes the quantitative strategy's infrastructure and generates the starting portfolio.
+
+    This is the "Genesis" function for a new backtest or production run. it creates
+    the core performance tracking ledger in MinIO and triggers the first iteration of
+    signal generation and capital allocation.
+
+    Args:
+        init_date (str): The starting date for the strategy (YYYY-MM-DD).
+        minio_bucket_name (str, optional): Target bucket for performance files.
+        mongodb_collection_name (str, optional): Target collection for trade logs.
+        omit_factor (str, optional): Factor to exclude from the scoring model.
+
+    Returns:
+        None: Initializes storage and prints confirmation.
+    """
+
     object_name = "performance/strategy_daily_stats.parquet"
     columns = [
         "date",
@@ -475,6 +565,23 @@ def rebalance(
     mongodb_collection_name: str = None,
     omit_factor: str = None,
 ):
+    """
+    Triggers a scheduled portfolio re-alignment by generating new target weights.
+
+    This function acts as the interface for periodic strategy updates (e.g., monthly).
+    It invokes the full construction pipeline to refresh alpha signals,
+    apply risk constraints, and queue the necessary buy/sell orders in MongoDB.
+
+    Args:
+        rebalance_date (str): The date the rebalance signal is generated (YYYY-MM-DD).
+        minio_bucket_name (str, optional): Source for the latest capital figures.
+        mongodb_collection_name (str, optional): Destination for the new trade log.
+        omit_factor (str, optional): Factor to exclude for attribution testing.
+
+    Returns:
+        None: Updates the database state and prints confirmation.
+    """
+
     establish_portfolio(
         rebalance_date,
         mongodb_collection_name=mongodb_collection_name,

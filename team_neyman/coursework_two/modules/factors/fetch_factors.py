@@ -1,11 +1,10 @@
 import sys
 import time
-import yaml
-from datetime import datetime, timedelta
-from pathlib import Path
 from functools import reduce
+from pathlib import Path
 
 import pandas as pd
+import yaml
 
 from modules.db_loader import postgres
 
@@ -20,6 +19,18 @@ def load_config():
 
 
 def wait_for_postgres():
+    """
+    Implements a retry loop to verify PostgreSQL availability during system startup.
+
+    Attempts to establish a connection via the 'postgres' utility, pausing for 5 seconds between failures. This ensures downstream services don't execute before the database container is fully initialized.
+
+    Returns:
+        bool: True if connection is successful.
+
+    Raises:
+        ConnectionError: If the database remains unreachable after 5 attempts.
+    """
+
     print("Checking database connection...")
     retries = 5
     while retries > 0:
@@ -33,7 +44,18 @@ def wait_for_postgres():
 
 
 def calculate_ntm_eps(data: pd.DataFrame):
-    """Calculate next twelve months earning per share (EPS) base on consensus prediction"""
+    """
+    Computes the Next Twelve Months (NTM) consensus EPS using a time-weighted interpolation.
+
+    Calculates a forward-looking EPS by blending the current fiscal year (FY1) and next fiscal year (FY2) estimates. The weight assigned to each year is determined by the number of days remaining in the current fiscal period, providing a rolling 12-month estimate.
+
+    Args:
+        data (pd.DataFrame): Consensus data containing 'symbol', 'period', 'period_end_date', and 'consensus_eps'.
+
+    Returns:
+        pd.DataFrame: A DataFrame containing 'symbol' and the calculated 'ntm_eps'.
+    """
+
     if data is not None and not data.empty:
         eps_pivot = data.pivot(
             index="symbol",
@@ -85,10 +107,18 @@ def calculate_ntm_eps(data: pd.DataFrame):
 
 def get_latest_indicators(symbols: list, as_of_date: str):
     """
-    Fetch the latest target indicators used for trading stretagies to form a portfolio.
-    Process raw data with symbol as the key into an intergrated dataframe.
-    Calculate and add new columns for strategies execution.
+    Aggregates multi-factor financial indicators and computes derived strategy signals for a symbol list.
+
+    Fetches technical, risk, and fundamental data from PostgreSQL, merges them into a single feature set, and calculates key execution metrics like Forward Earning Yields and trend confirmation.
+
+    Args:
+        symbols (list): Tickers to analyze.
+        as_of_date (str): The reference date for the data snapshot.
+
+    Returns:
+        pd.DataFrame: Unified indicator set or an empty DataFrame on failure.
     """
+
     latest_ohlcv = postgres.get_latest_data(
         "daily_ohlcv", columns=["close_price"], symbols=symbols, as_of_date=as_of_date
     )
@@ -158,6 +188,20 @@ def get_latest_indicators(symbols: list, as_of_date: str):
 
 
 def get_target_factors(run_date: str):
+    """
+    Orchestrates the retrieval of strategy-ready factors for a sector-filtered universe.
+
+    Filters companies by GICS sector, fetches their latest multi-factor indicators
+    (liquidity, momentum, risk, and valuation), and merges them with sector
+    metadata for a specific trading date.
+
+    Args:
+        run_date (str): The target date for indicator retrieval (YYYY-MM-DD).
+
+    Returns:
+        pd.DataFrame: A comprehensive dataset of company factors and sector classifications.
+    """
+
     target_sectors = load_config()["sectors"]
     target_companies = postgres.get_companies_by_sector(target_sectors)
     latest_indicators = get_latest_indicators(
@@ -174,6 +218,18 @@ def get_target_factors(run_date: str):
 
 
 def apply_filter(df: pd.DataFrame):
+    """
+    Refines the investment universe by applying liquidity hurdles and trend-following filters.
+
+    The function implements a two-stage elimination process: first, it removes the bottom 15% of stocks by both share and dollar volume to ensure tradability; second, it enforces a trend regime filter by retaining only stocks trading above their 200-day moving average.
+
+    Args:
+        df (pd.DataFrame): Input universe with 'adv_20d', 'addv_20d', 'close_price', and 'ma200'.
+
+    Returns:
+        pd.DataFrame: A filtered subset of the original data.
+    """
+
     # 1. Liquidity Filter
     adv_cutoff = df["adv_20d"].quantile(0.15)
     addv_cutoff = df["addv_20d"].quantile(0.15)
@@ -190,6 +246,23 @@ def apply_filter(df: pd.DataFrame):
 
 
 def apply_scoring(df: pd.DataFrame, omit_factor: str = None):
+    """
+    Computes a multi-factor composite score for a universe of stocks using percentile ranking.
+
+    The function applies a weighted-average model across five core dimensions: Momentum,
+    Valuation (FEY), Trend, Risk, and Liquidity. It features dynamic re-normalization
+    logic to handle the omission of specific factors without breaking the weighting
+    schema (sum w = 1.0).
+
+    Args:
+        df (pd.DataFrame): Indicator data containing technical and fundamental metrics.
+        omit_factor (str, optional): A factor name to exclude from the total score.
+
+    Returns:
+        pd.DataFrame: The original DataFrame enriched with individual component ranks
+                      and the final 'total_score'.
+    """
+
     config = load_config()
 
     weights = {
@@ -266,6 +339,21 @@ def apply_scoring(df: pd.DataFrame, omit_factor: str = None):
 
 
 def apply_weight(df: pd.DataFrame):
+    """
+    Determines final portfolio weightings by applying sector-specific and individual stock caps.
+
+    Initializes weights based on 'total_score' and enters an iterative optimization loop
+    to enforce risk constraints. If the 'Health Care' sector or any single security exceeds
+    predefined limits, the excess weight is redistributed proportionally across the
+    remaining universe until convergence.
+
+    Args:
+        df (pd.DataFrame): Data containing 'total_score' and 'gics_sector'.
+
+    Returns:
+        pd.DataFrame: The input DataFrame enriched with a normalized 'weight' column
+                      that satisfies all risk mandates.
+    """
 
     config = load_config()
 

@@ -1,14 +1,8 @@
 import argparse
 import sys
-import time
 import traceback
 from datetime import datetime, timedelta
-from pathlib import Path
 
-import pandas as pd
-
-from modules.db_loader import postgres, minio_db
-from modules.factors import fetch_factors
 from modules.investment import trading
 
 

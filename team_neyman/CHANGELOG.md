@@ -2,6 +2,22 @@
 
 All notable changes to the **Team Neyman Coursework** will be documented in this file.
 
+## 2026-04-29
+### Added
+- Constructed test functions.
+
+### Changed
+- Applied flake8 and isort to maintain code quality.
+- Revised documentation content.
+
+### Security
+- Executed Bandit and Safety to ensure security.
+
+## 2026-04-28
+### Added
+- Added code documentation.
+- Created scheduler Python code to fulfill scheduling needs.
+
 ## 2026-04-27
 ### Added
 - Constructed sectors return analysis.

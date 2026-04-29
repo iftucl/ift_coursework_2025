@@ -73,6 +73,20 @@ def upload_dataframe_to_parquet(
 def create_empty_parquet(
     object_name: str, bucket_name: str = BUCKET_NAME, columns: list = None
 ):
+    """
+    Initializes a structured but empty Parquet file in MinIO as a pipeline placeholder.
+
+    Automatically creates the target bucket if it does not exist and uploads an empty DataFrame with the specified column schema via an in-memory BytesIO buffer.
+
+    Args:
+        object_name (str): Destination path within the bucket.
+        bucket_name (str, optional): Target MinIO bucket. Defaults to BUCKET_NAME.
+        columns (list, optional): List of column headers to define the Parquet schema.
+
+    Returns:
+        None: Uploads the file directly to MinIO.
+    """
+
     df_empty = pd.DataFrame(columns=columns)
 
     parquet_buffer = io.BytesIO()
@@ -95,6 +109,23 @@ def create_empty_parquet(
 def load_parquet(
     object_name: str, bucket_name: str = BUCKET_NAME, create: bool = False
 ):
+    """
+    Retrieves a Parquet file from MinIO and converts it into a pandas DataFrame.
+
+    If the specified object is missing and the 'create' flag is enabled, the function
+    automatically initializes a new empty Parquet file via 'create_empty_parquet'
+    to prevent downstream pipeline crashes.
+
+    Args:
+        object_name (str): The destination path of the Parquet file.
+        bucket_name (str, optional): Target MinIO bucket. Defaults to BUCKET_NAME.
+        create (bool): If True, initializes a new file if the key does not exist.
+
+    Returns:
+        pd.DataFrame: The loaded data, an empty DataFrame if a new file was created,
+                      or None if a retrieval error occurs.
+    """
+
     try:
         print(f"Attempting to read: {object_name} from bucket: {bucket_name}")
         response = client.get_object(bucket_name, object_name)
@@ -113,6 +144,18 @@ def load_parquet(
 
 
 def load_current_holdings(bucket_name: str = BUCKET_NAME):
+    """
+    Retrieves the most recent portfolio snapshot from the 'holdings/' directory in MinIO.
+
+    The function filters for Parquet files and utilizes chronological file-naming conventions to identify and load the latest state. It provides a clean fallback if no historical snapshots are detected.
+
+    Args:
+        bucket_name (str, optional): Target MinIO bucket. Defaults to BUCKET_NAME.
+
+    Returns:
+        pd.DataFrame: The latest holdings data or None if no files exist.
+    """
+
     objects = client.list_objects(bucket_name, prefix="holdings/", recursive=True)
     holdings_files = [
         obj.object_name for obj in objects if obj.object_name.endswith(".parquet")
@@ -131,6 +174,18 @@ def load_current_holdings(bucket_name: str = BUCKET_NAME):
 
 
 def get_initial_date(bucket_name: str = BUCKET_NAME):
+    """
+    Identifies the baseline start date from archived holdings files in MinIO.
+
+    Parses filenames using regex to extract 'YYYY-MM-DD' patterns and requires a minimum of five records to establish a stabilized backtest window. Returns the fifth chronological date to skip the initial warm-up period.
+
+    Args:
+        bucket_name (str, optional): Target MinIO bucket. Defaults to BUCKET_NAME.
+
+    Returns:
+        str: The 5th chronological date (YYYY-MM-DD) found in the bucket.
+    """
+
     all_files = client.list_objects(bucket_name, prefix="holdings/", recursive=True)
     file_names = [obj.object_name for obj in all_files]
     dates = sorted(
@@ -148,6 +203,18 @@ def get_initial_date(bucket_name: str = BUCKET_NAME):
 
 
 def get_latest_date(bucket_name: str = BUCKET_NAME):
+    """
+    Identifies the most recent holdings date available in MinIO.
+
+    Scans the 'holdings/' directory and uses regex to extract the latest 'YYYY-MM-DD' timestamp from archived Parquet files.
+
+    Args:
+        bucket_name (str, optional): Target MinIO bucket. Defaults to BUCKET_NAME.
+
+    Returns:
+        str: The latest chronological date string.
+    """
+
     all_files = client.list_objects(bucket_name, prefix="holdings/", recursive=True)
     file_names = [obj.object_name for obj in all_files]
     dates = sorted(
@@ -161,6 +228,14 @@ def get_latest_date(bucket_name: str = BUCKET_NAME):
 
 
 def reset_minio():
+    """
+    Wipes the entire MinIO instance by recursively deleting all objects and their parent buckets.
+
+    Iterates through every accessible bucket, clears all nested data to satisfy S3 deletion requirements, and removes the empty buckets. Used to ensure a clean state for fresh backtest cycles.
+
+    Returns:
+        None: Prints reset status to the console.
+    """
 
     buckets = client.list_buckets()
 
