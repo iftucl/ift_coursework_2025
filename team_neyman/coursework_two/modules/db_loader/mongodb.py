@@ -220,6 +220,37 @@ def get_latest_date(collection_name: str):
     return doc["portfolio_date"] if doc else None
 
 
+def del_collection(collection_name: str):
+    """
+    Surgically removes a specific collection from the MongoDB database.
+
+    Checks the database for existence before dropping the collection to prevent
+    unhandled exceptions and ensure a clean state.
+
+    Args:
+        collection_name (str): The name of the collection to be deleted.
+
+    Returns:
+        None
+    """
+
+    try:
+        config = load_config()
+        url = f"mongodb://{config['host']}:{config['port']}/"
+        client = MongoClient(url)
+        db = client[config["dbname"]]
+
+        if collection_name in db.list_collection_names():
+            db.drop_collection(collection_name)
+            print(f"Collection '{collection_name}' successfully deleted.")
+        else:
+            print(f"Warning: Collection '{collection_name}' does not exist.")
+
+        client.close()
+    except Exception as e:
+        print(f"Error deleting collection: {e}")
+
+
 def reset_mongodb():
     """
     Drops the MongoDB database defined in the local configuration.

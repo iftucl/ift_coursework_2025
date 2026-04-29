@@ -227,6 +227,37 @@ def get_latest_date(bucket_name: str = BUCKET_NAME):
     return dates[-1]
 
 
+def del_bucket(bucket_name: str):
+    """
+    Surgically removes a specific MinIO bucket and all nested objects.
+
+    Recursively identifies and deletes all archived Parquet files and directories
+    within the target bucket to satisfy the S3 requirement that a bucket must
+    be empty before deletion.
+
+    Args:
+        bucket_name (str): The target MinIO bucket name to be removed.
+
+    Returns:
+        None
+    """
+
+    try:
+        if not client.bucket_exists(bucket_name):
+            print(f"Warning: Bucket '{bucket_name}' does not exist.")
+            return
+
+        objects_to_delete = client.list_objects(bucket_name, recursive=True)
+        for obj in objects_to_delete:
+            client.remove_object(bucket_name, obj.object_name)
+
+        client.remove_bucket(bucket_name)
+        print(f"Bucket '{bucket_name}' and all contents successfully deleted.")
+
+    except Exception as e:
+        print(f"Error deleting bucket '{bucket_name}': {e}")
+
+
 def reset_minio():
     """
     Wipes the entire MinIO instance by recursively deleting all objects and their parent buckets.

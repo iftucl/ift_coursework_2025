@@ -144,3 +144,37 @@ def test_upload_dataframe_s3_error_branch(mocker):
     # This hits lines 67-70
     minio_db.upload_dataframe_to_parquet(pd.DataFrame(), "test.parquet")
     assert True
+
+
+def test_del_bucket_success(mocker):
+
+    # 1. Mock bucket exists
+    mocker.patch("modules.db_loader.minio_db.client.bucket_exists", return_value=True)
+
+    # 2. Mock list_objects to return one file that needs deleting
+    mock_obj = mocker.MagicMock()
+    mock_obj.object_name = "holdings/test.parquet"
+    mocker.patch(
+        "modules.db_loader.minio_db.client.list_objects", return_value=[mock_obj]
+    )
+
+    # 3. Spies for removal
+    m_remove_obj = mocker.patch("modules.db_loader.minio_db.client.remove_object")
+    m_remove_bucket = mocker.patch("modules.db_loader.minio_db.client.remove_bucket")
+
+    # Execute
+    minio_db.del_bucket("target-bucket")
+
+    # Verify the cleanup happened before the deletion
+    m_remove_obj.assert_called_once_with("target-bucket", "holdings/test.parquet")
+    m_remove_bucket.assert_called_once_with("target-bucket")
+
+
+def test_del_bucket_not_exists(mocker):
+    mocker.patch("modules.db_loader.minio_db.client.bucket_exists", return_value=False)
+    m_remove = mocker.patch("modules.db_loader.minio_db.client.remove_bucket")
+
+    minio_db.del_bucket("ghost-bucket")
+
+    # Verify remove was never called
+    assert not m_remove.called
