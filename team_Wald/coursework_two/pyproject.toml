@@ -1,0 +1,54 @@
+[tool.poetry]
+name = "ift-cw2-backtest"
+version = "2.8.0"
+description = "IFTE0003 CW2: Value-Sentiment Investment Strategy — Backtest & Portfolio Construction"
+authors = ["Team Wald"]
+readme = "README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.10"
+pandas = "^2.0"
+numpy = "^1.24"
+scipy = "^1.10"
+statsmodels = "^0.14"
+matplotlib = "^3.7"
+seaborn = "^0.12"
+pyyaml = "^6.0"
+psycopg2-binary = "^2.9"
+sqlalchemy = "^2.0"
+yfinance = "^0.2"
+quantstats = "^0.0.62"
+arch = "^6.0"
+pandas-datareader = "^0.10"
+pymongo = "^4.6"
+vaderSentiment = "^3.3.2"
+ipython = "^8.30"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.0"
+pytest-cov = "^6.0.0"
+pytest-mock = "^3.12.0"
+flake8 = "^7.0.0"
+black = "^24.1.0"
+isort = "^5.13.0"
+
+[tool.black]
+line-length = 120
+target-version = ["py310"]
+
+[tool.isort]
+profile = "black"
+line_length = 120
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--cov=modules --cov-report=term-missing --cov-report=html -v"
+markers = [
+    "unit: Unit tests (no external dependencies)",
+    "integration: Integration tests requiring CW1 database",
+]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

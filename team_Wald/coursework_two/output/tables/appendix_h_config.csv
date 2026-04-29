@@ -1,0 +1,55 @@
+parameter,value,type
+backtest.start_date,'2023-07-31',str
+backtest.end_date,'2025-12-31',str
+backtest.rebalance_frequency,'quarterly',str
+backtest.rebalance_months,"[1, 4, 7, 10]",list
+backtest.reporting_lag_days,90,int
+backtest.execution_delay,1,int
+backtest.regime_filter.enabled,False,bool
+backtest.regime_filter.fast_ma_days,50,int
+backtest.regime_filter.slow_ma_days,200,int
+backtest.regime_filter.bull_weight,1.0,float
+backtest.regime_filter.bear_weight,0.0,float
+scoring.value_weight,0.6,float
+scoring.sentiment_weight,0.4,float
+scoring.max_debt_equity,2.0,float
+scoring.min_sentiment_confidence,0.3,float
+scoring.selection_percentile,0.2,float
+scoring.momentum_filter.enabled,True,bool
+scoring.momentum_filter.lookback_days,126,int
+scoring.momentum_filter.min_return,0.05,float
+scoring.winsorize_lower,0.025,float
+scoring.winsorize_upper,0.975,float
+scoring.zscore_cap,3.0,float
+scoring.shrinkage_k_sector,20,int
+scoring.shrinkage_k_sentiment,5,int
+sentiment.half_life_days,7,int
+sentiment.source_tiers.tier1,"['reuters.com', 'bloomberg.com', 'ft.com', 'wsj.com']",list
+sentiment.source_tiers.tier2,"['cnbc.com', 'barrons.com', 'bbc.com', 'marketwatch.com']",list
+sentiment.source_tiers.tier3,"['seekingalpha.com', 'benzinga.com', 'fool.com']",list
+sentiment.tier_weights.tier1,1.0,float
+sentiment.tier_weights.tier2,0.7,float
+sentiment.tier_weights.tier3,0.4,float
+sentiment.tier_weights.default,0.3,float
+portfolio.weighting_scheme,'equal_weight',str
+portfolio.max_position_weight,0.2,float
+portfolio.max_sector_weight,0.5,float
+portfolio.min_holdings,5,int
+portfolio.target_holdings,10,int
+portfolio.buffer_buy_pctl,0.7,float
+portfolio.buffer_sell_pctl,0.5,float
+portfolio.long_short.enabled,False,bool
+costs.transaction_cost_bps,25,int
+costs.stress_test_bps,50,int
+benchmark.primary,'^GSPC',str
+benchmark.secondary,'IWVL.L',str
+risk_free.annual_rate,0.04,float
+data.postgres_schema,'systematic_equity',str
+data.table_prices,'daily_prices',str
+data.table_values,'value_metrics',str
+data.table_sentiment,'sentiment_scores',str
+data.table_composite,'composite_rankings',str
+data.table_company,'company_static',str
+data.lookback_years,5,int
+cw1.config_path,'../coursework_one/config/conf.yaml',str
+cw1.env_type,'dev',str

@@ -1,0 +1,10 @@
+category,metric,value
+source,python_files,36.0
+source,lines_of_code,7093.0
+source,__init__.py_files,8.0
+source,documented___init__.py,8.0
+tests,test_files,20.0
+tests,test_cases,167.0
+tests,test_lines_of_code,2005.0
+ratio,tests_per_source_file,4.64
+ratio,test_loc_per_source_loc,0.28
