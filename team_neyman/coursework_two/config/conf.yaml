@@ -27,7 +27,7 @@ portfolio:
   liquidity_weight: 0.05
   health_sector_cap: 0.3
   stock_cap: 0.1
-  benchmark_symbol: "^892400-USD-STRD"
+  benchmark_symbol: "^990100-USD-STRD"
 
 trading:
   transaction_fee: 0.001
