@@ -2,9 +2,20 @@
 
 All notable changes to the **Team Neyman Coursework** will be documented in this file.
 
+## 2026-04-30
+### Added
+- Created `README.md` explaining the execution of project.
+
+### Changed
+- Regenerated the docs and pytest result.
+
 ## 2026-04-29
 ### Added
 - Constructed test functions.
+
+### Adjusted
+- Adjusted portfolio strategy.
+- Reran the backtest for correct results.
 
 ### Changed
 - Applied flake8 and isort to maintain code quality.

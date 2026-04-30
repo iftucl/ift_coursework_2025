@@ -1,0 +1,3 @@
+,initial_capital,cash,net_capital,date,investment_cost,investment_value,P&L,percentage_change
+0,100000.0,100000.0,100000.0,,,,,
+1,100000.0,85000.0,101000.0,2025-01-01,15000.0,16000.0,1000.0,0.01

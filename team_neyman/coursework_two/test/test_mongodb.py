@@ -103,18 +103,23 @@ def test_reset_mongodb_execution(mocker):
 
 
 def test_del_collection_success(mocker):
+    # Mock the MongoClient and the database instance
+    mock_client_class = mocker.patch("modules.db_loader.mongodb.MongoClient")
+    mock_client_instance = mock_client_class.return_value
+    mock_db = mock_client_instance["test_db"]
 
-    # Mock the MongoClient and the collection list
-    mock_client = mocker.patch("modules.db_loader.mongodb.MongoClient")
-    mock_db = mock_client.return_value["test_db"]
+    # Mock the collection names
     mock_db.list_collection_names.return_value = ["target_coll"]
 
+    # Provide a FLAT config to match what your function expects
     mocker.patch(
         "modules.db_loader.mongodb.load_config",
-        return_value={"mongodb": {"host": "h", "port": 1, "dbname": "test_db"}},
+        return_value={"host": "h", "port": 1, "dbname": "test_db"},
     )
 
     # Execute
+    from modules.db_loader import mongodb
+
     mongodb.del_collection("target_coll")
 
     # Verify drop_collection was called
@@ -122,17 +127,21 @@ def test_del_collection_success(mocker):
 
 
 def test_del_collection_not_found(mocker):
+    mock_client_class = mocker.patch("modules.db_loader.mongodb.MongoClient")
+    mock_client_instance = mock_client_class.return_value
+    mock_db = mock_client_instance["test_db"]
 
-    mock_client = mocker.patch("modules.db_loader.mongodb.MongoClient")
-    mock_db = mock_client.return_value["test_db"]
     mock_db.list_collection_names.return_value = ["other_coll"]
 
+    # Flat config here too
     mocker.patch(
         "modules.db_loader.mongodb.load_config",
-        return_value={"mongodb": {"host": "h", "port": 1, "dbname": "test_db"}},
+        return_value={"host": "h", "port": 1, "dbname": "test_db"},
     )
 
     # Execute
+    from modules.db_loader import mongodb
+
     mongodb.del_collection("missing_coll")
 
     # Verify drop_collection was NOT called

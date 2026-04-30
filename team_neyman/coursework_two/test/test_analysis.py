@@ -83,7 +83,7 @@ def test_generate_sector_weights_pivoting(mocker):
 
 def test_generate_return_chart_full_periods(mocker):
     # Create a 2-year range of dates
-    dates = pd.date_range("2023-01-01", "2025-01-01", freq="M")
+    dates = pd.date_range("2023-01-01", "2025-01-01", freq="ME")
     df = pd.DataFrame(
         {"date": dates, "net_capital": np.linspace(100000, 150000, len(dates))}
     )
