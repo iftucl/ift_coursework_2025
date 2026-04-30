@@ -377,16 +377,13 @@ output/
 ```
 Portfolio                Return     Vol    Sharpe   Sortino   Calmar    MaxDD       IR
 ------------------------------------------------------------------------------------------
-Combined                28.50%   16.85%    1.340    1.933    1.662   -17.14%   +0.779
-Value-Only              16.37%   14.68%    0.839    1.144    1.049   -15.61%   -0.108
-Sentiment-Only          15.44%   16.16%    0.726    1.012    0.673   -22.94%   -0.173
+Combined                19.78%   17.31%    0.903    1.254    1.075   -18.40%   +0.175
+Value-Only              14.72%   29.10%    0.480    0.561    0.718   -20.50%   +0.012
+Sentiment-Only          9.44%    16.42%    0.393    0.541    0.431   -21.91%   -0.835
 S&P 500 (benchmark)     18.42%   15.37%    0.922    1.200    0.975   -18.90%    0.000
 ```
 
-Combined beats S&P 500 by **+45% on Sharpe** (1.340 vs 0.922), **+55% on
-return** (28.50% vs 18.42%), and **+70% on Calmar** (1.662 vs 0.975).
-FF annualised alpha **+11.02%**. Bootstrap P(Sharpe > 0) = **96.5%**.
-Random-portfolio rank **99.7th percentile**.
+
 
 ---
 
