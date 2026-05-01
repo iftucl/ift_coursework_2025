@@ -60,6 +60,9 @@ const MULTILINE_INPUT_KEYS = new Set(["system_prompt", "user_instruction"]);
 const SECRET_INPUT_KEYS = new Set(["api_key"]);
 const LEGACY_REPORT_USER_INSTRUCTION = "Generate an English report note that assesses performance, robustness, caveats, and the points that should be emphasized in the formal written report.";
 const DEFAULT_REPORT_USER_INSTRUCTION = "Write an investor-facing portfolio analysis report. Focus on strategy logic, backtest evidence, risk profile, and concise robustness conclusions. Keep numeric claims tied to the supplied data.";
+const FORMAL_SCENARIO_NAME = "cw2_formal_20260420_fund_ra3_s30_t50";
+const FORMAL_UNIVERSE_LABEL = "US / PIT screened universe / ADV >= 2,000,000 / log mcap >= 20";
+const FORMAL_BENCHMARK_LABEL = "SPY";
 
 function isLegacyReportUserInstruction(value) {
   const normalized = String(value || "").trim().toLowerCase().replace(/\s+/g, " ");
@@ -140,11 +143,11 @@ const store = {
     acceptance: [],
   },
   scenarioBuilder: {
-    presets: [["Base", "US large cap, quarterly rebalance, hybrid 25-35"], ["Stress-aware", "VIX switch at 22, defensive sleeve rotation"], ["Low-turnover", "Quarterly baseline with tighter trading frictions"]],
-    assumptions: [["Universe", "US liquid large-cap basket"], ["Rebalance", "Quarterly with quarterly-rebalanced targets"], ["Neutralisation", "Sector-neutral score construction"], ["Costs", "15bps baseline one-way"]],
+    presets: [[FORMAL_SCENARIO_NAME, "Formal quarterly SPY-baseline scenario with PIT-screened universe and 15bps costs"]],
+    assumptions: [["Universe", FORMAL_UNIVERSE_LABEL], ["Rebalance", "Quarterly with quarterly-rebalanced targets"], ["Neutralisation", "Sector-neutral score construction"], ["Costs", "15bps baseline one-way"], ["Benchmark", FORMAL_BENCHMARK_LABEL]],
     inputs: [["Factor sleeves", "Quality, Value, Market Technical, Dividend"], ["VIX threshold", "22"], ["Target range", "25-35 names"], ["Holding cap", "5%"]],
     controls: {
-      universe: "US Large Cap",
+      universe: FORMAL_UNIVERSE_LABEL,
       rebalance: "Quarterly",
       topN: "25",
       threshold: "22",
@@ -239,7 +242,7 @@ let inputDialogKeydownHandler = null;
 const pageToSection = Object.entries(navSections).reduce((acc, [section, pages]) => { pages.forEach((id) => { acc[id] = section; }); return acc; }, {});
 const formState = {
   scenario_builder: {
-    universe: "US Large Cap",
+    universe: FORMAL_UNIVERSE_LABEL,
     rebalance: "Quarterly",
     top_n: "25",
     vix_threshold: "22",
@@ -247,16 +250,16 @@ const formState = {
     neutralisation: true,
     factor_sleeves: ["Quality", "Value", "Market Technical", "Dividend"],
     hold_cap: "5%",
-    benchmark: "Static baseline + market benchmark",
+    benchmark: FORMAL_BENCHMARK_LABEL,
     stress_overlay: true,
     lookback_window: "12 months",
     output_pack: "NAV + holdings + risk",
-    active_preset: "Base",
+    active_preset: FORMAL_SCENARIO_NAME,
   },
   backtest_runner: {
     scenario: "Current working scenario",
     execution_mode: "Single run",
-    batch_targets: ["Current working scenario", "Base", "Stress-aware"],
+    batch_targets: [FORMAL_SCENARIO_NAME],
     nightly_mode: "Single scenario",
     nightly_time: "22:00",
     priority: "Normal",
@@ -338,7 +341,6 @@ const dirtyState = {
 };
 const STORAGE_KEY = "quant-workbench-state-v1";
 const REPORT_STUDIO_SESSION_KEY = "quant-workbench-report-studio-session-v1";
-const FORMAL_SCENARIO_NAME = "cw2_formal_20260420_fund_ra3_s30_t50";
 const defaultScenarioBuilderState = JSON.parse(JSON.stringify(formState.scenario_builder));
 const runtimeState = {
   latestLogRunId: "BT-2026-0406-01",
@@ -476,8 +478,8 @@ const apiRuntime = {
 const livePreviewTimers = {};
 
 const scenarioPresetConfigs = {
-  Base: {
-    universe: "US Large Cap",
+  [FORMAL_SCENARIO_NAME]: {
+    universe: FORMAL_UNIVERSE_LABEL,
     rebalance: "Quarterly",
     top_n: "25",
     vix_threshold: "22",
@@ -485,38 +487,10 @@ const scenarioPresetConfigs = {
     neutralisation: true,
     factor_sleeves: ["Quality", "Value", "Market Technical", "Dividend"],
     hold_cap: "5%",
-    benchmark: "Static baseline + market benchmark",
+    benchmark: FORMAL_BENCHMARK_LABEL,
     stress_overlay: true,
-    lookback_window: "12 months",
-    output_pack: "NAV + holdings + risk",
-  },
-  "Stress-aware": {
-    universe: "Defensive Basket",
-    rebalance: "Quarterly",
-    top_n: "25",
-    vix_threshold: "22",
-    transaction_cost: "15bps",
-    neutralisation: true,
-    factor_sleeves: ["Quality", "Dividend", "Value"],
-    hold_cap: "5%",
-    benchmark: "Static baseline + market benchmark",
-    stress_overlay: true,
-    lookback_window: "12 months",
-    output_pack: "NAV + holdings + risk",
-  },
-  "Low-turnover": {
-    universe: "US Large Cap",
-    rebalance: "Quarterly",
-    top_n: "25",
-    vix_threshold: "25",
-    transaction_cost: "15bps",
-    neutralisation: true,
-    factor_sleeves: ["Value", "Quality", "Dividend"],
-    hold_cap: "4%",
-    benchmark: "Benchmark only",
-    stress_overlay: true,
-    lookback_window: "24 months",
-    output_pack: "Full artifact bundle",
+    lookback_window: "5 years",
+    output_pack: "Formal baseline evidence pack",
   },
 };
 
@@ -2288,8 +2262,8 @@ function getScenarioBuilderControlGroups() {
         .filter(Boolean);
   return {
     primary: [
-      ["Universe", { type: "select", key: "universe", value: s.universe, options: ["US Large Cap", "US Broad Market", "Defensive Basket"] }],
-      ["Rebalance", { type: "select", key: "rebalance", value: s.rebalance, options: ["Quarterly"] }],
+      ["Universe", s.universe],
+      ["Rebalance", s.rebalance],
       ["Top N", { type: "input", key: "top_n", value: s.top_n }],
       ["VIX Threshold", { type: "input", key: "vix_threshold", value: s.vix_threshold }],
       ["Transaction Cost", { type: "select", key: "transaction_cost", value: s.transaction_cost, options: ["10bps", "15bps", "25bps", "40bps"] }],
@@ -2298,7 +2272,7 @@ function getScenarioBuilderControlGroups() {
     secondary: [
       ["Factor Sleeves", { type: "tag", key: "factor_sleeves", value: sleeves }],
       ["Hold Cap", { type: "input", key: "hold_cap", value: s.hold_cap }],
-      ["Benchmark", { type: "select", key: "benchmark", value: s.benchmark, options: ["Static baseline + market benchmark", "Benchmark only", "Custom control portfolio"] }],
+      ["Benchmark", s.benchmark],
       ["Stress Overlay", { type: "switch", key: "stress_overlay", value: s.stress_overlay }],
       ["Lookback Window", { type: "select", key: "lookback_window", value: s.lookback_window, options: ["6 months", "12 months", "24 months"] }],
       ["Output Pack", { type: "select", key: "output_pack", value: s.output_pack, options: ["NAV + holdings + risk", "NAV only", "Full artifact bundle"] }],
@@ -2353,8 +2327,8 @@ function getFloatingControlSpec(pageId = currentPage) {
       title: "Universe Controls",
       subtitle: "Adjust the investable set here and jump to the preview sections that update below.",
       fields: [
-        ["Universe", { type: "select", key: "universe", value: s.universe, options: ["US Large Cap", "US Broad Market", "Defensive Basket"] }],
-        ["Benchmark", { type: "select", key: "benchmark", value: s.benchmark, options: ["Static baseline + market benchmark", "Benchmark only", "Custom control portfolio"] }],
+        ["Universe", s.universe],
+        ["Benchmark", s.benchmark],
         ["Company focus", { type: "select", key: "company_focus", value: s.company_focus, options: ["Large and liquid only", "Balanced quality/liquidity", "Defensive resilient names"] }],
         ["Dividend screen", { type: "switch", key: "require_dividend", value: s.require_dividend }],
         ["Sector tilt", { type: "select", key: "sector_tilt", value: s.sector_tilt, options: ["Balanced", "Defensive", "Cyclical check"] }],
@@ -5012,7 +4986,7 @@ function deleteScenarioPreset(presetName) {
   delete scenarioPresetConfigs[presetName];
   store.scenarioBuilder.presets = store.scenarioBuilder.presets.filter(([name]) => name !== presetName);
   if (formState.scenario_builder.active_preset === presetName) {
-    formState.scenario_builder.active_preset = store.scenarioBuilder.presets[0]?.[0] || "Base";
+    formState.scenario_builder.active_preset = store.scenarioBuilder.presets[0]?.[0] || FORMAL_SCENARIO_NAME;
   }
   if (defaultScenarioBuilderState.active_preset === presetName) {
     defaultScenarioBuilderState.active_preset = formState.scenario_builder.active_preset;
@@ -6017,7 +5991,7 @@ function handleAction(action, sourceButton) {
       render(false);
     },
     "duplicate-preset": () => {
-      const sourceName = formState.scenario_builder.active_preset || "Base";
+  const sourceName = formState.scenario_builder.active_preset || FORMAL_SCENARIO_NAME;
       const nextName = getUniquePresetName(`${sourceName} Copy`);
       const duplicatedConfig = { ...formState.scenario_builder, active_preset: nextName };
       upsertScenarioPreset(nextName, duplicatedConfig);
@@ -7485,7 +7459,7 @@ store.universeSelector = store.universeSelector || {
     coverage_pct: 98.8,
     avg_market_cap_usd_bn: 182,
     avg_liquidity_score: 98.4,
-    benchmark: "Static baseline + market benchmark",
+    benchmark: FORMAL_BENCHMARK_LABEL,
     top_n_target: 25,
   },
   sectorMix: [["Technology", 22], ["Health Care", 14], ["Financials", 13], ["Consumer Staples", 9], ["Industrials", 11], ["Energy", 8]],
@@ -7577,8 +7551,8 @@ store.factorRaw = store.factorRaw || {
 };
 
 formState.universe_selector = formState.universe_selector || {
-  universe: "US Large Cap",
-  benchmark: "Static baseline + market benchmark",
+  universe: FORMAL_UNIVERSE_LABEL,
+  benchmark: FORMAL_BENCHMARK_LABEL,
   company_focus: "Large and liquid only",
   require_dividend: false,
   sector_tilt: "Balanced",
@@ -7803,7 +7777,40 @@ async function loadTradePreview(showFeedback = false) {
 function renderUniverseSelector() {
   const d = store.universeSelector;
   const s = formState.universe_selector;
-  return `${renderActionPanel("Universe & Company Selector", "Choose the investable universe, review company sample coverage, and sanity-check the candidate pool before factor ranking. Changes on this page feed directly into the current working scenario.", [{ label: "Refresh preview", action: "preview-universe" }, { label: "Open in Runner", action: "handoff-to-runner" }], { type: "derived", detail: "Connected universe preview controls backed by the preview API." })}${renderSystemMetrics([{ label: "Universe Size", value: `${d.summary.universe_size}`, note: "Current candidate count before factor ranking and portfolio construction.", sourceType: "derived", sourceDetail: "Universe preview API summary." }, { label: "Coverage", value: `${d.summary.coverage_pct}%`, note: "Data and liquidity coverage across the selected universe.", sourceType: "derived", sourceDetail: "Universe preview API summary." }, { label: "Top N Target", value: `${d.summary.top_n_target}`, note: "Current selection target inherited by the optimizer.", sourceType: "derived", sourceDetail: "Current scenario and preview summary." }])}<div class="grid-two"><div id="universe-controls-anchor">${makePanel("Universe Controls", "Keep this page focused on the investable set and company-level screening assumptions.", renderFormFields([["Universe", { type: "select", key: "universe", value: s.universe, options: ["US Large Cap", "US Broad Market", "Defensive Basket"] }], ["Benchmark", { type: "select", key: "benchmark", value: s.benchmark, options: ["Static baseline + market benchmark", "Benchmark only", "Custom control portfolio"] }], ["Company focus", { type: "select", key: "company_focus", value: s.company_focus, options: ["Large and liquid only", "Balanced quality/liquidity", "Defensive resilient names"] }], ["Dividend screen", { type: "switch", key: "require_dividend", value: s.require_dividend }], ["Sector tilt", { type: "select", key: "sector_tilt", value: s.sector_tilt, options: ["Balanced", "Defensive", "Cyclical check"] }]]), { type: "derived", detail: "Editable universe selection state in the working scenario." })}</div><div id="universe-preview-anchor">${makePanel("Universe Summary", "Review the connected preview before promoting the settings into a scenario run.", renderTable(["Metric", "Current Preview"], [["Candidate buffer", `${d.summary.candidate_buffer}`], ["Average market cap", `${d.summary.avg_market_cap_usd_bn} bn USD`], ["Average liquidity score", `${d.summary.avg_liquidity_score}`], ["Benchmark", d.summary.benchmark]]), { type: "derived", detail: "Connected universe preview summary from the API." })}</div></div><div class="grid-two">${makePanel("Sector Mix Preview", "Rough sector composition of the current candidate set.", `<div class="chart-card"><h4>Universe sector mix</h4>${renderBars(d.sectorMix, (value) => `${value}%`)}</div>`, { type: "derived", detail: "Connected universe preview sector weights rather than raw holdings." })}<div id="universe-company-sample-anchor">${makePanel("Company Sample", "Illustrative company-level slice for quick manual review.", renderTable(["Ticker", "Sector", "Liquidity", "Why it survives"], d.companyPreview), { type: "derived", detail: "Connected preview sample of current candidate names." })}</div></div>${makePanel("Preview Notes", "Short operating notes that clarify how this page should be interpreted during review and analysis.", `<div class="docs-list">${(d.notes || []).map((note) => `<article><p>${note}</p></article>`).join("")}</div>`, { type: "text-only", detail: "Explanatory notes rather than a raw data surface." })}`;
+  const actionPanel = renderActionPanel(
+    "Universe & Company Selector",
+    "Choose the investable universe, review company sample coverage, and sanity-check the candidate pool before factor ranking. Changes on this page feed directly into the current working scenario.",
+    [{ label: "Refresh preview", action: "preview-universe" }, { label: "Open in Runner", action: "handoff-to-runner" }],
+    { type: "derived", detail: "Connected universe preview controls backed by the preview API." }
+  );
+  const metrics = renderSystemMetrics([
+    { label: "Universe Size", value: `${d.summary.universe_size}`, note: "Current candidate count before factor ranking and portfolio construction.", sourceType: "derived", sourceDetail: "Universe preview API summary." },
+    { label: "Coverage", value: `${d.summary.coverage_pct}%`, note: "Data and liquidity coverage across the selected universe.", sourceType: "derived", sourceDetail: "Universe preview API summary." },
+    { label: "Top N Target", value: `${d.summary.top_n_target}`, note: "Current selection target inherited by the optimizer.", sourceType: "derived", sourceDetail: "Current scenario and preview summary." },
+  ]);
+  const controls = renderFormFields([
+    ["Universe", s.universe],
+    ["Benchmark", s.benchmark],
+    ["Company focus", { type: "select", key: "company_focus", value: s.company_focus, options: ["Large and liquid only", "Balanced quality/liquidity", "Defensive resilient names"] }],
+    ["Dividend screen", { type: "switch", key: "require_dividend", value: s.require_dividend }],
+    ["Sector tilt", { type: "select", key: "sector_tilt", value: s.sector_tilt, options: ["Balanced", "Defensive", "Cyclical check"] }],
+  ]);
+  const controlsPanel = makePanel(
+    "Universe Controls",
+    "Keep this page focused on the investable set and company-level screening assumptions.",
+    controls,
+    { type: "derived", detail: "Universe and benchmark are locked to the formal PIT-screened SPY-baseline setup; remaining controls drive the current preview state." }
+  );
+  const summaryPanel = makePanel(
+    "Universe Summary",
+    "Review the connected preview before promoting the settings into a scenario run.",
+    renderTable(["Metric", "Current Preview"], [["Candidate buffer", `${d.summary.candidate_buffer}`], ["Average market cap", `${d.summary.avg_market_cap_usd_bn} bn USD`], ["Average liquidity score", `${d.summary.avg_liquidity_score}`], ["Benchmark", d.summary.benchmark]]),
+    { type: "derived", detail: "Connected universe preview summary from the API." }
+  );
+  const sectorPanel = makePanel("Sector Mix Preview", "Rough sector composition of the current candidate set.", `<div class="chart-card"><h4>Universe sector mix</h4>${renderBars(d.sectorMix, (value) => `${value}%`)}</div>`, { type: "derived", detail: "Connected universe preview sector weights rather than raw holdings." });
+  const samplePanel = makePanel("Company Sample", "Illustrative company-level slice for quick manual review.", renderTable(["Ticker", "Sector", "Liquidity", "Why it survives"], d.companyPreview), { type: "derived", detail: "Connected preview sample of current candidate names." });
+  const notesPanel = makePanel("Preview Notes", "Short operating notes that clarify how this page should be interpreted during review and analysis.", `<div class="docs-list">${(d.notes || []).map((note) => `<article><p>${note}</p></article>`).join("")}</div>`, { type: "text-only", detail: "Explanatory notes rather than a raw data surface." });
+  return `${actionPanel}${metrics}<div class="grid-two"><div id="universe-controls-anchor">${controlsPanel}</div><div id="universe-preview-anchor">${summaryPanel}</div></div><div class="grid-two">${sectorPanel}<div id="universe-company-sample-anchor">${samplePanel}</div></div>${notesPanel}`;
 }
 
 function renderRegimeControl() {
