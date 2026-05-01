@@ -338,6 +338,7 @@ const dirtyState = {
 };
 const STORAGE_KEY = "quant-workbench-state-v1";
 const REPORT_STUDIO_SESSION_KEY = "quant-workbench-report-studio-session-v1";
+const FORMAL_SCENARIO_NAME = "cw2_formal_20260420_fund_ra3_s30_t50";
 const defaultScenarioBuilderState = JSON.parse(JSON.stringify(formState.scenario_builder));
 const runtimeState = {
   latestLogRunId: "BT-2026-0406-01",
@@ -1089,6 +1090,26 @@ function persistState(options = {}) {
   } catch {}
 }
 
+function isLegacyScenarioName(value) {
+  return /qnative|web_qnative/i.test(String(value || ""));
+}
+
+function sanitizeFormalScenarioSelections() {
+  if (isLegacyScenarioName(formState.backtest_runner?.scenario)) {
+    formState.backtest_runner.scenario = FORMAL_SCENARIO_NAME;
+  }
+  if (Array.isArray(formState.backtest_runner?.batch_targets)) {
+    const filteredTargets = formState.backtest_runner.batch_targets.filter((name) => !isLegacyScenarioName(name));
+    formState.backtest_runner.batch_targets = filteredTargets.length ? filteredTargets : [FORMAL_SCENARIO_NAME];
+  }
+  if (isLegacyScenarioName(formState.scenario_builder?.active_preset)) {
+    formState.scenario_builder.active_preset = FORMAL_SCENARIO_NAME;
+  }
+  if (isLegacyScenarioName(runtimeState.activeScenarioId)) {
+    runtimeState.activeScenarioId = "";
+  }
+}
+
 function loadPersistedState() {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
@@ -1163,6 +1184,7 @@ function loadPersistedState() {
         scenarioPresetConfigs[name] = normalizeScenarioDraftForUi(config, name);
       });
     }
+    sanitizeFormalScenarioSelections();
     if (saved.uiState?.currentPage && renderers[saved.uiState.currentPage]) {
       currentPage = saved.uiState.currentPage;
       currentSection = pageToSection[currentPage] || saved.uiState.currentSection || "home";
@@ -1733,6 +1755,10 @@ function getScenarioConfigSnapshotByName(name) {
   if (name === "Current working scenario") {
     return enforceQuarterlyScenarioConfig(JSON.parse(JSON.stringify(formState.scenario_builder)));
   }
+  const savedScenario = getScenarioRecordByName(name);
+  if (savedScenario?.scenario_config) {
+    return enforceQuarterlyScenarioConfig(JSON.parse(JSON.stringify(savedScenario.scenario_config)));
+  }
   return enforceQuarterlyScenarioConfig(JSON.parse(JSON.stringify(scenarioPresetConfigs[name] || formState.scenario_builder)));
 }
 
@@ -2283,7 +2309,7 @@ function getScenarioBuilderControlGroups() {
 function getBacktestRunnerControlFields() {
   const s = formState.backtest_runner;
   const scenarioOptions = getRunnerScenarioOptions();
-  if (!scenarioOptions.includes(s.scenario)) s.scenario = "Current working scenario";
+  if (!scenarioOptions.includes(s.scenario)) s.scenario = scenarioOptions[0] || FORMAL_SCENARIO_NAME;
   normalizeBatchTargets();
   const isBatchMode = s.execution_mode === "Batch compare";
   const isNightlyMode = s.execution_mode === "Nightly refresh";
@@ -2550,14 +2576,17 @@ function applyScenarioCatalog(rows) {
     ...row,
     scenario_config: normalizeScenarioDraftForUi(row.scenario_config, row.scenario_name),
   }));
-  store.scenarioCenter.items = normalizedRows;
-  const mainline = normalizedRows.find((row) => row.is_mainline) || normalizedRows[0];
+  const formalRows = normalizedRows.filter((row) => row.scenario_name === FORMAL_SCENARIO_NAME || row.is_mainline);
+  const visibleRows = formalRows.length ? [formalRows[0]] : normalizedRows.slice(0, 1);
+  store.scenarioCenter.items = visibleRows;
+  const mainline = visibleRows.find((row) => row.is_mainline) || visibleRows[0];
   store.scenarioCenter.mainlineId = mainline?.scenario_id || "";
-  runtimeState.activeScenarioId = runtimeState.activeScenarioId || mainline?.scenario_id || "";
+  const activeRecord = visibleRows.find((row) => row.scenario_id === runtimeState.activeScenarioId) || mainline;
+  runtimeState.activeScenarioId = activeRecord?.scenario_id || "";
   store.scenarioCenter.activeScenarioId = runtimeState.activeScenarioId;
-  const activeRecord = normalizedRows.find((row) => row.scenario_id === runtimeState.activeScenarioId) || mainline;
   if (activeRecord) {
     formState.backtest_runner.scenario = activeRecord.scenario_name;
+    formState.backtest_runner.batch_targets = [activeRecord.scenario_name];
     if (!dirtyState.scenario_builder || !hasConnectedScenarioDraft(formState.scenario_builder)) {
       replaceScenarioBuilderDraft({ ...activeRecord.scenario_config, active_preset: activeRecord.scenario_name });
       syncDerivedFormsFromScenarioDraft();
@@ -4901,8 +4930,7 @@ function buildScenarioPresetDescription(config) {
 
 function getRunnerScenarioOptions() {
   const scenarioNames = store.scenarioCenter.items.map((row) => row.scenario_name);
-  const presetNames = store.scenarioBuilder.presets.map(([name]) => name);
-  return ["Current working scenario", ...Array.from(new Set([...scenarioNames, ...presetNames]))];
+  return scenarioNames.length ? Array.from(new Set(scenarioNames)) : [FORMAL_SCENARIO_NAME];
 }
 
 function getRunnerScenarioSelection() {

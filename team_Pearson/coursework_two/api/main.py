@@ -2120,7 +2120,35 @@ def _formal_mainline_record_template() -> dict[str, Any] | None:
     return record
 
 
+def _sync_formal_mainline_scenario() -> dict[str, Any] | None:
+    formal_template = _formal_mainline_record_template()
+    if not formal_template:
+        return None
+    SCENARIO_DIR.mkdir(parents=True, exist_ok=True)
+    scenario_path = _scenario_file_path(formal_template["scenario_id"])
+    existing = _read_json_if_exists(scenario_path, {})
+    should_write_scenario = (
+        not existing
+        or existing.get("scenario_id") != formal_template["scenario_id"]
+        or existing.get("scenario_name") != formal_template["scenario_name"]
+        or existing.get("scenario_config") != formal_template["scenario_config"]
+        or not existing.get("is_mainline")
+    )
+    if should_write_scenario:
+        _write_json(scenario_path, formal_template)
+    mainline_payload = _read_json_if_exists(MAINLINE_SCENARIO_PATH, {})
+    expected_mainline = {
+        "scenario_id": formal_template["scenario_id"],
+        "scenario_name": formal_template["scenario_name"],
+    }
+    if mainline_payload != expected_mainline:
+        _write_json(MAINLINE_SCENARIO_PATH, expected_mainline)
+    return formal_template
+
+
 def _bootstrap_default_scenarios() -> None:
+    if _sync_formal_mainline_scenario():
+        return
     if SCENARIO_DIR.exists() and any(SCENARIO_DIR.glob("*.json")):
         return
     saved = _load_saved_scenarios()
@@ -2193,10 +2221,12 @@ def _bootstrap_default_scenarios() -> None:
 
 
 def _load_scenarios() -> list[dict[str, Any]]:
+    formal_template = _sync_formal_mainline_scenario()
+    if formal_template:
+        return [formal_template]
     _bootstrap_default_scenarios()
     mainline_payload = _read_json_if_exists(MAINLINE_SCENARIO_PATH, {})
     mainline_id = mainline_payload.get("scenario_id")
-    formal_template = _formal_mainline_record_template()
     records: list[dict[str, Any]] = []
     for path in sorted(SCENARIO_DIR.glob("SCN-*.json")):
         record = _read_json_if_exists(path, {})
@@ -2218,11 +2248,11 @@ def _load_scenarios() -> list[dict[str, Any]]:
 
 
 def _get_scenario_record(scenario_id: str) -> dict[str, Any] | None:
+    formal_template = _sync_formal_mainline_scenario()
+    if formal_template:
+        return formal_template if scenario_id == formal_template["scenario_id"] else None
     path = _scenario_file_path(scenario_id)
     if not path.exists():
-        formal_template = _formal_mainline_record_template()
-        if formal_template and scenario_id == formal_template["scenario_id"]:
-            return formal_template
         return None
     record = _read_json_if_exists(path, {})
     mainline_payload = _read_json_if_exists(MAINLINE_SCENARIO_PATH, {})
