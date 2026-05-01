@@ -1,0 +1,12 @@
+CW2 methodology note
+
+CW2 treats CW1 as a frozen upstream data product.
+It does not modify CW1, but it can consume both published CW1 outputs and the
+historical raw price cache exposed by CW1.
+When historical OHLCV price files are available, CW2 rebuilds monthly factor and
+selection snapshots using the CW1 factor formulas, then runs a point-in-time
+rolling rebalance backtest.
+If only latest snapshots are available, CW2 falls back to a constrained fixed-portfolio
+historical evaluation.
+This allows the report to distinguish clearly between true rolling evaluation and
+latest-snapshot fallback mode.
