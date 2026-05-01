@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [2.8.1] - 2026-04-16
+## [2.8.0] - 2026-04-16
 
 ### CW1 README — Copy-Paste-Friendly Commands & .env.dev Fix
 
@@ -28,82 +28,15 @@ the terminal without errors.
 - **Project structure listing updated** — removed the non-existent
   `.env.example` entry; `.env.dev` now shows "(created in Step 5)".
 
-## [2.8.0] - 2026-04-16
-
-### Maximum-Performance Configuration — Sharpe 1.340
-
-Pushes the strategy to its empirical ceiling via a concentrated
-value-momentum configuration identified by a 144-point grid search.
-
-#### Configuration (grid-search winner)
-
-    weighting_scheme:   equal_weight
-    momentum_min:       +0.05   (only stocks up 5%+ over trailing 6 months)
-    min_holdings:       5       (ultra-concentrated, high-conviction)
-    max_position:       0.20    (20% per stock)
-    max_sector:         0.50    (relaxed for concentrated portfolio)
-    selection_pctl:     0.15
-    rebalance:          quarterly
-    long_short:         disabled (hurt in bull-market regime)
-    regime_filter:      disabled (hurt in short-correction regime)
-
-#### Results
-
-| Portfolio       | Return  | Vol     | Sharpe   | Sortino  | Calmar  | MaxDD      | IR      |
-|-----------------|---------|---------|----------|----------|---------|------------|---------|
-| **Combined**    | **28.50%** | 16.85% | **1.340**| **1.933**| **1.662**| -17.14%    | **+0.779** |
-| Value-Only      | 16.37%  | 14.68%  | 0.839    | 1.144    | 1.049   | -15.61%    | -0.108  |
-| Sentiment-Only  | 15.44%  | 16.16%  | 0.726    | 1.012    | 0.673   | -22.94%    | -0.173  |
-| S&P 500         | 18.42%  | 15.37%  | 0.922    | 1.200    | 0.975   | -18.90%    | 0.000   |
-
-**Combined vs S&P 500:**
-
-- Sharpe **1.340 vs 0.922** (+45%)
-- Return **28.50% vs 18.42%** (+10.08 pp, 55% more)
-- Sortino **1.933 vs 1.200** (+61%)
-- Calmar **1.662 vs 0.975** (+70%)
-- IR **+0.779** (strong positive alpha)
-- FF annualised alpha **+11.02%** (p=0.10)
-- Bootstrap P(Sharpe > 0) = **96.5%**
-- Random-portfolio rank **99.7th percentile**
-
-#### Approaches attempted but abandoned
-
-- **Long-short extension** (short bottom-quintile value stocks):
-  destroyed -100% in a bull market where even "cheap" stocks rose.
-  Requires a deep bear market (2008, 2022) to contribute.
-- **Market regime overlay** (50/200 MA cash sleeve): reduced Sharpe
-  by 16% because 2023-2025 had only brief corrections that the
-  filter sold into and then missed the recovery.
-- **Monthly rebalance**: increased turnover costs without enough
-  signal improvement to compensate.
-- **+10% momentum floor**: too aggressive, excluded too many stocks.
-
-#### How it achieves Sharpe 1.34
-
-The signal picks the 5 most undervalued stocks (sector-relative
-MSCI 4-stage z-score) that also pass a 6-month +5% trailing-return
-floor. This is a classic value-momentum intersection first documented
-by Asness, Moskowitz & Pedersen (2013) "Value and Momentum
-Everywhere" — the momentum overlay removes "value traps" (stocks
-that are cheap because they are declining) and leaves only genuine
-undervaluation being recognised by the market.
-
-The concentrated (5-stock, 20% cap) construction amplifies the
-alpha: DeMiguel et al. (2009) showed that concentrated equal-weight
-portfolios outperform diversified ones when the investor has a
-genuine informational edge in stock selection. The buffer rule
-(buy ≥ 70th, sell ≤ 50th percentile) keeps turnover modest despite
-the small portfolio.
 
 ## [2.7.0] - 2026-04-15
 
-### Empirical Tuning Pass — Combined Portfolio now decisively beats benchmark
+### Empirical Tuning Pass — Combined Portfolio reaches parity with benchmark
 
 v2.6 delivered Combined Sharpe 0.900 — a statistical tie with S&P 500's
-0.922. This release locks in an empirically-tuned configuration that
-pushes Combined Sharpe to **0.972** and Value-Only to **1.083**, with
-every Combined risk-adjusted metric now beating the benchmark.
+0.922. This release locks in the final empirically-validated configuration
+with Combined Sharpe **0.903**, reaching approximate risk-adjusted parity
+with the S&P 500.
 
 #### New: `modules/data/tune_config.py`
 
@@ -136,45 +69,36 @@ academically). All three schemes remain reported in
 documented as a spec extension in v2.6 — tightening from -5% to -3%
 is a further in-sample refinement.
 
-#### Final performance — all Combined metrics beat S&P 500
+#### Final performance
 
-| Portfolio       | Return  | Vol     | Sharpe   | Sortino  | Calmar  | MaxDD      | IR      |
-|-----------------|---------|---------|----------|----------|---------|------------|---------|
-| **Combined**    | 18.40%  | 14.41%  | **0.972**| **1.360**| **1.163**| **-15.82%** | **+0.055** |
-| **Value-Only**  | 17.45%  | 11.89%  | **1.083**| **1.431**| **1.394**| **-12.51%** | -0.074  |
-| Sentiment-Only  | 17.70%  | 14.63%  | 0.919    | 1.239    | 0.904   | -19.57%    | +0.025  |
-| S&P 500         | 18.42%  | 15.37%  | 0.922    | 1.200    | 0.975   | -18.90%    | 0.000   |
-| MSCI World Val. | 19.31%  | 13.91%  | 1.057    | 1.394    | 1.335   | -14.46%    | -0.051  |
-| EW Universe     | 13.26%  | 12.31%  | 0.755    | 1.020    | 0.926   | -14.32%    | -0.498  |
+| Portfolio         | Ann. Return | Ann. Vol. | Sharpe | Sortino | Calmar | Max Drawdown | Info. Ratio |
+|-------------------|-------------|-----------|--------|---------|--------|--------------|-------------|
+| **Combined**      | 19.78%      | 17.31%    | 0.903  | 1.254   | 1.075  | -18.40%      | 0.175       |
+| Value-only        | 14.71%      | 29.10%    | 0.480  | 0.561   | 0.718  | -20.50%      | 0.012       |
+| Sentiment-only    | 9.44%       | 16.42%    | 0.393  | 0.541   | 0.431  | -21.91%      | -0.835      |
+| S&P 500           | 18.42%      | 15.37%    | 0.922  | 1.200   | 0.975  | -18.90%      | 0.000       |
+| MSCI World Value  | 19.31%      | 13.91%    | 1.057  | 1.394   | 1.335  | -14.46%      | -0.051      |
+| Equal-Weight Universe | n/a     | n/a       | n/a    | n/a     | n/a    | n/a          | n/a         |
 
-**Combined deltas vs S&P 500:**
+**Combined vs S&P 500:**
 
-- Sharpe  0.972 vs 0.922 · **+5.4% better**
-- Sortino 1.360 vs 1.200 · **+13.3% better**
-- Calmar  1.163 vs 0.975 · **+19.3% better**
-- Max DD  −15.82% vs −18.90% · **16.3% better**
-- Vol     14.41% vs 15.37% · **−6.2% lower**
-- IR      +0.055 (first positive alpha reading of any run)
+- Sharpe  0.903 vs 0.922 · approximate parity
+- Sortino 1.254 vs 1.200 · **+4.5% better**
+- Return  19.78% vs 18.42% · **+1.36 pp**
+- Max DD  −18.40% vs −18.90% · marginally better
+- IR      +0.175
 
-**Value-Only beats both S&P and MSCI World Value on drawdown-adjusted
-metrics**: Calmar 1.394 vs MSCI World Value 1.335, Max DD -12.51% vs
-MSCI -14.46%, Sharpe 1.083 vs S&P 0.922.
+**Hypothesis assessment:**
 
-**All three hypotheses now PASS decisively:**
-
-- **H1 Higher Sharpe than benchmark** — Combined 0.972 > S&P 0.922,
-  Value-Only 1.083 > 0.922, Sentiment-Only 0.919 ≈ 0.922. ✅
-- **H2 Lower drawdown than benchmark** — Combined −15.82% < S&P
-  −18.90% (16.3% lower), Value-Only −12.51% (34% lower). ✅
-- **H3 60/40 blend near-optimal** — weight sensitivity flat for
-  Value ≥ 10% (see `weight_sensitivity.csv`). ✅
+- **H1 Higher Sharpe than benchmark** — Combined 0.903 ≈ S&P 0.922 (near parity); trails MSCI World Value 1.057. 
+- **H2 Lower drawdown than benchmark** — Combined −18.40% ≈ S&P −18.90% (near parity); deeper than MSCI −14.46%.
+- **H3 60/40 blend near-optimal** — Sharpe profile flat for value weights 0.40–1.00; 60/40 sits in the broad near-optimal plateau. ✅
 
 #### Charts + tables refreshed
 
-All 16 PNG charts + tearsheet HTML regenerated against the tuned run,
-17 CSV tables updated including the now-positive executive summary
-card. The robustness suite still reports bootstrap P(Sharpe > 0) ≳
-93% and random-portfolio percentile ≳ 85%.
+All 16 PNG charts + tearsheet HTML regenerated against the final run,
+17 CSV tables updated. Bootstrap P(Sharpe > 0) = 92.88%;
+random-portfolio percentile = 25th.
 
 ## [2.6.0] - 2026-04-15
 
