@@ -816,6 +816,18 @@ function isRobustnessArtifactRecord(record) {
 function createArtifactTreeNode(label, key) {
   return { label, key, files: [], children: [] };
 }
+function countArtifactFiles(node) {
+  return (node.files || []).length
+    + (node.children || []).reduce((total, child) => total + countArtifactFiles(child), 0);
+}
+function summarizeArtifactFolder(node) {
+  const folderCount = (node.children || []).length;
+  const fileCount = countArtifactFiles(node);
+  const parts = [];
+  if (folderCount) parts.push(`${folderCount} folder${folderCount === 1 ? "" : "s"}`);
+  parts.push(`${fileCount} file${fileCount === 1 ? "" : "s"}`);
+  return parts.join(" / ");
+}
 function getArtifactChildNode(parent, label, key) {
   let existing = parent.children.find((node) => node.key === key);
   if (!existing) {
@@ -885,7 +897,7 @@ function buildArtifactTree(records) {
 function renderArtifactTreeNode(node, depth = 0, openByDefault = false) {
   const folderBody = `${node.children.map((child) => renderArtifactTreeNode(child, depth + 1, false)).join("")}${node.files.map((file) => `<div class="artifact-file-row"><div><strong>${escapeHtml(file.label)}</strong><small>${escapeHtml(file.rawName)}</small></div><span>${escapeHtml(file.detail)}</span></div>`).join("")}`;
   const openAttr = openByDefault ? " open" : "";
-  return `<details class="artifact-folder artifact-depth-${depth}" data-artifact-key="${escapeHtml(node.key)}"${openAttr}><summary><span>${escapeHtml(node.label)}</span><small>${node.children.length + node.files.length} item${node.children.length + node.files.length === 1 ? "" : "s"}</small></summary><div class="artifact-folder-body">${folderBody}</div></details>`;
+  return `<details class="artifact-folder artifact-depth-${depth}" data-artifact-key="${escapeHtml(node.key)}"${openAttr}><summary><span>${escapeHtml(node.label)}</span><small>${escapeHtml(summarizeArtifactFolder(node))}</small></summary><div class="artifact-folder-body">${folderBody}</div></details>`;
 }
 function renderArtifactTree(records) {
   if (!Array.isArray(records) || !records.length) {
@@ -4158,7 +4170,7 @@ function renderArtifacts() {
   const needsRefresh = Math.max(packCount - readyNow, 0);
   const artifactBody = renderArtifactTree(store.artifacts.records);
   const documentationBody = buildDocumentationHubMarkup(store.artifacts.records, store.docs.docs);
-  return `${renderActionPanel("Delivery Console", "Export the current delivery bundle as a real ZIP package for submission handoff.", [{ label: "Export ZIP", action: "export-delivery-zip" }], { type: "derived", detail: "Connected delivery manifest and export actions." })}${renderSystemMetrics([{ label: "Export Packs", value: `${packCount}`, note: "Current artifact groups connected to the workbench.", sourceType: "derived", sourceDetail: "Artifact manifest count." }, { label: "Ready Now", value: `${readyNow}`, note: "Derived from the live artifact manifest.", sourceType: "derived", sourceDetail: "Artifact manifest readiness summary." }, { label: "Needs Refresh", value: `${needsRefresh}`, note: "Items still marked pending or refresh-needed.", sourceType: "derived", sourceDetail: "Artifact manifest readiness summary." }])}<div class="grid-two"><div id="delivery-bundle-anchor">${makePanel("Artifact Library", "Files and bundles prepared for handoff or presentation. Expand by source, then part, then test or bundle.", artifactBody, { type: "derived", detail: "Connected artifact manifest and bundle listing." })}</div>${makePanel("Documentation Hub", "Document groups that explain the formal evidence pack, per-part notes, and the supporting report/briefing outputs.", documentationBody, { type: "derived", detail: "Connected documentation groups derived from live evidence and delivery outputs." })}</div>`;
+  return `${renderActionPanel("Delivery Console", "Export the current delivery bundle as a real ZIP package for submission handoff.", [{ label: "Export ZIP", action: "export-delivery-zip" }], { type: "derived", detail: "Connected delivery manifest and export actions." })}${renderSystemMetrics([{ label: "Export Packs", value: `${packCount}`, note: "Current artifact groups connected to the workbench.", sourceType: "derived", sourceDetail: "Artifact manifest count." }, { label: "Ready Now", value: `${readyNow}`, note: "Derived from the live artifact manifest.", sourceType: "derived", sourceDetail: "Artifact manifest readiness summary." }, { label: "Needs Refresh", value: `${needsRefresh}`, note: "Items still marked pending or refresh-needed.", sourceType: "derived", sourceDetail: "Artifact manifest readiness summary." }])}<div class="grid-two"><div id="delivery-bundle-anchor">${makePanel("Artifact Library", "Files that actually exist in the checked-in evidence folders. Expand by part, then test or bundle.", artifactBody, { type: "derived", detail: "Connected artifact manifest and bundle listing." })}</div>${makePanel("Documentation Hub", "Document groups that explain the formal evidence pack, per-part notes, and the supporting report/briefing outputs.", documentationBody, { type: "derived", detail: "Connected documentation groups derived from live evidence and delivery outputs." })}</div>`;
 }
 
 function getLlmModelCategory(modelId) {
