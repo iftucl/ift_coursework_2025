@@ -33,12 +33,20 @@ The portfolio ranks all eligible stocks by a composite factor score, selects the
 
 ## How to Run
 
+> **No database or WRDS credentials required.**
+> `results/stock_returns_10year.csv` is pre-built and included in the repo.
+> Steps 01–02 (data build) are skipped by default — the pipeline runs straight
+> to analysis (steps 03–09).
+
 All commands run from `team_russell/coursework_one/`:
 
 ```bash
 cd team_russell/coursework_one
 
-# Run full pipeline (steps 02–09); step 01 skipped by default (needs WRDS)
+# Install dependencies (first time only)
+poetry install
+
+# Run analysis pipeline (steps 03–09); reads pre-built stock_returns_10year.csv
 poetry run python ../coursework_two/main.py
 
 # Run tests with coverage report
@@ -168,10 +176,15 @@ tests/
 
 ## Prerequisites
 
-- PostgreSQL with `systematic_equity.factor_values` table (from CW1 pipeline)
-- WRDS account with credentials in `~/.pgpass` (Step 01 only)
-- Python 3.10+ via Poetry — dependencies declared in `pyproject.toml`
-- Required packages installed via `poetry install` from `team_russell/coursework_one/`
+- Python 3.10+ via Poetry — install dependencies with `poetry install` from `team_russell/coursework_one/`
+
+> **To reproduce from raw data** (optional — not required to run the pipeline):
+> - WRDS account with credentials in `~/.pgpass` — needed for Step 01 only
+> - Running PostgreSQL instance with `systematic_equity.factor_values` table — needed for Steps 01–02
+>
+> Steps 01–02 are commented out in `main.py` by default. The pre-built
+> `results/stock_returns_10year.csv` is included so the full analysis
+> pipeline (steps 03–09), API, and dashboard all work without any database.
 
 ## Testing
 

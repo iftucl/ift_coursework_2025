@@ -53,8 +53,8 @@ sys.path.insert(0, str(SCRIPTS))
 # Step 09 (long-short) is included as an optional robustness test.
 PIPELINE = [
     # ── PHASE 1: Data Build ──────────────────────────────────────────────────
-    # ("01", "step01_wrds_pull",     "build"),  # needs WRDS credentials
-    ("02", "step02_extend_2015", "build"),
+    # ("01", "step01_wrds_pull", "build"),   # needs WRDS credentials + PostgreSQL
+    # ("02", "step02_extend_2015", "build"), # needs PostgreSQL; pre-built CSV included
     # ── PHASE 2: Analysis ────────────────────────────────────────────────────
     ("03", "step03_ic_analysis", "analysis"),
     ("04", "step04_turnover", "analysis"),
@@ -107,7 +107,7 @@ def main():
     print("  RUSSEL CW2 PIPELINE  --  Systematic Equity Strategy")
     print("  3-Factor: Value 35% + Quality 35% + Momentum 30%")
     print("=" * 65)
-    print(f"\n  {len(PIPELINE)} steps  |  Step 01 (WRDS pull) skipped by default")
+    print(f"\n  {len(PIPELINE)} steps  |  Steps 01–02 skipped (pre-built CSV included)")
 
     results = {}
     t_total = time.time()

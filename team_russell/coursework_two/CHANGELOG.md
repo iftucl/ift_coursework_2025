@@ -9,6 +9,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.5.2] — 2026-05-01
+
+### Fixed
+- `main.py`: commented out step 02 from the default pipeline — it requires
+  PostgreSQL which reviewers won't have; pre-built `stock_returns_10year.csv`
+  is included so steps 03–09 run without any database.
+- `README.md`: added prominent note that no database or WRDS credentials are
+  needed; clarified that `poetry install` is required before first run;
+  moved PostgreSQL/WRDS into an optional "reproduce from raw data" block.
+
+---
+
 ## [0.5.1] — 2026-05-01
 
 ### Fixed
