@@ -3536,7 +3536,7 @@ function renderGlobalActionDock(pageId) {
   const isNightlyMode = runnerMode === "Nightly refresh";
   const isBatchMode = runnerMode === "Batch compare";
   const runAction = isNightlyMode ? "schedule-nightly" : isBatchMode ? "queue-batch" : "run-baseline";
-  const runLabel = isNightlyMode ? "Schedule" : isBatchMode ? "Queue" : "Run";
+  const runLabel = isNightlyMode ? "Schedule" : isBatchMode ? "Compare" : "Run";
   const previewAction = pageId === "universe_selector"
     ? "preview-universe"
     : pageId === "regime_control"
@@ -3549,15 +3549,17 @@ function renderGlobalActionDock(pageId) {
             ? "preview-trades"
         : "preview-current-work";
   const saveLabel = hasUnsavedChanges ? "Save Required" : "Save";
+  const canExecuteFromPage = [...setupPages, "backtest_runner", "overview"].includes(pageId);
   const commonActions = [
-    { label: saveLabel, action: "save-scenario", disabled: ![...setupPages, "backtest_runner", "overview"].includes(pageId) },
+    { label: saveLabel, action: "save-scenario", disabled: !canExecuteFromPage },
     { label: "Preview", action: previewAction, disabled: false },
-    { label: runLabel, action: runAction, disabled: ![...setupPages, "backtest_runner", "overview"].includes(pageId), locked: hasUnsavedChanges },
-    { label: "Compare", action: "queue-batch", disabled: pageId !== "backtest_runner", locked: hasUnsavedChanges },
-    { label: "Generate", action: "generate-ai-report-analysis", disabled: pageId !== "report_studio", locked: hasUnsavedChanges },
+    { label: runLabel, action: runAction, disabled: !canExecuteFromPage, locked: hasUnsavedChanges },
   ];
+  if (pageId === "report_studio") {
+    commonActions.push({ label: "Generate", action: "generate-ai-report-analysis", disabled: false, locked: hasUnsavedChanges });
+  }
   const statusNote = hasUnsavedChanges
-    ? `<div class="global-action-dock-note">Save is required before run, compare, or generate.</div>`
+    ? `<div class="global-action-dock-note">Save is required before execution.</div>`
     : `<div class="global-action-dock-note is-ready">All setup changes are saved.</div>`;
   return `<section class="global-action-dock">${statusNote}${commonActions.map((config, index) => `<button type="button" class="${index === 0 ? "workspace-action primary" : "workspace-action"}${config.locked ? " needs-save" : ""}" data-action="${config.action}"${config.disabled ? " disabled aria-disabled=\"true\"" : ""}>${config.label}</button>`).join("")}</section>`;
 }
