@@ -1,0 +1,481 @@
+{
+  "package": "formal_slim_6905_20260420",
+  "generated_at": "2026-04-29T18:10:17.451820+00:00",
+  "baseline_run_id": "6905e84b-9e16-4106-8c0f-cd9ecce56728",
+  "baseline_portfolio_name": "cw2_formal_20260420_fund_ra3_s30_t50",
+  "cutoff_date": "2026-04-20",
+  "tables": [
+    {
+      "table": "factor_observations",
+      "filter": "observation_date <= cutoff and publish_date <= cutoff",
+      "rows": 17641612,
+      "file": "handoff_exports/formal_slim_6905_20260420/db_csv/systematic_equity/factor_observations.csv.gz",
+      "file_bytes": 179580481,
+      "source": "pit_inputs_20260420"
+    },
+    {
+      "table": "financial_observations",
+      "filter": "publish_date <= cutoff",
+      "rows": 112715,
+      "file": "handoff_exports/formal_slim_6905_20260420/db_csv/systematic_equity/financial_observations.csv.gz",
+      "file_bytes": 1316032,
+      "source": "pit_inputs_20260420"
+    },
+    {
+      "table": "benchmark_prices",
+      "filter": "price_date <= cutoff",
+      "rows": 2777,
+      "file": "handoff_exports/formal_slim_6905_20260420/db_csv/systematic_equity/benchmark_prices.csv.gz",
+      "file_bytes": 45908,
+      "source": "pit_inputs_20260420"
+    },
+    {
+      "table": "company_static",
+      "filter": "full static universe reference",
+      "rows": 678,
+      "file": "handoff_exports/formal_slim_6905_20260420/db_csv/systematic_equity/company_static.csv.gz",
+      "file_bytes": 10989,
+      "source": "pit_inputs_20260420"
+    },
+    {
+      "table": "feature_sub_scores",
+      "filter": "as_of_date <= cutoff",
+      "rows": 256345,
+      "file": "handoff_exports/formal_slim_6905_20260420/db_csv/systematic_equity/feature_sub_scores.csv.gz",
+      "file_bytes": 6208159,
+      "source": "pit_inputs_20260420"
+    },
+    {
+      "table": "feature_factor_scores",
+      "filter": "as_of_date <= cutoff",
+      "rows": 20853,
+      "file": "handoff_exports/formal_slim_6905_20260420/db_csv/systematic_equity/feature_factor_scores.csv.gz",
+      "file_bytes": 740611,
+      "source": "pit_inputs_20260420"
+    },
+    {
+      "table": "feature_universe_screen",
+      "filter": "as_of_date <= cutoff",
+      "rows": 29692,
+      "file": "handoff_exports/formal_slim_6905_20260420/db_csv/systematic_equity/feature_universe_screen.csv.gz",
+      "file_bytes": 648388,
+      "source": "pit_inputs_20260420"
+    },
+    {
+      "table": "feature_risk_overlay",
+      "filter": "as_of_date <= cutoff",
+      "rows": 20853,
+      "file": "handoff_exports/formal_slim_6905_20260420/db_csv/systematic_equity/feature_risk_overlay.csv.gz",
+      "file_bytes": 556056,
+      "source": "pit_inputs_20260420"
+    },
+    {
+      "table": "dataset_registry",
+      "filter": "full registry",
+      "rows": 40,
+      "file": "handoff_exports/formal_slim_6905_20260420/db_csv/systematic_equity/dataset_registry.csv.gz",
+      "file_bytes": 2536,
+      "started_at": "2026-04-29T18:10:17.669095+00:00",
+      "ended_at": "2026-04-29T18:10:17.674711+00:00",
+      "source": "database_export"
+    },
+    {
+      "table": "source_coverage_audit",
+      "filter": "full source coverage audit; no formal-run rows exist",
+      "rows": 29450,
+      "file": "handoff_exports/formal_slim_6905_20260420/db_csv/systematic_equity/source_coverage_audit.csv.gz",
+      "file_bytes": 321212,
+      "started_at": "2026-04-29T18:10:17.674795+00:00",
+      "ended_at": "2026-04-29T18:10:17.834982+00:00",
+      "source": "database_export"
+    },
+    {
+      "table": "quality_snapshots",
+      "filter": "baseline run_id",
+      "rows": 2,
+      "file": "handoff_exports/formal_slim_6905_20260420/db_csv/systematic_equity/quality_snapshots.csv.gz",
+      "file_bytes": 619,
+      "started_at": "2026-04-29T18:10:17.835081+00:00",
+      "ended_at": "2026-04-29T18:10:17.842972+00:00",
+      "source": "database_export"
+    },
+    {
+      "table": "feature_snapshot_registry",
+      "filter": "as_of_date <= cutoff",
+      "rows": 76,
+      "file": "handoff_exports/formal_slim_6905_20260420/db_csv/systematic_equity/feature_snapshot_registry.csv.gz",
+      "file_bytes": 8921,
+      "started_at": "2026-04-29T18:10:17.843050+00:00",
+      "ended_at": "2026-04-29T18:10:17.849950+00:00",
+      "source": "database_export"
+    },
+    {
+      "table": "model_input_manifests",
+      "filter": "as_of_date <= cutoff",
+      "rows": 228,
+      "file": "handoff_exports/formal_slim_6905_20260420/db_csv/systematic_equity/model_input_manifests.csv.gz",
+      "file_bytes": 108553,
+      "started_at": "2026-04-29T18:10:17.850025+00:00",
+      "ended_at": "2026-04-29T18:10:17.890888+00:00",
+      "source": "database_export"
+    },
+    {
+      "table": "portfolio_target_positions",
+      "filter": "baseline portfolio_name",
+      "rows": 730,
+      "file": "handoff_exports/formal_slim_6905_20260420/db_csv/systematic_equity/portfolio_target_positions.csv.gz",
+      "file_bytes": 20712,
+      "started_at": "2026-04-29T18:10:17.890975+00:00",
+      "ended_at": "2026-04-29T18:10:17.923786+00:00",
+      "source": "database_export"
+    },
+    {
+      "table": "portfolio_snapshot_registry",
+      "filter": "baseline portfolio_name; currently empty",
+      "rows": 20,
+      "file": "handoff_exports/formal_slim_6905_20260420/db_csv/systematic_equity/portfolio_snapshot_registry.csv.gz",
+      "file_bytes": 3573,
+      "started_at": "2026-04-29T18:10:17.923869+00:00",
+      "ended_at": "2026-04-29T18:10:17.926330+00:00",
+      "source": "database_export"
+    },
+    {
+      "table": "portfolio_construction_diagnostics",
+      "filter": "baseline portfolio_name",
+      "rows": 4127,
+      "file": "handoff_exports/formal_slim_6905_20260420/db_csv/systematic_equity/portfolio_construction_diagnostics.csv.gz",
+      "file_bytes": 165187,
+      "started_at": "2026-04-29T18:10:17.926378+00:00",
+      "ended_at": "2026-04-29T18:10:17.986977+00:00",
+      "source": "database_export"
+    },
+    {
+      "table": "backtest_runs",
+      "filter": "baseline run_id",
+      "rows": 1,
+      "file": "handoff_exports/formal_slim_6905_20260420/db_csv/systematic_equity/backtest_runs.csv.gz",
+      "file_bytes": 3453,
+      "started_at": "2026-04-29T18:10:17.987075+00:00",
+      "ended_at": "2026-04-29T18:10:17.989508+00:00",
+      "source": "database_export"
+    },
+    {
+      "table": "backtest_performance",
+      "filter": "baseline run_id",
+      "rows": 59,
+      "file": "handoff_exports/formal_slim_6905_20260420/db_csv/systematic_equity/backtest_performance.csv.gz",
+      "file_bytes": 3827,
+      "started_at": "2026-04-29T18:10:17.989565+00:00",
+      "ended_at": "2026-04-29T18:10:17.992006+00:00",
+      "source": "database_export"
+    },
+    {
+      "table": "backtest_metrics",
+      "filter": "baseline run_id",
+      "rows": 30,
+      "file": "handoff_exports/formal_slim_6905_20260420/db_csv/systematic_equity/backtest_metrics.csv.gz",
+      "file_bytes": 650,
+      "started_at": "2026-04-29T18:10:17.992158+00:00",
+      "ended_at": "2026-04-29T18:10:17.993711+00:00",
+      "source": "database_export"
+    },
+    {
+      "table": "backtest_holdings",
+      "filter": "baseline run_id",
+      "rows": 2211,
+      "file": "handoff_exports/formal_slim_6905_20260420/db_csv/systematic_equity/backtest_holdings.csv.gz",
+      "file_bytes": 43950,
+      "started_at": "2026-04-29T18:10:17.993758+00:00",
+      "ended_at": "2026-04-29T18:10:18.017043+00:00",
+      "source": "database_export"
+    },
+    {
+      "table": "backtest_cash_ledger",
+      "filter": "baseline run_id",
+      "rows": 59,
+      "file": "handoff_exports/formal_slim_6905_20260420/db_csv/systematic_equity/backtest_cash_ledger.csv.gz",
+      "file_bytes": 1588,
+      "started_at": "2026-04-29T18:10:18.017125+00:00",
+      "ended_at": "2026-04-29T18:10:18.020754+00:00",
+      "source": "database_export"
+    },
+    {
+      "table": "backtest_trade_blotter",
+      "filter": "baseline run_id",
+      "rows": 855,
+      "file": "handoff_exports/formal_slim_6905_20260420/db_csv/systematic_equity/backtest_trade_blotter.csv.gz",
+      "file_bytes": 33272,
+      "started_at": "2026-04-29T18:10:18.020811+00:00",
+      "ended_at": "2026-04-29T18:10:18.039018+00:00",
+      "source": "database_export"
+    },
+    {
+      "table": "backtest_execution_ledger",
+      "filter": "baseline run_id",
+      "rows": 855,
+      "file": "handoff_exports/formal_slim_6905_20260420/db_csv/systematic_equity/backtest_execution_ledger.csv.gz",
+      "file_bytes": 55014,
+      "started_at": "2026-04-29T18:10:18.039092+00:00",
+      "ended_at": "2026-04-29T18:10:18.065267+00:00",
+      "source": "database_export"
+    },
+    {
+      "table": "backtest_benchmark_nav",
+      "filter": "baseline run_id",
+      "rows": 177,
+      "file": "handoff_exports/formal_slim_6905_20260420/db_csv/systematic_equity/backtest_benchmark_nav.csv.gz",
+      "file_bytes": 5420,
+      "started_at": "2026-04-29T18:10:18.065363+00:00",
+      "ended_at": "2026-04-29T18:10:18.070069+00:00",
+      "source": "database_export"
+    },
+    {
+      "table": "backtest_benchmark_metrics",
+      "filter": "baseline run_id",
+      "rows": 34,
+      "file": "handoff_exports/formal_slim_6905_20260420/db_csv/systematic_equity/backtest_benchmark_metrics.csv.gz",
+      "file_bytes": 671,
+      "started_at": "2026-04-29T18:10:18.070158+00:00",
+      "ended_at": "2026-04-29T18:10:18.071752+00:00",
+      "source": "database_export"
+    },
+    {
+      "table": "backtest_relative_metrics",
+      "filter": "baseline run_id",
+      "rows": 20,
+      "file": "handoff_exports/formal_slim_6905_20260420/db_csv/systematic_equity/backtest_relative_metrics.csv.gz",
+      "file_bytes": 475,
+      "started_at": "2026-04-29T18:10:18.071791+00:00",
+      "ended_at": "2026-04-29T18:10:18.073062+00:00",
+      "source": "database_export"
+    },
+    {
+      "table": "backtest_factor_attribution",
+      "filter": "baseline run_id",
+      "rows": 285,
+      "file": "handoff_exports/formal_slim_6905_20260420/db_csv/systematic_equity/backtest_factor_attribution.csv.gz",
+      "file_bytes": 10164,
+      "started_at": "2026-04-29T18:10:18.073095+00:00",
+      "ended_at": "2026-04-29T18:10:18.077330+00:00",
+      "source": "database_export"
+    },
+    {
+      "table": "backtest_covariance_metrics",
+      "filter": "baseline run_id",
+      "rows": 1113,
+      "file": "handoff_exports/formal_slim_6905_20260420/db_csv/systematic_equity/backtest_covariance_metrics.csv.gz",
+      "file_bytes": 13383,
+      "started_at": "2026-04-29T18:10:18.077399+00:00",
+      "ended_at": "2026-04-29T18:10:18.082535+00:00",
+      "source": "database_export"
+    },
+    {
+      "table": "backtest_covariance_contributions",
+      "filter": "baseline run_id",
+      "rows": 18639,
+      "file": "handoff_exports/formal_slim_6905_20260420/db_csv/systematic_equity/backtest_covariance_contributions.csv.gz",
+      "file_bytes": 377594,
+      "started_at": "2026-04-29T18:10:18.082595+00:00",
+      "ended_at": "2026-04-29T18:10:18.151215+00:00",
+      "source": "database_export"
+    },
+    {
+      "table": "backtest_regime_attribution",
+      "filter": "baseline run_id",
+      "rows": 6,
+      "file": "handoff_exports/formal_slim_6905_20260420/db_csv/systematic_equity/backtest_regime_attribution.csv.gz",
+      "file_bytes": 534,
+      "started_at": "2026-04-29T18:10:18.151297+00:00",
+      "ended_at": "2026-04-29T18:10:18.153154+00:00",
+      "source": "database_export"
+    },
+    {
+      "table": "backtest_scorecard",
+      "filter": "baseline run_id",
+      "rows": 5,
+      "file": "handoff_exports/formal_slim_6905_20260420/db_csv/systematic_equity/backtest_scorecard.csv.gz",
+      "file_bytes": 544,
+      "started_at": "2026-04-29T18:10:18.153205+00:00",
+      "ended_at": "2026-04-29T18:10:18.154540+00:00",
+      "source": "database_export"
+    },
+    {
+      "table": "backtest_reports",
+      "filter": "baseline run_id",
+      "rows": 1,
+      "file": "handoff_exports/formal_slim_6905_20260420/db_csv/systematic_equity/backtest_reports.csv.gz",
+      "file_bytes": 3285,
+      "started_at": "2026-04-29T18:10:18.154585+00:00",
+      "ended_at": "2026-04-29T18:10:18.156070+00:00",
+      "source": "database_export"
+    },
+    {
+      "table": "backtest_report_artifacts",
+      "filter": "baseline run_id",
+      "rows": 8,
+      "file": "handoff_exports/formal_slim_6905_20260420/db_csv/systematic_equity/backtest_report_artifacts.csv.gz",
+      "file_bytes": 668,
+      "started_at": "2026-04-29T18:10:18.156102+00:00",
+      "ended_at": "2026-04-29T18:10:18.157300+00:00",
+      "source": "database_export"
+    }
+  ],
+  "artifacts": [
+    {
+      "role": "formal_config",
+      "source": "team_Pearson/coursework_two/config/experiments/formal/cw2_formal_20260420_fund_ra3_s30_t50.yaml",
+      "file": "handoff_exports/formal_slim_6905_20260420/key_artifacts/formal_config/cw2_formal_20260420_fund_ra3_s30_t50.yaml",
+      "file_bytes": 9757
+    },
+    {
+      "role": "formal_report",
+      "source": "team_Pearson/coursework_two/outputs/reports/cw2_formal_fund_ra3_s30_t50_20260420_report/report.md",
+      "file": "handoff_exports/formal_slim_6905_20260420/key_artifacts/formal_report/report.md",
+      "file_bytes": 11869
+    },
+    {
+      "role": "formal_report",
+      "source": "team_Pearson/coursework_two/outputs/reports/cw2_formal_fund_ra3_s30_t50_20260420_report/report_summary.json",
+      "file": "handoff_exports/formal_slim_6905_20260420/key_artifacts/formal_report/report_summary.json",
+      "file_bytes": 12456
+    },
+    {
+      "role": "formal_report",
+      "source": "team_Pearson/coursework_two/outputs/reports/cw2_formal_fund_ra3_s30_t50_20260420_report/nav_vs_benchmarks.png",
+      "file": "handoff_exports/formal_slim_6905_20260420/key_artifacts/formal_report/nav_vs_benchmarks.png",
+      "file_bytes": 175191
+    },
+    {
+      "role": "formal_report",
+      "source": "team_Pearson/coursework_two/outputs/reports/cw2_formal_fund_ra3_s30_t50_20260420_report/drawdown_comparison.png",
+      "file": "handoff_exports/formal_slim_6905_20260420/key_artifacts/formal_report/drawdown_comparison.png",
+      "file_bytes": 143646
+    },
+    {
+      "role": "formal_report",
+      "source": "team_Pearson/coursework_two/outputs/reports/cw2_formal_fund_ra3_s30_t50_20260420_report/turnover_and_cost.png",
+      "file": "handoff_exports/formal_slim_6905_20260420/key_artifacts/formal_report/turnover_and_cost.png",
+      "file_bytes": 154533
+    },
+    {
+      "role": "formal_report",
+      "source": "team_Pearson/coursework_two/outputs/reports/cw2_formal_fund_ra3_s30_t50_20260420_report/regime_return_summary.png",
+      "file": "handoff_exports/formal_slim_6905_20260420/key_artifacts/formal_report/regime_return_summary.png",
+      "file_bytes": 37330
+    },
+    {
+      "role": "formal_report",
+      "source": "team_Pearson/coursework_two/outputs/reports/cw2_formal_fund_ra3_s30_t50_20260420_report/latest_sector_risk_contribution.png",
+      "file": "handoff_exports/formal_slim_6905_20260420/key_artifacts/formal_report/latest_sector_risk_contribution.png",
+      "file_bytes": 50659
+    },
+    {
+      "role": "formal_report",
+      "source": "team_Pearson/coursework_two/outputs/reports/cw2_formal_fund_ra3_s30_t50_20260420_report/trade_blotter.csv",
+      "file": "handoff_exports/formal_slim_6905_20260420/key_artifacts/formal_report/trade_blotter.csv",
+      "file_bytes": 288550
+    },
+    {
+      "role": "formal_sweep",
+      "source": "team_Pearson/coursework_two/outputs/formal_sweeps/20260429T031646Z/ranking.csv",
+      "file": "handoff_exports/formal_slim_6905_20260420/key_artifacts/formal_sweep/ranking.csv",
+      "file_bytes": 894
+    },
+    {
+      "role": "formal_sweep",
+      "source": "team_Pearson/coursework_two/outputs/formal_sweeps/20260429T031646Z/ranking.json",
+      "file": "handoff_exports/formal_slim_6905_20260420/key_artifacts/formal_sweep/ranking.json",
+      "file_bytes": 1148
+    },
+    {
+      "role": "formal_sweep",
+      "source": "team_Pearson/coursework_two/outputs/formal_sweeps/20260429T031646Z/manifest.json",
+      "file": "handoff_exports/formal_slim_6905_20260420/key_artifacts/formal_sweep/manifest.json",
+      "file_bytes": 8601
+    }
+  ],
+  "notes": [
+    "Full PIT input tables are cutoff-filtered to 2026-04-20.",
+    "Formal baseline outputs are filtered to the baseline run_id.",
+    "Portfolio target and construction tables are filtered to the baseline portfolio_name."
+  ],
+  "proof_stats": {
+    "factor_observations": {
+      "n": 17641612,
+      "min_date": "2015-04-06",
+      "max_date": "2026-04-20",
+      "min_publish": "2015-04-06",
+      "max_publish": "2026-04-20"
+    },
+    "financial_observations": {
+      "n": 112715,
+      "min_date": "2021-01-23",
+      "max_date": "2026-03-31",
+      "min_publish": "2021-02-16",
+      "max_publish": "2026-04-20"
+    },
+    "benchmark_prices": {
+      "n": 2777,
+      "min_date": "2015-04-06",
+      "max_date": "2026-04-20",
+      "min_publish": null,
+      "max_publish": null
+    },
+    "backtest_performance": {
+      "n": 59,
+      "min_date": "2021-06-01",
+      "max_date": "2026-04-01",
+      "min_publish": null,
+      "max_publish": null
+    },
+    "portfolio_target_positions": {
+      "n": 20,
+      "min_date": "2021-06-30",
+      "max_date": "2026-03-31",
+      "min_publish": null,
+      "max_publish": null
+    },
+    "portfolio_snapshot_registry": {
+      "n": 20,
+      "min_date": "2021-06-30",
+      "max_date": "2026-03-31",
+      "min_publish": null,
+      "max_publish": null
+    },
+    "backtest_factor_attribution": {
+      "n": 285,
+      "min_date": "2021-06-30",
+      "max_date": "2026-02-27",
+      "min_publish": null,
+      "max_publish": null
+    },
+    "backtest_covariance_metrics": {
+      "n": 1113,
+      "min_date": "2021-10-29",
+      "max_date": "2026-02-27",
+      "min_publish": null,
+      "max_publish": null
+    },
+    "backtest_covariance_contributions": {
+      "n": 18639,
+      "min_date": "2021-10-29",
+      "max_date": "2026-02-27",
+      "min_publish": null,
+      "max_publish": null
+    },
+    "backtest_regime_attribution": {
+      "n": 6,
+      "min_date": null,
+      "max_date": null,
+      "min_publish": null,
+      "max_publish": null
+    },
+    "backtest_scorecard": {
+      "n": 5,
+      "min_date": null,
+      "max_date": null,
+      "min_publish": null,
+      "max_publish": null
+    }
+  }
+}

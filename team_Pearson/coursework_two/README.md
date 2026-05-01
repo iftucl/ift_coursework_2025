@@ -20,6 +20,8 @@ team_Pearson/coursework_two/
 |   |-- experiments/formal/       # Pinned formal reference configurations
 |   |-- experiments/mini_sweep/   # Parameter-search candidates
 |   `-- ablation/                 # Ablation and constrained-search variants
+|-- inputs/                       # Minimal formal raw seed used by the web dashboard
+|   `-- formal_slim_6905_20260420_extracted/
 |-- modules/                      # Production Python packages
 |   |-- feature/                  # Factor engine, preprocessing, composite alpha
 |   |-- risk/                     # Risk overlay and covariance model
@@ -226,7 +228,38 @@ docker compose \
   miniocw minio_client_cw team_pearson_redis kafka_cw airflow_cw cw2_kafka_audit_consumer
 ```
 
-### 4.3 Recurring setup
+### 4.3 Minimal formal raw seed for the web dashboard
+
+The GitHub submission includes a **minimal formal raw seed** at:
+
+```text
+team_Pearson/coursework_two/inputs/formal_slim_6905_20260420_extracted/
+```
+
+This seed is deliberately small. It contains the formal baseline run metadata
+and the web-facing PostgreSQL CSV extracts needed by the dashboard:
+
+- `backtest_performance`, `backtest_benchmark_nav`, and benchmark metrics
+- `feature_factor_scores`, `feature_risk_overlay`, and universe/snapshot registries
+- `backtest_holdings`, `backtest_trade_blotter`, and `backtest_execution_ledger`
+- `backtest_factor_attribution`, covariance metrics, and covariance contributions
+- portfolio targets, construction diagnostics, source coverage, and static company sectors
+
+It intentionally excludes the large research warehouse tables such as
+`factor_observations.csv.gz`, `feature_sub_scores.csv.gz`, and
+`financial_observations.csv.gz`. The API lookup order is:
+
+1. live local PostgreSQL / Docker Postgres, when available;
+2. this minimal formal raw seed under `inputs/`;
+3. checked-in robustness/report evidence for report-facing summaries.
+
+This means a fresh clone can render the formal web dashboard from the included
+seed, while a fully loaded local database still takes precedence when present.
+The seed is tied to formal run id
+`6905e84b-9e16-4106-8c0f-cd9ecce56728`, portfolio
+`cw2_formal_20260420_fund_ra3_s30_t50`, and data cutoff `2026-04-20`.
+
+### 4.4 Recurring setup
 
 If the machine is already prepared, the minimum recurring setup is:
 
@@ -336,6 +369,19 @@ The command prints the web URL and writes a machine-readable summary to
 `outputs/web_state/full_workflow/latest.json`. It is the full workflow path; it
 does not replace the formal baseline run `6905e84b-9e16-4106-8c0f-cd9ecce56728`
 or the formal robustness evidence pack.
+
+When the formal data and artifacts are already present, use the reuse mode to
+test the full orchestration from infrastructure through robustness/web without
+pulling data or rerunning the expensive full strategy chain:
+
+```bash
+../.venv/Scripts/python.exe scripts/full_workflow.py --start-services --reuse-existing-formal
+```
+
+`--reuse-existing-formal` verifies the pinned 6905 formal config, repro
+contract, report package, robustness evidence, and web state before skipping the
+full-chain stage. Robustness bridge and web endpoint checks still run unless
+they are explicitly skipped.
 
 ### 6.2 Feature pipeline only
 
