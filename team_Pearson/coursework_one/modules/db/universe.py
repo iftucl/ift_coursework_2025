@@ -3,7 +3,8 @@ from __future__ import annotations
 """Company universe access layer for PostgreSQL."""
 
 import os
-from typing import List, Optional
+from datetime import date
+from typing import Any, List, Optional
 
 from sqlalchemy import text
 
@@ -72,6 +73,62 @@ def _dedupe_symbols(symbols: List[str]) -> List[str]:
     return out
 
 
+def _coerce_as_of_date(value: Optional[object]) -> Optional[date]:
+    if value in {None, "", "auto", "latest", "none", "null"}:
+        return None
+    if isinstance(value, date):
+        return value
+    return date.fromisoformat(str(value))
+
+
+def _load_available_columns(conn: Any, table_name: str) -> set[str]:
+    try:
+        rows = conn.execute(
+            text("""
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_schema = 'systematic_equity'
+                  AND table_name = :table_name
+                """),
+            {"table_name": table_name},
+        ).fetchall()
+    except Exception:
+        return set()
+    return {str(row[0]).strip().lower() for row in rows}
+
+
+def _build_where_clause(
+    *,
+    countries: List[str],
+    as_of_date: Optional[date],
+    available_columns: set[str],
+) -> tuple[str, dict[str, Any]]:
+    params: dict[str, Any] = {}
+    clauses: List[str] = []
+    if countries:
+        placeholders = []
+        for i, country in enumerate(countries):
+            key = f"country_{i}"
+            placeholders.append(f":{key}")
+            params[key] = country
+        clauses.append(f"country IN ({', '.join(placeholders)})")
+
+    if as_of_date is not None:
+        params["as_of_date"] = as_of_date
+        listing_cols = ("listing_date", "ipo_date", "start_date", "effective_date")
+        delist_cols = ("delisted_date", "inactive_date", "end_date")
+        listing_col = next((col for col in listing_cols if col in available_columns), None)
+        delist_col = next((col for col in delist_cols if col in available_columns), None)
+        if listing_col is not None:
+            clauses.append(f"({listing_col} IS NULL OR {listing_col} <= :as_of_date)")
+        if delist_col is not None:
+            clauses.append(f"({delist_col} IS NULL OR {delist_col} > :as_of_date)")
+
+    if not clauses:
+        return "", params
+    return f"WHERE {' AND '.join(clauses)}", params
+
+
 def _apply_universe_overrides(
     base_symbols: List[str],
     override_rows: List[tuple[str, str, bool]],
@@ -109,7 +166,10 @@ def _apply_universe_overrides(
 
 
 def get_company_universe(
-    company_limit: Optional[int], country_allowlist: Optional[object] = None
+    company_limit: Optional[int],
+    country_allowlist: Optional[object] = None,
+    *,
+    as_of_date: Optional[object] = None,
 ) -> list[str]:
     """Return company symbols from ``systematic_equity.company_static``.
 
@@ -134,6 +194,7 @@ def get_company_universe(
         parsed_limit = int(company_limit)
         limit = None if parsed_limit <= 0 else parsed_limit
     countries = _normalize_country_allowlist(country_allowlist)
+    effective_as_of_date = _coerce_as_of_date(as_of_date)
 
     if os.getenv("CW1_TEST_MODE") == "1":
         return _test_mode_symbols(limit)
@@ -142,15 +203,12 @@ def get_company_universe(
     with engine.connect() as conn:
         errors = []
         for table_name in ("company_static", "equity_static"):
-            params = {}
-            where_clause = ""
-            if countries:
-                placeholders = []
-                for i, country in enumerate(countries):
-                    key = f"country_{i}"
-                    placeholders.append(f":{key}")
-                    params[key] = country
-                where_clause = f"WHERE country IN ({', '.join(placeholders)})"
+            available_columns = _load_available_columns(conn, table_name)
+            where_clause, params = _build_where_clause(
+                countries=countries,
+                as_of_date=effective_as_of_date,
+                available_columns=available_columns,
+            )
 
             sql = text(UNIVERSE_SELECT_SQL[table_name].format(where_clause=where_clause))
             try:
@@ -158,14 +216,10 @@ def get_company_universe(
                 base_symbols = _dedupe_symbols([str(r[0]).strip().upper() for r in rows])
 
                 try:
-                    override_rows = conn.execute(
-                        text(
-                            """
+                    override_rows = conn.execute(text("""
                             SELECT symbol, action, is_active
                             FROM systematic_equity.company_universe_overrides
-                            """
-                        )
-                    ).fetchall()
+                            """)).fetchall()
                     merged = _apply_universe_overrides(base_symbols, list(override_rows))
                 except Exception:
                     merged = base_symbols

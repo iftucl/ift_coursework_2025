@@ -164,3 +164,57 @@ def test_write_pipeline_run_finish_accepts_none_error_fields(monkeypatch):
     assert params["error_message"] is None
     assert params["error_traceback"] is None
     assert params["notes"] is None
+
+
+def test_write_pipeline_stage_event_appends_row(monkeypatch):
+    monkeypatch.delenv("CW1_TEST_MODE", raising=False)
+    conn = _FakeConn([1])
+    monkeypatch.setattr(audit_mod, "get_db_engine", lambda: _FakeEngine(conn))
+
+    audit_mod.write_pipeline_stage_event(
+        run_id="r-stage",
+        stage_name="atomic_persist",
+        status="ok",
+        rows_in=10,
+        rows_out=8,
+        elapsed_ms=123,
+        details={"source": "source_a"},
+    )
+
+    assert len(conn.calls) == 1
+    stmt, params = conn.calls[0]
+    assert "INSERT INTO systematic_equity.pipeline_stage_events" in stmt.text
+    assert params["run_id"] == "r-stage"
+    assert params["stage_name"] == "atomic_persist"
+    assert params["status"] == "ok"
+    assert params["rows_in"] == 10
+    assert params["rows_out"] == 8
+    assert params["elapsed_ms"] == 123
+    assert '"source": "source_a"' in params["details_json"]
+
+
+def test_write_dataset_refresh_event_appends_row(monkeypatch):
+    monkeypatch.delenv("CW1_TEST_MODE", raising=False)
+    conn = _FakeConn([1])
+    monkeypatch.setattr(audit_mod, "get_db_engine", lambda: _FakeEngine(conn))
+
+    audit_mod.write_dataset_refresh_event(
+        run_id="r-refresh",
+        run_date="2026-04-13",
+        dataset_name="factor_observations",
+        stage_name="transform_final",
+        status="ok",
+        rows_written=42,
+        details={"frequency": "daily"},
+    )
+
+    assert len(conn.calls) == 1
+    stmt, params = conn.calls[0]
+    assert "INSERT INTO systematic_equity.dataset_refresh_events" in stmt.text
+    assert params["run_id"] == "r-refresh"
+    assert params["run_date"] == "2026-04-13"
+    assert params["dataset_name"] == "factor_observations"
+    assert params["stage_name"] == "transform_final"
+    assert params["status"] == "ok"
+    assert params["rows_written"] == 42
+    assert '"frequency": "daily"' in params["details_json"]

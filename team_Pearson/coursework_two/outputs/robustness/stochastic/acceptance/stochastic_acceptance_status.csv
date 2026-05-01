@@ -1,0 +1,10 @@
+﻿category,item_key,label,status,detail
+stochastic_acceptance,test_9::stationary_block_bootstrap,Stationary Block Bootstrap,completed,Directly mapped from existing stationary block bootstrap path metrics.
+stochastic_acceptance,test_10::cost_multiplier_sigma_30pct,Monte Carlo Cost Perturbation (sigma 30%),completed,"Matches the requirement-sheet Monte Carlo cost perturbation with realized cost multiplier epsilon ~ N(0, 0.3^2)."
+stochastic_acceptance,test_10::cost_multiplier_sigma_50pct,Monte Carlo Cost Perturbation (sigma 50%),completed,Stress version of Test 10 using wider cost multiplier dispersion.
+stochastic_acceptance,test_10::flat_extra_25bps,Flat +25bps Execution Drag,completed,Requirement-sheet style cost robustness using turnover-linked 25bps incremental drag.
+stochastic_acceptance,test_11::factor_weight_loose,Factor-weight Dirichlet Neighbourhood (loose),completed,"Requirement-style reruns built from full snapshot refresh, backtest, analysis, and report generation for sampled regime.normal factor weights."
+stochastic_acceptance,test_11::factor_weight_medium,Factor-weight Dirichlet Neighbourhood (medium),completed,"Requirement-style reruns built from full snapshot refresh, backtest, analysis, and report generation for sampled regime.normal factor weights."
+stochastic_acceptance,test_11::factor_weight_tight,Factor-weight Dirichlet Neighbourhood (tight),completed,"Requirement-style reruns built from full snapshot refresh, backtest, analysis, and report generation for sampled regime.normal factor weights."
+stochastic_acceptance,test_12::rolling_24p_is_1p_oos,Rolling Out-of-Sample (24P IS / 1P OOS),completed,Built directly from monthly return records of the quarterly-rebalanced strategy using rolling 24-period estimation windows and chained 1-period OOS evaluation.
+stochastic_acceptance,test_13::empirical_mean_covariance,Monte Carlo Path Simulation from Empirical Mean/Covariance,completed,Uses multivariate normal simulation fitted to realized monthly strategy and benchmark returns from the quarterly-rebalanced run.

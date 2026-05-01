@@ -1,0 +1,88 @@
+{
+  "generatedAt": "2026-04-30T23:59:56.082Z",
+  "checks": [
+    {
+      "pageId": "scenario_builder",
+      "label": "Save preset prompt",
+      "selector": "[data-action=\"save-preset\"]",
+      "result": {
+        "ok": true
+      },
+      "dialog": [
+        {
+          "type": "prompt",
+          "message": "Save preset as:"
+        }
+      ]
+    },
+    {
+      "pageId": "scenario_builder",
+      "label": "Rename preset prompt",
+      "selector": "[data-action=\"rename-preset\"]",
+      "result": {
+        "ok": true
+      },
+      "dialog": [
+        {
+          "type": "prompt",
+          "message": "Rename preset:"
+        }
+      ]
+    },
+    {
+      "pageId": "scenario_builder",
+      "label": "Delete preset confirm",
+      "selector": "[data-action=\"delete-preset\"]",
+      "result": {
+        "ok": true
+      },
+      "dialog": [
+        {
+          "type": "confirm",
+          "message": "Delete preset \"Base\"?"
+        }
+      ]
+    },
+    {
+      "pageId": "run_history",
+      "label": "Clear all confirm",
+      "selector": "[data-action=\"clear-all-history\"]",
+      "result": {
+        "ok": true
+      },
+      "dialog": [
+        {
+          "type": "confirm",
+          "message": "Delete all completed, failed, canceled, and interrupted run records?"
+        }
+      ]
+    },
+    {
+      "pageId": "run_history",
+      "label": "Delete run confirm",
+      "selector": "[data-delete-run-id]",
+      "result": {
+        "ok": true
+      },
+      "dialog": [
+        {
+          "type": "confirm",
+          "message": "Delete run record \"BT-2026-0406-01\"?"
+        }
+      ]
+    },
+    {
+      "pageId": "run_history",
+      "label": "Cancel run confirm",
+      "selector": "[data-cancel-run-id]",
+      "result": {
+        "ok": false,
+        "reason": "not found"
+      },
+      "dialog": []
+    }
+  ],
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ]
+}

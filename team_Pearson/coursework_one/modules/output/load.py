@@ -2,12 +2,12 @@ from __future__ import annotations
 
 """Database load helpers for curated factor observations."""
 
-from collections import Counter
-from decimal import Decimal, InvalidOperation, ROUND_HALF_EVEN
 import logging
 import math
 import os
+from collections import Counter
 from datetime import datetime
+from decimal import ROUND_HALF_EVEN, Decimal, InvalidOperation
 from typing import Any, Dict, List, Optional
 
 from modules.db import FactorObservation, FinancialObservation, get_db_engine
@@ -67,6 +67,7 @@ _FINANCIAL_CONSTRAINT_UNIQ = _find_unique_constraint_name(
     expected_cols={"symbol", "report_date", "metric_name"},
     fallback="uniq_financial_observation",
 )
+_EDGAR_PIT_SOURCES = ("edgar_xbrl", "edgar_xbrl_derived")
 
 
 def _coerce_finite_float_or_none(value: Any) -> float | None:
@@ -106,6 +107,11 @@ def _numeric_precision_scale(table: Any, column_name: str) -> tuple[int | None, 
     return precision, scale
 
 
+def _table_has_column(table: Any, column_name: str) -> bool:
+    """Return whether reflected table exposes *column_name*."""
+    return _get_table_column(table, column_name) is not None
+
+
 def _preserve_existing_non_null_where(
     *,
     table: Any,
@@ -124,6 +130,47 @@ def _preserve_existing_non_null_where(
     if not hasattr(excluded_value_column, "is_not") or not hasattr(existing_value_column, "is_"):
         return None
     return excluded_value_column.is_not(None) | existing_value_column.is_(None)
+
+
+def _preserve_existing_edgar_pit_where(
+    *,
+    table: Any,
+    excluded_source_column: Any,
+    source_column_name: str = "source",
+) -> Any | None:
+    """Prevent non-EDGAR updates from overwriting EDGAR-backed financial rows.
+
+    ``financial_observations`` can be written by multiple providers. Once an
+    EDGAR-backed row exists for one (symbol, report_date, metric_name) key, a
+    later non-EDGAR rerun must not overwrite its PIT metadata via UPSERT.
+    """
+    existing_source_column = _get_table_column(table, source_column_name)
+    if existing_source_column is None:
+        return None
+    if not hasattr(excluded_source_column, "in_") or not hasattr(existing_source_column, "in_"):
+        return None
+
+    existing_is_edgar = existing_source_column.in_(_EDGAR_PIT_SOURCES)
+    incoming_is_edgar = excluded_source_column.in_(_EDGAR_PIT_SOURCES)
+    return (~existing_is_edgar) | incoming_is_edgar
+
+
+def _conditional_preserve_existing_value(
+    *,
+    preserve_when: Any | None,
+    existing_value: Any,
+    incoming_value: Any,
+) -> Any:
+    """Keep *existing_value* when *preserve_when* holds, else use incoming."""
+    if preserve_when is None or existing_value is None:
+        return incoming_value
+    if preserve_when.__class__.__module__.startswith("sqlalchemy"):
+        from sqlalchemy import case  # type: ignore
+
+        return case((preserve_when, existing_value), else_=incoming_value)
+    if hasattr(preserve_when, "label"):
+        return ("preserve_when", preserve_when.label, existing_value, incoming_value)
+    return incoming_value
 
 
 def _numeric_max_abs(precision: int, scale: int) -> Decimal:
@@ -193,9 +240,7 @@ def _log_out_of_range_rows(
         return
 
     grouped = Counter(
-        str(row.get(group_field))
-        for row in rejected_rows
-        if row.get(group_field) is not None
+        str(row.get(group_field)) for row in rejected_rows if row.get(group_field) is not None
     )
     grouped_text = ", ".join(f"{name} x{count}" for name, count in grouped.most_common(5))
 
@@ -391,6 +436,9 @@ def load_curated(
         report = pd.to_datetime(df["source_report_date"], errors="coerce")
         # Keep Python ``date`` or ``None`` only; avoid pandas NaT leaking into SQL binds.
         df["source_report_date"] = [ts.date() if pd.notna(ts) else None for ts in report]
+    if "publish_date" in df.columns:
+        publish = pd.to_datetime(df["publish_date"], errors="coerce")
+        df["publish_date"] = [ts.date() if pd.notna(ts) else None for ts in publish]
     if "factor_value" in df.columns:
         df = _sanitize_numeric_column(
             df,
@@ -433,6 +481,8 @@ def load_curated(
                 "source_report_date": stmt.excluded.source_report_date,
                 "updated_at": datetime.now(),
             }
+            if _table_has_column(table, "publish_date"):
+                update_dict["publish_date"] = stmt.excluded.publish_date
             upsert_stmt = stmt.on_conflict_do_update(
                 constraint=_FACTOR_CONSTRAINT_UNIQ,
                 set_=update_dict,
@@ -547,6 +597,9 @@ def load_financial_observations(
     if "as_of" in df.columns:
         as_of = pd.to_datetime(df["as_of"], errors="coerce")
         df["as_of"] = [ts.date() if pd.notna(ts) else None for ts in as_of]
+    if "publish_date" in df.columns:
+        publish = pd.to_datetime(df["publish_date"], errors="coerce")
+        df["publish_date"] = [ts.date() if pd.notna(ts) else None for ts in publish]
 
     if "metric_value" in df.columns:
         df = _sanitize_numeric_column(
@@ -558,8 +611,33 @@ def load_financial_observations(
             group_field="metric_name",
         )
 
+    valid_count = int(len(df))
+    dedupe_keys = ["symbol", "report_date", "metric_name"]
+    if not df.empty:
+        sort_columns = []
+        if "publish_date" in df.columns:
+            sort_columns.append("publish_date")
+        if "as_of" in df.columns:
+            sort_columns.append("as_of")
+        if "metric_value" in df.columns:
+            df["__metric_value_present"] = df["metric_value"].notna()
+            sort_columns.append("__metric_value_present")
+        if sort_columns:
+            df = df.sort_values(sort_columns, kind="stable", na_position="first")
+        before_dedupe = int(len(df))
+        df = df.drop_duplicates(subset=dedupe_keys, keep="last").copy()
+        deduped_count = before_dedupe - int(len(df))
+        if "__metric_value_present" in df.columns:
+            df = df.drop(columns=["__metric_value_present"])
+        if deduped_count:
+            logger.warning(
+                "Deduplicated %s financial observation rows before upsert on keys=%s",
+                deduped_count,
+                dedupe_keys,
+            )
+
     records_out = df.to_dict(orient="records")
-    invalid_count = max(0, attempted_count - int(len(records_out)))
+    invalid_count = max(0, attempted_count - valid_count)
     if not records_out:
         if stats_out is not None:
             stats_out.update(
@@ -578,24 +656,95 @@ def load_financial_observations(
     with engine.begin() as conn:
         for chunk_no, chunk_records in _iter_record_chunks(records_out, resolved_batch_size):
             stmt = pg_insert(table).values(chunk_records)
+            existing_metric_value_column = _get_table_column(table, "metric_value")
+            existing_currency_column = _get_table_column(table, "currency")
+            existing_period_type_column = _get_table_column(table, "period_type")
+            existing_source_column = _get_table_column(table, "source")
+            existing_value_source_column = _get_table_column(table, "value_source")
+            existing_as_of_column = _get_table_column(table, "as_of")
+            existing_metric_definition_column = _get_table_column(table, "metric_definition")
             preserve_non_null_where = _preserve_existing_non_null_where(
                 table=table,
                 excluded_value_column=stmt.excluded.metric_value,
                 value_column_name="metric_value",
             )
+            preserve_edgar_pit_where = _preserve_existing_edgar_pit_where(
+                table=table,
+                excluded_source_column=stmt.excluded.source,
+            )
+            incoming_is_edgar = (
+                stmt.excluded.source.in_(_EDGAR_PIT_SOURCES)
+                if hasattr(stmt.excluded.source, "in_")
+                else None
+            )
+            preserve_existing_when_incoming_value_null = (
+                stmt.excluded.metric_value.is_(None)
+                if hasattr(stmt.excluded.metric_value, "is_")
+                else None
+            )
+            upsert_where = preserve_non_null_where
+            if incoming_is_edgar is not None:
+                upsert_where = (
+                    incoming_is_edgar
+                    if upsert_where is None
+                    else upsert_where | incoming_is_edgar
+                )
+            if preserve_edgar_pit_where is not None:
+                upsert_where = (
+                    preserve_edgar_pit_where
+                    if upsert_where is None
+                    else upsert_where & preserve_edgar_pit_where
+                )
             update_dict = {
-                "metric_value": stmt.excluded.metric_value,
-                "currency": stmt.excluded.currency,
-                "period_type": stmt.excluded.period_type,
-                "source": stmt.excluded.source,
-                "as_of": stmt.excluded.as_of,
-                "metric_definition": stmt.excluded.metric_definition,
+                "metric_value": _conditional_preserve_existing_value(
+                    preserve_when=preserve_existing_when_incoming_value_null,
+                    existing_value=existing_metric_value_column,
+                    incoming_value=stmt.excluded.metric_value,
+                ),
+                "currency": _conditional_preserve_existing_value(
+                    preserve_when=preserve_existing_when_incoming_value_null,
+                    existing_value=existing_currency_column,
+                    incoming_value=stmt.excluded.currency,
+                ),
+                "period_type": _conditional_preserve_existing_value(
+                    preserve_when=preserve_existing_when_incoming_value_null,
+                    existing_value=existing_period_type_column,
+                    incoming_value=stmt.excluded.period_type,
+                ),
+                "source": _conditional_preserve_existing_value(
+                    preserve_when=preserve_existing_when_incoming_value_null,
+                    existing_value=existing_source_column,
+                    incoming_value=stmt.excluded.source,
+                ),
+                "value_source": _conditional_preserve_existing_value(
+                    preserve_when=preserve_existing_when_incoming_value_null,
+                    existing_value=existing_value_source_column,
+                    incoming_value=getattr(stmt.excluded, "value_source", None),
+                ),
+                "as_of": _conditional_preserve_existing_value(
+                    preserve_when=preserve_existing_when_incoming_value_null,
+                    existing_value=existing_as_of_column,
+                    incoming_value=stmt.excluded.as_of,
+                ),
+                "metric_definition": _conditional_preserve_existing_value(
+                    preserve_when=preserve_existing_when_incoming_value_null,
+                    existing_value=existing_metric_definition_column,
+                    incoming_value=stmt.excluded.metric_definition,
+                ),
                 "updated_at": datetime.now(),
             }
+            if not _table_has_column(table, "value_source"):
+                update_dict.pop("value_source", None)
+            if _table_has_column(table, "publish_date"):
+                update_dict["publish_date"] = stmt.excluded.publish_date
+            if _table_has_column(table, "publish_date_source"):
+                update_dict["publish_date_source"] = getattr(
+                    stmt.excluded, "publish_date_source", None
+                )
             upsert_stmt = stmt.on_conflict_do_update(
                 constraint=_FINANCIAL_CONSTRAINT_UNIQ,
                 set_=update_dict,
-                where=preserve_non_null_where,
+                where=upsert_where,
             )
             existing_count = 0
             if stats_out is not None:

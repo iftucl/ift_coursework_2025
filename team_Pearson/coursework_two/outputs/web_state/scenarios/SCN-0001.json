@@ -1,0 +1,59 @@
+{
+  "scenario_id": "SCN-0001",
+  "scenario_name": "qnative_v2_mainline",
+  "scenario_config": {
+    "preprocessing": {
+      "neutralize_by": "gics_sector"
+    },
+    "regime": {
+      "vix_stress_threshold": 22.0,
+      "vix_exit_threshold": 20.0,
+      "vix_warning_threshold": 18.0,
+      "normal": {
+        "quality": 0.18,
+        "value": 0.24,
+        "market_technical": 0.43,
+        "sentiment": 0.0,
+        "dividend": 0.15
+      },
+      "stress": {
+        "quality": 0.42105263157894735,
+        "value": 0.10526315789473684,
+        "market_technical": 0.05263157894736842,
+        "sentiment": 0.0,
+        "dividend": 0.42105263157894735
+      }
+    },
+    "portfolio_construction": {
+      "portfolio_name": "web_qnative_v2_mainline",
+      "top_n": 25,
+      "hybrid_min_n": 25,
+      "hybrid_max_n": 35,
+      "min_names": 25,
+      "min_candidate_pool": 35,
+      "max_single_weight": 0.05,
+      "target_generation_frequency": "quarterly"
+    },
+    "pipeline_guards": {
+      "min_investable_universe": 35
+    },
+    "quality_gates": {
+      "min_portfolio_targets": 25
+    },
+    "backtest": {
+      "portfolio_name": "web_qnative_v2_mainline",
+      "rebalance_frequency": "quarterly",
+      "top_n": 35,
+      "min_eligible_universe": 35,
+      "transaction_cost_bps": 15.0
+    }
+  },
+  "status": "active",
+  "version": 1,
+  "version_hash": "parent_scenario_id_null_scenario",
+  "is_mainline": true,
+  "parent_scenario_id": null,
+  "created_at": "2026-04-29T06:11:48.256661Z",
+  "updated_at": "2026-04-29T06:11:48.256661Z",
+  "notes": "Bootstrapped default mainline scenario."
+}

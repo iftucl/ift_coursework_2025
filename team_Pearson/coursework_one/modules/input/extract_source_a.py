@@ -32,12 +32,325 @@ _ALPHA_KEY_PLACEHOLDERS = {
     "ALPHA_VANTAGE_API_KEY",
     "REPLACE_WITH_YOUR_KEY",
 }
+_SOURCE_A_RAW_SCHEMA_VERSION = "v5"
+_SOURCE_A_PROVIDER_PAYLOAD_VERSION_DEFAULTS = {
+    "alpha_vantage": "time_series_daily_adjusted_v1",
+    "yfinance": "history_v1",
+}
+_SOURCE_A_QUARTERLY_METRIC_KEYS = (
+    "total_debt",
+    "total_shareholder_equity",
+    "book_value",
+    "shares_outstanding",
+    "enterprise_ebitda",
+    "enterprise_revenue",
+)
+_SOURCE_A_QUARTERLY_PROVENANCE_KEYS = (
+    "value_source_by_metric",
+    "publish_date_by_metric",
+    "publish_date_source_by_metric",
+    "provider_values_by_metric",
+)
+_SOURCE_A_EDGAR_RAW_PUBLISH_DATE_MAP = {
+    "total_debt": "total_debt",
+    "stockholders_equity": "total_shareholder_equity",
+    "shares_outstanding": "shares_outstanding",
+    "ebitda": "enterprise_ebitda",
+    "total_revenue": "enterprise_revenue",
+}
 
 
 def _json_default(obj: Any) -> Any:
     if hasattr(obj, "isoformat"):
         return obj.isoformat()
     return str(obj)
+
+
+def _coerce_iso_date_text(value: Any) -> str:
+    """Normalize date-like values to ``YYYY-MM-DD`` text."""
+    if hasattr(value, "date") and callable(getattr(value, "date", None)):
+        try:
+            return value.date().isoformat()
+        except (AttributeError, TypeError, ValueError) as exc:
+            logger.debug("source_a: date() coercion failed for %r: %s", value, exc)
+    if hasattr(value, "isoformat"):
+        try:
+            rendered = value.isoformat()
+            return str(rendered)[:10]
+        except (AttributeError, TypeError, ValueError) as exc:
+            logger.debug("source_a: isoformat() coercion failed for %r: %s", value, exc)
+
+    raw = str(value or "").strip()
+    if not raw:
+        return ""
+    if len(raw) >= 10 and raw[4] == "-" and raw[7] == "-":
+        return raw[:10]
+    if len(raw) >= 8 and raw[:8].isdigit():
+        return f"{raw[:4]}-{raw[4:6]}-{raw[6:8]}"
+    return ""
+
+
+def _coerce_finite_float(value: Any) -> Optional[float]:
+    """Return finite float or ``None`` for invalid numerics."""
+    try:
+        out = float(value)
+    except (TypeError, ValueError):
+        return None
+    if math.isnan(out) or math.isinf(out):
+        return None
+    return out
+
+
+def _resolve_source_a_provider_payload_version(provider: str) -> str:
+    """Resolve Source A provider payload version for raw archives."""
+    return _SOURCE_A_PROVIDER_PAYLOAD_VERSION_DEFAULTS.get(
+        str(provider or "").strip().lower(), "unknown"
+    )
+
+
+def _normalize_source_a_history_rows(rows: Any) -> tuple[List[Dict[str, Any]], List[str]]:
+    """Normalize raw Source A history rows into a stable replay schema."""
+    if rows in (None, ""):
+        return [], []
+    if not isinstance(rows, list):
+        return [], ["history_not_list"]
+
+    normalized: List[Dict[str, Any]] = []
+    issues: List[str] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            issues.append("history_row_not_dict")
+            continue
+        observation_date = _coerce_iso_date_text(
+            row.get("observation_date") or row.get("Date") or row.get("date")
+        )
+        if not observation_date:
+            issues.append("history_missing_observation_date")
+            continue
+        normalized.append(
+            {
+                "observation_date": observation_date,
+                "Open": _coerce_finite_float(row.get("Open")),
+                "High": _coerce_finite_float(row.get("High")),
+                "Low": _coerce_finite_float(row.get("Low")),
+                "Close": _coerce_finite_float(row.get("Close")),
+                "Dividends": _coerce_finite_float(row.get("Dividends")),
+                "Volume": _coerce_finite_float(row.get("Volume")),
+            }
+        )
+    return normalized, issues
+
+
+def _normalize_publish_date_by_metric(value: Any) -> Dict[str, str]:
+    if not isinstance(value, dict):
+        return {}
+    normalized: Dict[str, str] = {}
+    for key, raw_date in value.items():
+        metric_key = str(key or "").strip()
+        publish_date = _coerce_iso_date_text(raw_date)
+        if metric_key and publish_date:
+            normalized[metric_key] = publish_date
+    return normalized
+
+
+def _normalize_text_map(value: Any) -> Dict[str, str]:
+    if not isinstance(value, dict):
+        return {}
+    normalized: Dict[str, str] = {}
+    for key, raw_text in value.items():
+        metric_key = str(key or "").strip()
+        text_value = str(raw_text or "").strip()
+        if metric_key and text_value:
+            normalized[metric_key] = text_value
+    return normalized
+
+
+def _normalize_provider_values_by_metric(value: Any) -> Dict[str, Dict[str, Dict[str, Any]]]:
+    if not isinstance(value, dict):
+        return {}
+    normalized: Dict[str, Dict[str, Dict[str, Any]]] = {}
+    for metric_key, raw_provider_map in value.items():
+        metric_name = str(metric_key or "").strip()
+        if not metric_name or not isinstance(raw_provider_map, dict):
+            continue
+        normalized_provider_map: Dict[str, Dict[str, Any]] = {}
+        for provider_name, raw_payload in raw_provider_map.items():
+            provider = str(provider_name or "").strip()
+            if not provider:
+                continue
+            payload = raw_payload if isinstance(raw_payload, dict) else {"value": raw_payload}
+            metric_value = _coerce_finite_float(payload.get("value"))
+            report_date = _coerce_iso_date_text(payload.get("report_date"))
+            if metric_value is None and not report_date:
+                continue
+            provider_payload: Dict[str, Any] = {"value": metric_value}
+            if report_date:
+                provider_payload["report_date"] = report_date
+            normalized_provider_map[provider] = provider_payload
+        if normalized_provider_map:
+            normalized[metric_name] = normalized_provider_map
+    return normalized
+
+
+def _normalize_source_a_quarterly_fundamentals(
+    rows: Any,
+) -> tuple[List[Dict[str, Any]], List[str]]:
+    if rows in (None, ""):
+        return [], []
+    if not isinstance(rows, list):
+        return [], ["quarterly_fundamentals_not_list"]
+
+    normalized: List[Dict[str, Any]] = []
+    issues: List[str] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            issues.append("quarterly_fundamental_row_not_dict")
+            continue
+        report_date = _coerce_iso_date_text(row.get("report_date"))
+        if not report_date:
+            issues.append("quarterly_fundamental_missing_report_date")
+            continue
+
+        normalized_row = dict(row)
+        normalized_row["report_date"] = report_date
+        for key in _SOURCE_A_QUARTERLY_METRIC_KEYS:
+            if key in normalized_row:
+                normalized_row[key] = _coerce_finite_float(normalized_row.get(key))
+        if "publish_date" in normalized_row:
+            normalized_row["publish_date"] = (
+                _coerce_iso_date_text(normalized_row.get("publish_date")) or None
+            )
+        if "available_date" in normalized_row:
+            normalized_row["available_date"] = (
+                _coerce_iso_date_text(normalized_row.get("available_date")) or None
+            )
+        publish_date_by_metric = _normalize_publish_date_by_metric(
+            normalized_row.get("publish_date_by_metric")
+        )
+        if publish_date_by_metric:
+            normalized_row["publish_date_by_metric"] = publish_date_by_metric
+        elif "publish_date_by_metric" in normalized_row:
+            normalized_row.pop("publish_date_by_metric", None)
+        value_source_by_metric = _normalize_text_map(normalized_row.get("value_source_by_metric"))
+        if value_source_by_metric:
+            normalized_row["value_source_by_metric"] = value_source_by_metric
+        elif "value_source_by_metric" in normalized_row:
+            normalized_row.pop("value_source_by_metric", None)
+        publish_date_source_by_metric = _normalize_text_map(
+            normalized_row.get("publish_date_source_by_metric")
+        )
+        if publish_date_source_by_metric:
+            normalized_row["publish_date_source_by_metric"] = publish_date_source_by_metric
+        elif "publish_date_source_by_metric" in normalized_row:
+            normalized_row.pop("publish_date_source_by_metric", None)
+        provider_values_by_metric = _normalize_provider_values_by_metric(
+            normalized_row.get("provider_values_by_metric")
+        )
+        if provider_values_by_metric:
+            normalized_row["provider_values_by_metric"] = provider_values_by_metric
+        elif "provider_values_by_metric" in normalized_row:
+            normalized_row.pop("provider_values_by_metric", None)
+        normalized.append(normalized_row)
+
+    normalized.sort(key=lambda x: str(x.get("report_date") or ""))
+    return normalized, issues
+
+
+def _normalize_source_a_payload(
+    payload: Dict[str, Any], *, symbol: str, run_date: str
+) -> Dict[str, Any]:
+    """Normalize Source A raw payload before archive/replay."""
+    raw = dict(payload or {})
+    provider = str(raw.get("source_used") or raw.get("provider") or "").strip().lower()
+    normalized_history, history_issues = _normalize_source_a_history_rows(raw.get("history"))
+    validation_errors: List[str] = list(history_issues)
+
+    fundamentals = raw.get("fundamentals")
+    if fundamentals is None:
+        fundamentals = {}
+    elif not isinstance(fundamentals, dict):
+        validation_errors.append("fundamentals_not_dict")
+        fundamentals = {}
+    else:
+        fundamentals = dict(fundamentals)
+
+    normalized_quarterly, quarterly_issues = _normalize_source_a_quarterly_fundamentals(
+        fundamentals.get("quarterly_fundamentals")
+    )
+    validation_errors.extend(quarterly_issues)
+    if normalized_quarterly or "quarterly_fundamentals" in fundamentals:
+        fundamentals["quarterly_fundamentals"] = normalized_quarterly
+    if "report_date" in fundamentals:
+        fundamentals["report_date"] = _coerce_iso_date_text(fundamentals.get("report_date")) or None
+    if "publish_date" in fundamentals:
+        fundamentals["publish_date"] = _coerce_iso_date_text(fundamentals.get("publish_date")) or None
+    if "available_date" in fundamentals:
+        fundamentals["available_date"] = _coerce_iso_date_text(
+            fundamentals.get("available_date")
+        ) or None
+    publish_date_by_metric = _normalize_publish_date_by_metric(
+        fundamentals.get("publish_date_by_metric")
+    )
+    if publish_date_by_metric:
+        fundamentals["publish_date_by_metric"] = publish_date_by_metric
+    elif "publish_date_by_metric" in fundamentals:
+        fundamentals.pop("publish_date_by_metric", None)
+    value_source_by_metric = _normalize_text_map(fundamentals.get("value_source_by_metric"))
+    if value_source_by_metric:
+        fundamentals["value_source_by_metric"] = value_source_by_metric
+    elif "value_source_by_metric" in fundamentals:
+        fundamentals.pop("value_source_by_metric", None)
+    publish_date_source_by_metric = _normalize_text_map(
+        fundamentals.get("publish_date_source_by_metric")
+    )
+    if publish_date_source_by_metric:
+        fundamentals["publish_date_source_by_metric"] = publish_date_source_by_metric
+    elif "publish_date_source_by_metric" in fundamentals:
+        fundamentals.pop("publish_date_source_by_metric", None)
+    provider_values_by_metric = _normalize_provider_values_by_metric(
+        fundamentals.get("provider_values_by_metric")
+    )
+    if provider_values_by_metric:
+        fundamentals["provider_values_by_metric"] = provider_values_by_metric
+    elif "provider_values_by_metric" in fundamentals:
+        fundamentals.pop("provider_values_by_metric", None)
+
+    payload_symbol = str(raw.get("symbol") or symbol).strip().upper()
+    if not payload_symbol:
+        validation_errors.append("missing_symbol")
+        payload_symbol = str(symbol or "").strip().upper()
+
+    payload_run_date = (
+        _coerce_iso_date_text(raw.get("run_date") or run_date) or str(run_date).strip()
+    )
+    if not payload_run_date:
+        validation_errors.append("missing_run_date")
+
+    rows = raw.get("rows")
+    try:
+        declared_rows = int(rows) if rows not in (None, "") else len(normalized_history)
+    except (TypeError, ValueError):
+        declared_rows = len(normalized_history)
+        validation_errors.append("rows_not_int")
+
+    if declared_rows != len(normalized_history):
+        validation_errors.append("rows_mismatch")
+        declared_rows = len(normalized_history)
+
+    return {
+        "symbol": payload_symbol,
+        "run_date": payload_run_date,
+        "as_of_date": payload_run_date,
+        "rows": declared_rows,
+        "history": normalized_history,
+        "total_debt": _coerce_finite_float(raw.get("total_debt")),
+        "fundamentals": fundamentals,
+        "source_used": provider or str(raw.get("source_used") or "").strip() or None,
+        "normalized_schema_version": _SOURCE_A_RAW_SCHEMA_VERSION,
+        "provider_payload_version": _resolve_source_a_provider_payload_version(provider),
+        "schema_validation_status": "valid" if not validation_errors else "warning",
+        "schema_validation_errors": sorted(set(validation_errors)),
+    }
 
 
 def load_config(config_path: str = "config/conf.yaml") -> Dict[str, Any]:
@@ -60,7 +373,7 @@ def load_config(config_path: str = "config/conf.yaml") -> Dict[str, Any]:
 
 
 def _download_price_history(symbol: str, years_back: int, max_retries: int = 3):
-    """Download price history from yfinance (fallback provider)."""
+    """Download price history from yfinance (primary free provider)."""
     import yfinance as yf
 
     period = f"{max(1, int(years_back))}y"
@@ -298,6 +611,23 @@ def _in_backfill_window(report_date: Any, run_date: str, backfill_years: int) ->
     return start_dt <= report_dt <= run_dt
 
 
+def _pit_fallback_days(config: Optional[Dict[str, Any]] = None) -> int:
+    try:
+        days = int(((config or {}).get("edgar") or {}).get("pit_fallback_days", 45))
+    except (TypeError, ValueError):
+        return 45
+    return max(0, days)
+
+
+def _fallback_financial_publish_date(
+    report_date: Optional[str], *, config: Optional[Dict[str, Any]] = None
+) -> Optional[str]:
+    report_dt = _parse_iso_date(report_date)
+    if report_dt is None:
+        return None
+    return (report_dt + timedelta(days=_pit_fallback_days(config))).strftime("%Y-%m-%d")
+
+
 def _build_quarterly_fundamentals_from_av_balance_sheet(
     balance_sheet: Dict[str, Any],
     *,
@@ -481,11 +811,7 @@ def _build_quarterly_fundamentals_from_yfinance_ticker(
             ["Total Revenue", "TotalRevenue"],
         )
         book_value = None
-        if (
-            total_equity is not None
-            and shares_outstanding is not None
-            and shares_outstanding > 0
-        ):
+        if total_equity is not None and shares_outstanding is not None and shares_outstanding > 0:
             book_value = total_equity / shares_outstanding
         if all(
             value is None
@@ -516,6 +842,82 @@ def _build_quarterly_fundamentals_from_yfinance_ticker(
     return out
 
 
+def _annotate_quarterly_value_sources(
+    rows: List[Dict[str, Any]], *, source_name: str
+) -> List[Dict[str, Any]]:
+    annotated: List[Dict[str, Any]] = []
+    for row in rows or []:
+        if not isinstance(row, dict):
+            continue
+        updated = dict(row)
+        source_map = _normalize_text_map(updated.get("value_source_by_metric"))
+        provider_values_map = _normalize_provider_values_by_metric(updated.get("provider_values_by_metric"))
+        report_date = _coerce_iso_date_text(updated.get("report_date"))
+        for key in _SOURCE_A_QUARTERLY_METRIC_KEYS:
+            metric_value = _coerce_finite_float(updated.get(key))
+            if metric_value is None:
+                continue
+            if not source_map.get(key):
+                source_map[key] = source_name
+            metric_provider_map = dict(provider_values_map.get(key) or {})
+            metric_provider_map[source_name] = {
+                "value": metric_value,
+                "report_date": report_date,
+            }
+            provider_values_map[key] = metric_provider_map
+        if source_map:
+            updated["value_source_by_metric"] = source_map
+        if provider_values_map:
+            updated["provider_values_by_metric"] = provider_values_map
+        annotated.append(updated)
+    return annotated
+
+
+def _apply_default_publish_dates_to_quarterly_rows(
+    rows: List[Dict[str, Any]],
+    *,
+    config: Optional[Dict[str, Any]] = None,
+) -> List[Dict[str, Any]]:
+    normalized_rows: List[Dict[str, Any]] = []
+    for row in rows or []:
+        if not isinstance(row, dict):
+            continue
+        updated = dict(row)
+        report_date = _coerce_iso_date_text(updated.get("report_date"))
+        row_publish_date = _coerce_iso_date_text(
+            updated.get("publish_date")
+            or updated.get("available_date")
+            or _fallback_financial_publish_date(report_date, config=config)
+        )
+        if row_publish_date:
+            updated["publish_date"] = row_publish_date
+
+        publish_date_map = _normalize_publish_date_by_metric(updated.get("publish_date_by_metric"))
+        publish_date_source_map = _normalize_text_map(
+            updated.get("publish_date_source_by_metric")
+        )
+        for key in _SOURCE_A_QUARTERLY_METRIC_KEYS:
+            if updated.get(key) is None:
+                continue
+            if row_publish_date and not publish_date_map.get(key):
+                publish_date_map[key] = row_publish_date
+            if publish_date_map.get(key) and not publish_date_source_map.get(key):
+                publish_date_source_map[key] = (
+                    "provider_date"
+                    if _coerce_iso_date_text(updated.get("publish_date"))
+                    or _coerce_iso_date_text(updated.get("available_date"))
+                    else "fallback_45d"
+                )
+
+        if publish_date_map:
+            updated["publish_date_by_metric"] = publish_date_map
+            updated["publish_date"] = max(publish_date_map.values())
+        if publish_date_source_map:
+            updated["publish_date_source_by_metric"] = publish_date_source_map
+        normalized_rows.append(updated)
+    return normalized_rows
+
+
 def _merge_quarterly_fundamentals(
     existing: List[Dict[str, Any]], incoming: List[Dict[str, Any]]
 ) -> List[Dict[str, Any]]:
@@ -533,6 +935,41 @@ def _merge_quarterly_fundamentals(
             continue
         current = merged[report_date]
         for key, value in row.items():
+            if key in _SOURCE_A_QUARTERLY_PROVENANCE_KEYS:
+                if key == "provider_values_by_metric":
+                    current_map = _normalize_provider_values_by_metric(current.get(key))
+                    incoming_map = _normalize_provider_values_by_metric(value)
+                    merged_map = {
+                        metric_key: dict(provider_map)
+                        for metric_key, provider_map in current_map.items()
+                    }
+                    for metric_key, provider_map in incoming_map.items():
+                        merged_provider_map = dict(merged_map.get(metric_key) or {})
+                        for provider_name, provider_payload in provider_map.items():
+                            if provider_name not in merged_provider_map:
+                                merged_provider_map[provider_name] = provider_payload
+                        if merged_provider_map:
+                            merged_map[metric_key] = merged_provider_map
+                    if merged_map:
+                        current[key] = merged_map
+                    continue
+                current_map = (
+                    _normalize_publish_date_by_metric(current.get(key))
+                    if key == "publish_date_by_metric"
+                    else _normalize_text_map(current.get(key))
+                )
+                incoming_map = (
+                    _normalize_publish_date_by_metric(value)
+                    if key == "publish_date_by_metric"
+                    else _normalize_text_map(value)
+                )
+                merged_map = dict(current_map)
+                for metric_key, metric_value in incoming_map.items():
+                    if metric_key not in merged_map:
+                        merged_map[metric_key] = metric_value
+                if merged_map:
+                    current[key] = merged_map
+                continue
             if current.get(key) is None and value is not None:
                 current[key] = value
     return sorted(merged.values(), key=lambda x: str(x.get("report_date") or ""))
@@ -578,10 +1015,10 @@ def _apply_enterprise_pair_priority(
         av_row = av_by_date.get(report_date)
         yf_row = yf_by_date.get(report_date)
 
-        if _has_complete_enterprise_pair(av_row):
-            selected = av_row
-        elif _has_complete_enterprise_pair(yf_row):
+        if _has_complete_enterprise_pair(yf_row):
             selected = yf_row
+        elif _has_complete_enterprise_pair(av_row):
+            selected = av_row
 
         _set_enterprise_pair(row, selected)
 
@@ -662,13 +1099,69 @@ def _extract_fundamentals(
         "metric_definition": "provider_reported",
         "quarterly_fundamentals": [],
     }
+    av_quarterly: List[Dict[str, Any]] = []
+    yf_quarterly: List[Dict[str, Any]] = []
 
-    # 1) Alpha Vantage statements first: prefer period-aligned quarterly fields.
+    # 1) yfinance first: this is the primary free provider for Source A.
+    yf_ticker = ticker
+    if yf_ticker is None:
+        try:
+            import yfinance as yf
+
+            yf_ticker = yf.Ticker(symbol)
+        except Exception:
+            yf_ticker = None
+    if yf_ticker is not None:
+        yf_quarterly = _build_quarterly_fundamentals_from_yfinance_ticker(
+            yf_ticker,
+            run_date=str(run_date or ""),
+            backfill_years=backfill_years,
+            currency=out.get("currency"),
+            metric_definition=str(out.get("metric_definition") or "provider_reported"),
+        )
+        yf_quarterly = _annotate_quarterly_value_sources(yf_quarterly, source_name="yfinance")
+        if yf_quarterly:
+            out["quarterly_fundamentals"] = _merge_quarterly_fundamentals(
+                out.get("quarterly_fundamentals") or [],
+                yf_quarterly,
+            )
+            latest_quarter = out["quarterly_fundamentals"][-1]
+            for key in (
+                "total_debt",
+                "total_shareholder_equity",
+                "book_value",
+                "shares_outstanding",
+                "enterprise_ebitda",
+                "enterprise_revenue",
+            ):
+                if out.get(key) is None:
+                    out[key] = latest_quarter.get(key)
+            if out.get("report_date") is None:
+                latest_report_date = str(latest_quarter.get("report_date") or "").strip()
+                out["report_date"] = latest_report_date or None
+            if out.get("currency") is None:
+                out["currency"] = latest_quarter.get("currency")
+        yf_vals = _extract_fundamentals_from_yfinance_ticker(yf_ticker)
+        for key in out:
+            if out[key] is None:
+                out[key] = yf_vals.get(key)
+
+    # 2) Alpha Vantage fills remaining gaps only.
     api_key = _resolve_alpha_key(config)
-    if api_key:
+    if api_key and any(
+        out.get(k) is None
+        for k in (
+            "total_debt",
+            "total_shareholder_equity",
+            "book_value",
+            "shares_outstanding",
+            "enterprise_ebitda",
+            "enterprise_revenue",
+            "report_date",
+            "currency",
+        )
+    ):
         income_by_date: Dict[str, Dict[str, Optional[float]]] = {}
-        av_quarterly: List[Dict[str, Any]] = []
-        yf_quarterly: List[Dict[str, Any]] = []
         try:
             income_statement = _download_income_statement_alpha_vantage(symbol, api_key)
             income_by_date = _build_quarterly_income_map_from_av_income_statement(
@@ -679,7 +1172,7 @@ def _extract_fundamentals(
         except Exception as exc:
             logger.warning(
                 "alpha_vantage_income_statement_failed symbol=%s reason=%r; "
-                "falling back to yfinance quarterly for enterprise metrics",
+                "keeping yfinance values where available",
                 symbol,
                 exc,
             )
@@ -693,25 +1186,40 @@ def _extract_fundamentals(
                 metric_definition=str(out["metric_definition"] or "provider_reported"),
                 income_by_date=income_by_date,
             )
-            out["quarterly_fundamentals"] = list(av_quarterly)
-            if out["quarterly_fundamentals"]:
+            av_quarterly = _annotate_quarterly_value_sources(
+                av_quarterly,
+                source_name="alpha_vantage",
+            )
+            if av_quarterly:
+                out["quarterly_fundamentals"] = _merge_quarterly_fundamentals(
+                    out.get("quarterly_fundamentals") or [],
+                    av_quarterly,
+                )
                 latest_quarter = out["quarterly_fundamentals"][-1]
-                out["total_debt"] = latest_quarter.get("total_debt")
-                out["total_shareholder_equity"] = latest_quarter.get("total_shareholder_equity")
-                out["book_value"] = latest_quarter.get("book_value")
-                out["shares_outstanding"] = latest_quarter.get("shares_outstanding")
-                out["enterprise_ebitda"] = latest_quarter.get("enterprise_ebitda")
-                out["enterprise_revenue"] = latest_quarter.get("enterprise_revenue")
-                out["report_date"] = str(latest_quarter.get("report_date") or "").strip() or None
+                for key in (
+                    "total_debt",
+                    "total_shareholder_equity",
+                    "book_value",
+                    "shares_outstanding",
+                    "enterprise_ebitda",
+                    "enterprise_revenue",
+                ):
+                    if out.get(key) is None:
+                        out[key] = latest_quarter.get(key)
+                if out.get("report_date") is None:
+                    out["report_date"] = (
+                        str(latest_quarter.get("report_date") or "").strip() or None
+                    )
+                if out.get("currency") is None:
+                    out["currency"] = latest_quarter.get("currency")
         except Exception as exc:
             logger.warning(
                 "alpha_vantage_balance_sheet_failed symbol=%s reason=%r; "
-                "falling back to overview/yfinance fields",
+                "keeping yfinance values where available",
                 symbol,
                 exc,
             )
 
-        # 2) Alpha Vantage overview fills remaining gaps only.
         try:
             overview = _download_overview_alpha_vantage(symbol, api_key)
             overview_total_debt = _to_float_or_none(overview.get("TotalDebt"))
@@ -733,80 +1241,37 @@ def _extract_fundamentals(
         except Exception as exc:
             logger.warning(
                 "alpha_vantage_overview_failed symbol=%s reason=%r; "
-                "falling back to yfinance fields",
+                "keeping yfinance values where available",
                 symbol,
                 exc,
             )
 
-    # 3) yfinance fallback for remaining missing fields only
-    if any(
-        out.get(k) is None
-        for k in (
-            "total_debt",
-            "total_shareholder_equity",
-            "book_value",
-            "shares_outstanding",
-            "enterprise_ebitda",
-            "enterprise_revenue",
-            "report_date",
-            "currency",
+    _apply_enterprise_pair_priority(
+        out["quarterly_fundamentals"],
+        av_quarterly=av_quarterly,
+        yf_quarterly=yf_quarterly,
+    )
+    out["quarterly_fundamentals"] = _apply_default_publish_dates_to_quarterly_rows(
+        out["quarterly_fundamentals"],
+        config=config,
+    )
+
+    out["enterprise_ebitda"] = None
+    out["enterprise_revenue"] = None
+    if out["quarterly_fundamentals"]:
+        latest_quarter = out["quarterly_fundamentals"][-1]
+        if _has_complete_enterprise_pair(latest_quarter):
+            out["enterprise_ebitda"] = latest_quarter.get("enterprise_ebitda")
+            out["enterprise_revenue"] = latest_quarter.get("enterprise_revenue")
+        out["publish_date"] = latest_quarter.get("publish_date")
+        out["publish_date_by_metric"] = dict(latest_quarter.get("publish_date_by_metric") or {})
+        out["publish_date_source_by_metric"] = dict(
+            latest_quarter.get("publish_date_source_by_metric") or {}
         )
-    ):
-        yf_ticker = ticker
-        if yf_ticker is None:
-            try:
-                import yfinance as yf
-
-                yf_ticker = yf.Ticker(symbol)
-            except Exception:
-                yf_ticker = None
-        if yf_ticker is not None:
-            yf_quarterly = _build_quarterly_fundamentals_from_yfinance_ticker(
-                yf_ticker,
-                run_date=str(run_date or ""),
-                backfill_years=backfill_years,
-                currency=out.get("currency"),
-                metric_definition=str(out.get("metric_definition") or "provider_reported"),
-            )
-            if yf_quarterly:
-                out["quarterly_fundamentals"] = _merge_quarterly_fundamentals(
-                    out.get("quarterly_fundamentals") or [],
-                    yf_quarterly,
-                )
-                latest_quarter = out["quarterly_fundamentals"][-1]
-                for key in (
-                    "total_debt",
-                    "total_shareholder_equity",
-                    "book_value",
-                    "shares_outstanding",
-                    "enterprise_ebitda",
-                    "enterprise_revenue",
-                ):
-                    if out.get(key) is None:
-                        out[key] = latest_quarter.get(key)
-                if out.get("report_date") is None:
-                    latest_report_date = str(latest_quarter.get("report_date") or "").strip()
-                    out["report_date"] = latest_report_date or None
-                if out.get("currency") is None:
-                    out["currency"] = latest_quarter.get("currency")
-            yf_vals = _extract_fundamentals_from_yfinance_ticker(yf_ticker)
-            for key in out:
-                if out[key] is None:
-                    out[key] = yf_vals.get(key)
-
-        _apply_enterprise_pair_priority(
-            out["quarterly_fundamentals"],
-            av_quarterly=av_quarterly,
-            yf_quarterly=yf_quarterly,
+        out["value_source_by_metric"] = dict(latest_quarter.get("value_source_by_metric") or {})
+        out["provider_values_by_metric"] = _normalize_provider_values_by_metric(
+            latest_quarter.get("provider_values_by_metric")
         )
-
-        out["enterprise_ebitda"] = None
-        out["enterprise_revenue"] = None
-        if out["quarterly_fundamentals"]:
-            latest_quarter = out["quarterly_fundamentals"][-1]
-            if _has_complete_enterprise_pair(latest_quarter):
-                out["enterprise_ebitda"] = latest_quarter.get("enterprise_ebitda")
-                out["enterprise_revenue"] = latest_quarter.get("enterprise_revenue")
 
     return out
 
@@ -822,11 +1287,145 @@ def _minio_config(config: Dict[str, Any]) -> Dict[str, Any]:
     return minio_cfg
 
 
-def _raw_object_path(symbol: str, run_date: str) -> str:
+def _raw_legacy_object_path(symbol: str, run_date: str) -> str:
     return (
         "raw/source_a/pricing_fundamentals/"
         f"run_date={run_date}/year={run_date[:4]}/symbol={symbol}.json"
     )
+
+
+def _raw_market_object_path(symbol: str, run_date: str) -> str:
+    return f"raw/source_a/market/run_date={run_date}/year={run_date[:4]}/symbol={symbol}.json"
+
+
+def _raw_financial_object_path(symbol: str, run_date: str) -> str:
+    return (
+        f"raw/source_a/financial/run_date={run_date}/year={run_date[:4]}/symbol={symbol}.json"
+    )
+
+
+def _load_json_object_from_minio(
+    *,
+    minio_cfg: Dict[str, Any],
+    object_path: str,
+) -> Optional[Dict[str, Any]]:
+    try:
+        from minio import Minio
+
+        client = Minio(
+            endpoint=minio_cfg["endpoint"],
+            access_key=minio_cfg["access_key"],
+            secret_key=minio_cfg["secret_key"],
+            secure=minio_cfg.get("secure", False),
+        )
+        obj = client.get_object(minio_cfg["bucket"], object_path)
+        try:
+            payload = json.loads(obj.read().decode("utf-8"))
+        finally:
+            obj.close()
+            obj.release_conn()
+    except Exception:
+        return None
+    return payload if isinstance(payload, dict) else None
+
+
+def _save_json_object_to_minio(
+    *,
+    minio_cfg: Dict[str, Any],
+    object_path: str,
+    payload: Dict[str, Any],
+) -> None:
+    from minio import Minio
+
+    client = Minio(
+        endpoint=minio_cfg["endpoint"],
+        access_key=minio_cfg["access_key"],
+        secret_key=minio_cfg["secret_key"],
+        secure=minio_cfg.get("secure", False),
+    )
+    bucket = minio_cfg["bucket"]
+    if not client.bucket_exists(bucket):
+        client.make_bucket(bucket)
+
+    data = json.dumps(payload, ensure_ascii=False, default=_json_default).encode("utf-8")
+    client.put_object(
+        bucket,
+        object_path,
+        data=BytesIO(data),
+        length=len(data),
+        content_type="application/json",
+    )
+
+
+def _split_source_a_payload(
+    normalized_payload: Dict[str, Any], *, symbol: str, run_date: str
+) -> tuple[Dict[str, Any], Dict[str, Any]]:
+    market_payload = {
+        "symbol": symbol,
+        "run_date": run_date,
+        "as_of_date": run_date,
+        "rows": int(normalized_payload.get("rows") or 0),
+        "history": list(normalized_payload.get("history") or []),
+        "source_used": normalized_payload.get("source_used"),
+        "normalized_schema_version": _SOURCE_A_RAW_SCHEMA_VERSION,
+        "provider_payload_version": normalized_payload.get("provider_payload_version"),
+        "schema_validation_status": normalized_payload.get("schema_validation_status"),
+        "schema_validation_errors": list(normalized_payload.get("schema_validation_errors") or []),
+        "raw_layer": "market",
+    }
+    financial_payload = {
+        "symbol": symbol,
+        "run_date": run_date,
+        "as_of_date": run_date,
+        "fundamentals": dict(normalized_payload.get("fundamentals") or {}),
+        "total_debt": normalized_payload.get("total_debt"),
+        "source_used": normalized_payload.get("source_used"),
+        "normalized_schema_version": _SOURCE_A_RAW_SCHEMA_VERSION,
+        "provider_payload_version": normalized_payload.get("provider_payload_version"),
+        "schema_validation_status": normalized_payload.get("schema_validation_status"),
+        "schema_validation_errors": list(normalized_payload.get("schema_validation_errors") or []),
+        "raw_layer": "financial",
+        "merge_policy": {
+            "market_values": ["yfinance", "alpha_vantage"],
+            "financial_values": ["yfinance", "alpha_vantage", "edgar_xbrl_overlap"],
+            "financial_publish_date": ["edgar_xbrl", "provider_date", "fallback"],
+        },
+    }
+    return market_payload, financial_payload
+
+
+def _combine_source_a_payloads(
+    *,
+    symbol: str,
+    run_date: str,
+    market_payload: Optional[Dict[str, Any]],
+    financial_payload: Optional[Dict[str, Any]],
+) -> Dict[str, Any]:
+    market_status = str((market_payload or {}).get("schema_validation_status") or "").strip()
+    financial_status = str((financial_payload or {}).get("schema_validation_status") or "").strip()
+    combined_status = "valid"
+    if any(status and status != "valid" for status in (market_status, financial_status)):
+        combined_status = financial_status if financial_status and financial_status != "valid" else market_status
+    return {
+        "symbol": symbol,
+        "run_date": run_date,
+        "rows": int((market_payload or {}).get("rows") or 0),
+        "history": list((market_payload or {}).get("history") or []),
+        "fundamentals": dict((financial_payload or {}).get("fundamentals") or {}),
+        "total_debt": (financial_payload or {}).get("total_debt"),
+        "source_used": (market_payload or {}).get("source_used")
+        or (financial_payload or {}).get("source_used"),
+        "normalized_schema_version": _SOURCE_A_RAW_SCHEMA_VERSION,
+        "provider_payload_version": (market_payload or {}).get("provider_payload_version")
+        or (financial_payload or {}).get("provider_payload_version"),
+        "schema_validation_status": combined_status,
+        "schema_validation_errors": sorted(
+            set(
+                list((market_payload or {}).get("schema_validation_errors") or [])
+                + list((financial_payload or {}).get("schema_validation_errors") or [])
+            )
+        ),
+    }
 
 
 def _load_raw_from_minio(
@@ -837,23 +1436,30 @@ def _load_raw_from_minio(
     if not all(minio_cfg.get(k) for k in required):
         return None
 
-    try:
-        from minio import Minio
+    market_payload = _load_json_object_from_minio(
+        minio_cfg=minio_cfg,
+        object_path=_raw_market_object_path(symbol, run_date),
+    )
+    financial_payload = _load_json_object_from_minio(
+        minio_cfg=minio_cfg,
+        object_path=_raw_financial_object_path(symbol, run_date),
+    )
 
-        client = Minio(
-            endpoint=minio_cfg["endpoint"],
-            access_key=minio_cfg["access_key"],
-            secret_key=minio_cfg["secret_key"],
-            secure=minio_cfg.get("secure", False),
+    if market_payload or financial_payload:
+        payload = _combine_source_a_payloads(
+            symbol=symbol,
+            run_date=run_date,
+            market_payload=market_payload,
+            financial_payload=financial_payload,
         )
-        obj = client.get_object(minio_cfg["bucket"], _raw_object_path(symbol, run_date))
-        try:
-            return json.loads(obj.read().decode("utf-8"))
-        finally:
-            obj.close()
-            obj.release_conn()
-    except Exception:
-        return None
+    else:
+        payload = _load_json_object_from_minio(
+            minio_cfg=minio_cfg,
+            object_path=_raw_legacy_object_path(symbol, run_date),
+        )
+        if payload is None:
+            return None
+    return _normalize_source_a_payload(payload, symbol=symbol, run_date=run_date)
 
 
 def _save_raw_to_minio(
@@ -868,29 +1474,249 @@ def _save_raw_to_minio(
         return
 
     try:
-        from minio import Minio
-
-        client = Minio(
-            endpoint=minio_cfg["endpoint"],
-            access_key=minio_cfg["access_key"],
-            secret_key=minio_cfg["secret_key"],
-            secure=minio_cfg.get("secure", False),
+        normalized_payload = _normalize_source_a_payload(payload, symbol=symbol, run_date=run_date)
+        market_payload, financial_payload = _split_source_a_payload(
+            normalized_payload,
+            symbol=symbol,
+            run_date=run_date,
         )
-        bucket = minio_cfg["bucket"]
-        if not client.bucket_exists(bucket):
-            client.make_bucket(bucket)
-
-        object_path = _raw_object_path(symbol, run_date)
-        data = json.dumps(payload, ensure_ascii=False, default=_json_default).encode("utf-8")
-        client.put_object(
-            bucket,
-            object_path,
-            data=BytesIO(data),
-            length=len(data),
-            content_type="application/json",
+        _save_json_object_to_minio(
+            minio_cfg=minio_cfg,
+            object_path=_raw_market_object_path(symbol, run_date),
+            payload=market_payload,
+        )
+        _save_json_object_to_minio(
+            minio_cfg=minio_cfg,
+            object_path=_raw_financial_object_path(symbol, run_date),
+            payload=financial_payload,
         )
     except Exception as exc:  # pragma: no cover - external service dependent
         logger.warning("source_a raw archive skipped for %s: %r", symbol, exc)
+
+
+def _build_edgar_enrichment_for_source_a_raw(
+    edgar_records: List[Dict[str, Any]],
+) -> Dict[str, Dict[str, Dict[str, Dict[str, Any]]]]:
+    by_symbol: Dict[str, Dict[str, Dict[str, Dict[str, Any]]]] = {}
+    for record in edgar_records or []:
+        symbol = str(record.get("symbol") or "").strip().upper()
+        report_date = _coerce_iso_date_text(record.get("report_date"))
+        metric_name = str(record.get("metric_name") or "").strip()
+        publish_date = _coerce_iso_date_text(record.get("publish_date"))
+        metric_value = _coerce_finite_float(record.get("metric_value"))
+        value_source = str(record.get("source") or "edgar_xbrl").strip() or "edgar_xbrl"
+        publish_date_source = (
+            str(record.get("publish_date_source") or "edgar_xbrl").strip() or "edgar_xbrl"
+        )
+        quarterly_key = _SOURCE_A_EDGAR_RAW_PUBLISH_DATE_MAP.get(metric_name)
+        if not symbol or not report_date or not publish_date or quarterly_key is None:
+            continue
+        symbol_map = by_symbol.setdefault(symbol, {})
+        report_map = symbol_map.setdefault(report_date, {})
+        existing = report_map.get(quarterly_key)
+        if existing is None or publish_date < str(existing.get("publish_date") or ""):
+            report_map[quarterly_key] = {
+                "publish_date": publish_date,
+                "metric_value": metric_value,
+                "value_source": value_source,
+                "publish_date_source": publish_date_source,
+            }
+
+    for symbol_map in by_symbol.values():
+        for report_map in symbol_map.values():
+            equity_ref = report_map.get("total_shareholder_equity")
+            shares_ref = report_map.get("shares_outstanding")
+            equity_date = str((equity_ref or {}).get("publish_date") or "")
+            shares_date = str((shares_ref or {}).get("publish_date") or "")
+            if equity_date and shares_date:
+                report_map["book_value"] = {
+                    "publish_date": max(equity_date, shares_date),
+                    "metric_value": None,
+                    "value_source": "derived_from_core_metrics",
+                }
+    return by_symbol
+
+
+def enrich_source_a_raw_with_edgar_publish_dates(
+    config: Dict[str, Any],
+    run_date: str,
+    edgar_records: List[Dict[str, Any]],
+) -> Dict[str, int]:
+    by_symbol = _build_edgar_enrichment_for_source_a_raw(edgar_records)
+    stats = {
+        "symbols_with_edgar_dates": int(len(by_symbol)),
+        "raw_payloads_updated": 0,
+        "quarter_rows_updated": 0,
+        "payloads_missing": 0,
+    }
+    if not by_symbol:
+        return stats
+
+    for symbol, report_dates in by_symbol.items():
+        payload = _load_raw_from_minio(config, symbol, run_date)
+        if not payload:
+            stats["payloads_missing"] += 1
+            continue
+
+        fundamentals = dict(payload.get("fundamentals") or {})
+        quarterly_fundamentals = list(fundamentals.get("quarterly_fundamentals") or [])
+        if not quarterly_fundamentals:
+            continue
+
+        payload_changed = False
+        updated_rows = 0
+        for row in quarterly_fundamentals:
+            report_date = _coerce_iso_date_text(row.get("report_date"))
+            if not report_date:
+                continue
+            edgar_metric_map = report_dates.get(report_date)
+            if not edgar_metric_map:
+                continue
+
+            current_publish_map = _normalize_publish_date_by_metric(
+                row.get("publish_date_by_metric")
+            )
+            current_publish_source_map = _normalize_text_map(
+                row.get("publish_date_source_by_metric")
+            )
+            current_value_source_map = _normalize_text_map(row.get("value_source_by_metric"))
+            current_provider_values_map = _normalize_provider_values_by_metric(
+                row.get("provider_values_by_metric")
+            )
+            merged_publish_map = dict(current_publish_map)
+            merged_publish_source_map = dict(current_publish_source_map)
+            merged_value_source_map = dict(current_value_source_map)
+            merged_provider_values_map = {
+                metric_key: dict(provider_map)
+                for metric_key, provider_map in current_provider_values_map.items()
+            }
+            row_changed = False
+            for metric_key, edgar_ref in edgar_metric_map.items():
+                publish_date = str(edgar_ref.get("publish_date") or "").strip()
+                value_source = str(edgar_ref.get("value_source") or "edgar_xbrl").strip() or "edgar_xbrl"
+                if merged_publish_map.get(metric_key) != publish_date:
+                    merged_publish_map[metric_key] = publish_date
+                    row_changed = True
+                publish_date_source = (
+                    str(edgar_ref.get("publish_date_source") or "edgar_xbrl").strip()
+                    or "edgar_xbrl"
+                )
+                if merged_publish_source_map.get(metric_key) != publish_date_source:
+                    merged_publish_source_map[metric_key] = publish_date_source
+                    row_changed = True
+                metric_value = edgar_ref.get("metric_value")
+                current_value = _coerce_finite_float(row.get(metric_key))
+                current_source = (
+                    merged_value_source_map.get(metric_key)
+                    or current_value_source_map.get(metric_key)
+                    or ""
+                )
+                if (
+                    current_value is not None
+                    and current_source
+                    and current_source not in (merged_provider_values_map.get(metric_key) or {})
+                ):
+                    metric_provider_map = dict(merged_provider_values_map.get(metric_key) or {})
+                    metric_provider_map[current_source] = {
+                        "value": current_value,
+                        "report_date": report_date,
+                    }
+                    merged_provider_values_map[metric_key] = metric_provider_map
+                    row_changed = True
+                if metric_value is not None and row.get(metric_key) != metric_value:
+                    row[metric_key] = metric_value
+                    row_changed = True
+                if (
+                    metric_value is not None
+                    and merged_value_source_map.get(metric_key) != value_source
+                ):
+                    merged_value_source_map[metric_key] = value_source
+                    row_changed = True
+                if metric_value is not None:
+                    metric_provider_map = dict(merged_provider_values_map.get(metric_key) or {})
+                    metric_provider_map[value_source] = {
+                        "value": metric_value,
+                        "report_date": report_date,
+                    }
+                    if metric_provider_map != merged_provider_values_map.get(metric_key):
+                        merged_provider_values_map[metric_key] = metric_provider_map
+                    row_changed = True
+
+            equity = _coerce_finite_float(row.get("total_shareholder_equity"))
+            shares = _coerce_finite_float(row.get("shares_outstanding"))
+            if equity is not None and shares is not None and shares > 0:
+                derived_book_value = equity / shares
+                if row.get("book_value") != derived_book_value:
+                    row["book_value"] = derived_book_value
+                    row_changed = True
+                book_value_publish_date = max(
+                    merged_publish_map.get("total_shareholder_equity") or "",
+                    merged_publish_map.get("shares_outstanding") or "",
+                )
+                if book_value_publish_date and merged_publish_map.get("book_value") != book_value_publish_date:
+                    merged_publish_map["book_value"] = book_value_publish_date
+                    row_changed = True
+                if book_value_publish_date and merged_publish_source_map.get("book_value") != "derived_from_core_metrics":
+                    merged_publish_source_map["book_value"] = "derived_from_core_metrics"
+                    row_changed = True
+                if merged_value_source_map.get("book_value") != "derived_from_core_metrics":
+                    merged_value_source_map["book_value"] = "derived_from_core_metrics"
+                    row_changed = True
+                book_value_provider_map = dict(merged_provider_values_map.get("book_value") or {})
+                new_book_value_provider_map = dict(book_value_provider_map)
+                new_book_value_provider_map["derived_from_core_metrics"] = {
+                    "value": derived_book_value,
+                    "report_date": report_date,
+                }
+                if new_book_value_provider_map != book_value_provider_map:
+                    merged_provider_values_map["book_value"] = new_book_value_provider_map
+                    row_changed = True
+
+            if (
+                not row_changed
+                and merged_publish_map == current_publish_map
+                and merged_publish_source_map == current_publish_source_map
+                and merged_value_source_map == current_value_source_map
+                and merged_provider_values_map == current_provider_values_map
+            ):
+                continue
+
+            row["publish_date_by_metric"] = merged_publish_map
+            row["publish_date_source_by_metric"] = merged_publish_source_map
+            row["value_source_by_metric"] = merged_value_source_map
+            row["provider_values_by_metric"] = merged_provider_values_map
+            conservative_row_publish_date = max(merged_publish_map.values())
+            current_row_publish_date = _coerce_iso_date_text(
+                row.get("publish_date") or row.get("available_date")
+            )
+            if current_row_publish_date != conservative_row_publish_date:
+                row["publish_date"] = conservative_row_publish_date
+                row_changed = True
+            row["publish_date_source"] = "edgar_enriched"
+            payload_changed = True
+            updated_rows += 1
+
+            latest_report_date = _coerce_iso_date_text(fundamentals.get("report_date"))
+            if latest_report_date and latest_report_date == report_date:
+                fundamentals["publish_date"] = conservative_row_publish_date
+                fundamentals["publish_date_by_metric"] = merged_publish_map
+                fundamentals["publish_date_source_by_metric"] = merged_publish_source_map
+                fundamentals["value_source_by_metric"] = merged_value_source_map
+                fundamentals["provider_values_by_metric"] = merged_provider_values_map
+                for metric_key, source_name in merged_value_source_map.items():
+                    if row.get(metric_key) is not None:
+                        fundamentals[metric_key] = row.get(metric_key)
+
+        if payload_changed:
+            fundamentals["quarterly_fundamentals"] = quarterly_fundamentals
+            payload["fundamentals"] = fundamentals
+            payload["edgar_publish_dates_enriched"] = True
+            payload["edgar_publish_dates_enriched_at"] = str(run_date)
+            _save_raw_to_minio(config, symbol, run_date, payload)
+            stats["raw_payloads_updated"] += 1
+            stats["quarter_rows_updated"] += updated_rows
+
+    return stats
 
 
 def _compute_momentum_1m(close_series: pd.Series) -> pd.Series:
@@ -984,6 +1810,39 @@ def _build_records_from_history(
                 "frequency": frequency,
             }
         )
+        open_v = _to_float_or_none(row.get("Open"))
+        records.append(
+            {
+                "symbol": symbol,
+                "observation_date": observation_date,
+                "factor_name": "open_price",
+                "value": open_v,
+                "source": source_label,
+                "frequency": frequency,
+            }
+        )
+        high_v = _to_float_or_none(row.get("High"))
+        records.append(
+            {
+                "symbol": symbol,
+                "observation_date": observation_date,
+                "factor_name": "high_price",
+                "value": high_v,
+                "source": source_label,
+                "frequency": frequency,
+            }
+        )
+        low_v = _to_float_or_none(row.get("Low"))
+        records.append(
+            {
+                "symbol": symbol,
+                "observation_date": observation_date,
+                "factor_name": "low_price",
+                "value": low_v,
+                "source": source_label,
+                "frequency": frequency,
+            }
+        )
         records.append(
             {
                 "symbol": symbol,
@@ -1004,6 +1863,18 @@ def _build_records_from_history(
                 "frequency": frequency,
             }
         )
+        volume = row.get("Volume")
+        volume_v = _to_float_or_none(volume)
+        records.append(
+            {
+                "symbol": symbol,
+                "observation_date": observation_date,
+                "factor_name": "daily_volume",
+                "value": volume_v,
+                "source": source_label,
+                "frequency": frequency,
+            }
+        )
 
         if close_v is not None and close_v > 0:
             prev_close = close_v
@@ -1018,8 +1889,9 @@ def _build_fundamental_records(
     source_label: str,
     fundamentals: Dict[str, Any],
     backfill_years: int = 1,
+    config: Optional[Dict[str, Any]] = None,
 ) -> List[Dict[str, Any]]:
-    """Build atomic fundamental factor records at run_date snapshot."""
+    """Build atomic financial observation rows for Source A fundamentals."""
     field_map = {
         "total_debt": ("total_debt", "quarterly"),
         "total_shareholder_equity": ("total_shareholder_equity", "quarterly"),
@@ -1036,6 +1908,20 @@ def _build_fundamental_records(
             str(row.get("currency") or fundamentals.get("currency") or "UNKNOWN").strip().upper()
         )
         currency = currency or "UNKNOWN"
+        row_publish_date = _coerce_iso_date_text(
+            row.get("publish_date")
+            or row.get("available_date")
+            or _fallback_financial_publish_date(report_date, config=config)
+        )
+        if not row_publish_date:
+            row_publish_date = None
+        publish_date_by_metric = _normalize_publish_date_by_metric(
+            row.get("publish_date_by_metric")
+        )
+        value_source_by_metric = _normalize_text_map(row.get("value_source_by_metric"))
+        publish_date_source_by_metric = _normalize_text_map(
+            row.get("publish_date_source_by_metric")
+        )
         metric_definition = (
             str(
                 row.get("metric_definition")
@@ -1049,17 +1935,32 @@ def _build_fundamental_records(
         for key, (factor_name, period_type) in field_map.items():
             if key in {"enterprise_ebitda", "enterprise_revenue"} and not has_enterprise_pair:
                 continue
+            metric_publish_date = (
+                publish_date_by_metric.get(key)
+                or publish_date_by_metric.get(factor_name)
+                or row_publish_date
+            )
+            metric_source = (
+                value_source_by_metric.get(key)
+                or value_source_by_metric.get(factor_name)
+                or source_label
+            )
+            metric_publish_source = (
+                publish_date_source_by_metric.get(key)
+                or publish_date_source_by_metric.get(factor_name)
+                or row.get("publish_date_source")
+            )
             out.append(
                 {
                     "symbol": symbol,
-                    "observation_date": report_date,
-                    "factor_name": factor_name,
-                    "value": row.get(key),
-                    "source": source_label,
-                    "frequency": frequency,
-                    "source_report_date": report_date,
+                    "metric_name": factor_name,
+                    "metric_value": row.get(key),
+                    "source": metric_source,
+                    "value_source": metric_source,
                     "report_date": report_date,
                     "as_of": run_date,
+                    "publish_date": metric_publish_date,
+                    "publish_date_source": metric_publish_source,
                     "period_type": period_type,
                     "currency": currency,
                     "metric_definition": metric_definition,
@@ -1114,11 +2015,12 @@ def _resolve_alpha_key(config: Dict[str, Any]) -> str:
 
 def _select_source_order(config: Dict[str, Any]) -> List[str]:
     source_cfg = config.get("source_a") or {}
-    primary = str(source_cfg.get("primary_source", "alpha_vantage")).strip().lower()
+    primary = str(source_cfg.get("primary_source", "yfinance")).strip().lower()
     fallback = bool(source_cfg.get("enable_yfinance_fallback", True))
     order = [primary]
-    if fallback and primary != "yfinance":
-        order.append("yfinance")
+    secondary = "alpha_vantage" if primary == "yfinance" else "yfinance"
+    if fallback and secondary not in order:
+        order.append(secondary)
     return order
 
 
@@ -1154,7 +2056,12 @@ def _select_provider_order_for_symbol(symbol: str, config: Dict[str, Any]) -> Li
 
 
 def _history_from_payload(payload: Dict[str, Any]) -> pd.DataFrame:
-    rows = payload.get("history") or []
+    normalized_payload = _normalize_source_a_payload(
+        payload or {},
+        symbol=str((payload or {}).get("symbol") or ""),
+        run_date=str((payload or {}).get("run_date") or ""),
+    )
+    rows = normalized_payload.get("history") or []
     if not rows:
         return pd.DataFrame()
     frame = pd.DataFrame(rows)
@@ -1186,6 +2093,11 @@ def _validate_cache_payload(payload: Dict[str, Any], symbol: str, run_date: str)
     row_count = payload.get("rows")
     if isinstance(row_count, int) and row_count >= 0 and row_count != len(history_rows):
         warnings.append(f"rows_mismatch declared={row_count} actual={len(history_rows)}")
+
+    validation_status = str(payload.get("schema_validation_status") or "").strip().lower()
+    if validation_status and validation_status != "valid":
+        issues = ",".join(str(x) for x in payload.get("schema_validation_errors") or [])
+        warnings.append(f"schema_validation_status={validation_status} issues={issues}")
 
     return warnings
 
@@ -1222,6 +2134,23 @@ def _download_with_provider(
         except Exception as exc:
             errors.append(f"{source}: {exc}")
     raise RuntimeError(f"all providers failed for {symbol}; details={errors}")
+
+
+def _is_symbol_unavailable_error(exc: Exception) -> bool:
+    """Return True when the error indicates a stale/delisted symbol.
+
+    These cases should be treated as a routed skip rather than an extractor
+    failure because the pipeline can continue safely without degrading the run.
+    """
+    message = str(exc or "").lower()
+    unavailable_markers = (
+        "no history returned for symbol=",
+        "possibly delisted",
+        "no price data found",
+        "no data found",
+        "no timezone found",
+    )
+    return any(marker in message for marker in unavailable_markers)
 
 
 def extract_source_a(
@@ -1262,7 +2191,7 @@ def extract_source_a(
                 "observation_date": run_date,
                 "factor_name": "source_a_metric",
                 "value": 1.0,
-                "source": "alpha_vantage",
+                "source": "yfinance",
                 "frequency": frequency,
             }
             for symbol in symbols
@@ -1327,6 +2256,7 @@ def extract_source_a(
                     "fundamentals": fundamentals,
                     "source_used": provider_source,
                 }
+                payload = _normalize_source_a_payload(payload, symbol=symbol, run_date=run_date)
                 _save_raw_to_minio(cfg, symbol, run_date, payload)
 
             history = _apply_history_window(history, run_date, backfill_years, prior_rows=1)
@@ -1358,10 +2288,18 @@ def extract_source_a(
                     source_label=provider_source,
                     fundamentals=fundamentals,
                     backfill_years=backfill_years,
+                    config=cfg,
                 )
             )
             records.extend(symbol_records)
         except Exception as exc:
+            if _is_symbol_unavailable_error(exc):
+                logger.warning(
+                    "source_a skipped unavailable symbol=%s reason=%s",
+                    symbol,
+                    exc,
+                )
+                continue
             logger.error("source_a failed for %s: %r", symbol, exc, exc_info=True)
             if failed_symbols is not None:
                 failed_symbols.append({"symbol": symbol, "reason": f"{exc!r}"})

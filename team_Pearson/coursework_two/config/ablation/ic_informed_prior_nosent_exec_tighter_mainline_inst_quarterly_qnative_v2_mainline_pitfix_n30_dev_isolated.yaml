@@ -1,0 +1,311 @@
+# CW2 Configuration — N30 isolated development-period baseline
+#
+# This configuration freezes the corrected N30 baseline strategy but shortens
+# the evaluation window to the development / selection period so that strategy
+# experiments can be compared on a like-for-like basis without repeatedly
+# re-running the full five-year history.
+
+factors:
+  quality:
+    sub_variables:
+      - ebitda_margin
+      - roe
+      - debt_to_equity_inv
+    weights: equal
+
+  value:
+    sub_variables:
+      - book_to_price
+      - earnings_to_price
+      - ebitda_to_ev
+    weights: equal
+
+  market_technical:
+    sub_variables:
+      - momentum_1m
+      - momentum_6m
+      - momentum_12_1m
+    weights: equal
+
+  sentiment:
+    sub_variables:
+      - sentiment_7d_avg
+      - sentiment_30d_avg
+      - sentiment_surprise
+    weights: equal
+
+  dividend:
+    sub_variables:
+      - dividend_yield
+      - dividend_stability
+      - payout_sustainability
+    weights: equal
+
+preprocessing:
+  winsorize_percentile: 0.025
+  min_observations: 30
+  neutralize_by: gics_sector
+
+investable_universe:
+  country_allowlist: ["US"]
+  min_market_cap_log: 20.0
+  market_cap_bottom_percentile: 0.20
+  min_liquidity_20d: 2000000
+  liquidity_bottom_percentile: 0.20
+
+regime:
+  signal_model: vix_term_spread
+  mode: hysteresis
+  vix_stress_threshold: 22
+  vix_warning_threshold: 18
+  vix_exit_threshold: 20
+  term_spread_stress_threshold: 0.0
+  term_spread_confirm_days: 3
+  stress_persistence: 2
+  normal_persistence: 2
+  history_lookback_days: 60
+  normal:
+    quality: 0.18
+    value: 0.24
+    market_technical: 0.43
+    sentiment: 0.00
+    dividend: 0.15
+  stress:
+    quality: 0.40
+    value: 0.10
+    market_technical: 0.05
+    sentiment: 0.05
+    dividend: 0.40
+  ic_weighting:
+    enabled: false
+    lookback_months: 36
+    min_history_months: 12
+    min_cross_section: 25
+    ic_method: spearman
+    score_metric: ic_ir
+    prior_mix: 0.50
+    score_clip: 2.0
+    positive_only: true
+    regime_split: false
+
+risk_overlay:
+  min_market_cap_log: null
+  min_liquidity_20d: null
+  max_volatility_60d_percentile: 0.90
+  max_missing_factor_pct: 0.65
+  min_factor_groups_present: 3
+  required_factor_groups:
+    - quality
+    - value
+    - market_technical
+  optional_percentile_blacklists:
+    - column: garch_vol_60d
+      percentile: 0.90
+    - column: realized_vol_60d
+      percentile: 0.90
+
+pipeline_guards:
+  min_scoring_universe: 30
+  min_investable_universe: 30
+
+quality_gates:
+  min_sub_score_rows: 150
+  min_factor_score_rows: 30
+  min_risk_overlay_rows: 30
+  min_portfolio_targets: 30
+  min_factor_score_coverage_vs_scoring: 0.70
+  min_risk_pass_rate: 0.50
+  max_as_of_date_shift_days: 5
+
+ops_audit:
+  sentiment_coverage_lookback_days: 30
+  min_article_factor_date_coverage_ratio: 0.80
+  sentiment_pipeline_max_lag_days: 3
+
+portfolio_construction:
+  portfolio_name: cw2_ic_nosent_main_qnative_v2_pitfix_n30
+  target_generation_frequency: quarterly
+  ranking_mode: global
+  ranking_blend_global_weight: 0.70
+  selection_mode: hybrid
+  top_n: 30
+  top_pct: 0.12
+  hybrid_min_n: 30
+  hybrid_max_n: 30
+  min_names: 30
+  min_candidate_pool: 30
+  min_target_weight: 0.005
+  weighting: mean_variance
+  turnover_cap: 0.60
+  max_single_weight: 0.05
+  max_sector_weight: 0.25
+  relax_sector_cap_if_needed: true
+  covariance:
+    lookback_days: 252
+    min_history_days: 126
+    shrinkage_intensity: 0.25
+    max_forward_fill_days: 5
+    alpha_signal: composite_alpha
+    alpha_transform: clipped_zscore
+    alpha_clip: 2.0
+    anchor_scheme: equal
+    use_active_risk: true
+    annualize_covariance: true
+    covariance_annualization_factor: 252.0
+    risk_aversion: 4.0
+    ridge_penalty: 0.05
+    turnover_penalty: 0.0
+    max_iter: 400
+    tolerance: 1.0e-8
+
+backtest:
+  portfolio_name: cw2_ic_nosent_main_qnative_v2_pitfix_n30
+  start_date: "2021-04-20"
+  end_date: "2024-09-30"
+  lookback_years: 4
+  rebalance_frequency: quarterly
+  execution_lag: 1
+  transaction_cost_bps: 15
+  long_only: true
+  weighting: mean_variance
+  top_n: 30
+  benchmark_ticker: "SPY"
+  initial_nav: 1.0
+  min_eligible_universe: 30
+  max_forward_fill_days: 5
+  benchmark_max_missing_trading_days: 0
+  execution:
+    cost_model: flat_total_bps
+    assumed_aum: 10000000.0
+    enable_liquidity_clipping: true
+    adv_lookback_days: 20
+    min_adv_history_days: 5
+    max_adv_participation: 0.05
+    base_slippage_bps: 0.0
+    open_execution_penalty_bps: 0.0
+    gap_slippage_multiplier: 0.0
+    participation_slippage_bps: 0.0
+    bid_ask_spread_model: none
+    fixed_bid_ask_spread_bps: 0.0
+    bid_ask_crossing_fraction: 0.0
+    bid_ask_adv_low_threshold: 1000000.0
+    bid_ask_adv_medium_threshold: 10000000.0
+    bid_ask_spread_bps_low_adv: 0.0
+    bid_ask_spread_bps_medium_adv: 0.0
+    bid_ask_spread_bps_high_adv: 0.0
+  drawdown_brake:
+    enabled: false
+    lookback_periods: 12
+    threshold_pct: 0.12
+    recovery_drawdown_pct: 0.06
+    de_risk_fraction: 0.50
+  intraday_triggers:
+    enabled: false
+    stock_stop_loss_pct: -0.30
+    stop_loss_mode: fixed_pct
+    stop_loss_vol_lookback_days: 20
+    stop_loss_min_history_days: 10
+    stop_loss_vol_multiplier: 2.5
+    stop_loss_min_abs_pct: 0.05
+    stop_loss_max_abs_pct: 0.15
+    vix_spike_pct: 0.25
+    vix_spike_min_level: 25.0
+    term_spread_confirm_enabled: true
+    term_spread_stress_threshold: 0.0
+    vix_hard_stress_level: 30.0
+    vix_recovery_threshold: 22.0
+    vix_recovery_consecutive_days: 5
+    regime_switch_mode: next_day_rebalance
+    allow_reentry_after_stop_loss: false
+    mid_frequency_rebalance_enabled: false
+    mid_frequency_rebalance_weekday: 0
+    mid_frequency_min_turnover: 0.05
+    event_driven_enabled: false
+    news_sentiment_shock_enabled: false
+    news_sentiment_surprise_threshold: -0.20
+    news_sentiment_min_article_count: 8.0
+    news_sentiment_trim_fraction: 0.25
+    earnings_event_enabled: false
+    earnings_require_publication_flag: true
+    earnings_negative_news_min_count: 2.0
+    earnings_trim_fraction: 0.40
+    rating_downgrade_event_enabled: false
+    rating_downgrade_min_count: 2.0
+    rating_trim_fraction: 0.20
+    event_cooldown_days: 5
+    transaction_cost_bps: 15
+    save_daily_state: false
+  analysis:
+    primary_benchmark: SPY
+    secondary_benchmark: universe_ew
+    stress_vix_threshold: 25
+    universe_ew_deduct_cost: false
+    static_baseline_cost_bps: 15
+    static_baseline_normal_weights:
+      quality: 0.20
+      value: 0.20
+      market_technical: 0.30
+      sentiment: 0.20
+      dividend: 0.10
+    covariance:
+      enabled: true
+      method: diagonal_shrinkage
+      lookback_days: 252
+      min_history_days: 126
+      shrinkage_intensity: 0.25
+      max_forward_fill_days: 5
+      include_series:
+        - strategy
+        - universe_ew
+        - static_baseline
+
+recommendation:
+  portfolio_name: cw2_ic_nosent_main_qnative_v2_pitfix_n30
+  default_status: proposed
+  latest_as_of_policy: latest_lte_run_date
+  approval_required: true
+
+kafka:
+  enabled: true
+  required: false
+  bootstrap_servers:
+    - localhost:29092
+  client_id: team_pearson_cw2
+  linger_ms: 50
+  batch_size: 16384
+  compression_type: gzip
+  topics:
+    cw1_news_structured: cw1.news.structured.v1
+    cw1_event_proxies: cw1.event.proxies.v1
+    cw2_risk_actions_requested: cw2.risk.actions.requested.v1
+    cw2_risk_actions_executed: cw2.risk.actions.executed.v1
+    platform_run_status: platform.runs.status.v1
+  audit_consumer:
+    enabled: true
+    consumer_group: team_pearson_cw2_audit
+    consumer_component: cw2.kafka_audit_consumer
+    topic_keys:
+      - cw2_risk_actions_requested
+      - cw2_risk_actions_executed
+      - platform_run_status
+    poll_timeout_ms: 1000
+    max_batch_messages: 200
+    max_idle_polls: 3
+    max_retries_per_message: 3
+    lag_warning_threshold: 100
+    freshness_warning_minutes: 60
+    pending_grace_minutes: 2
+    orphan_reconcile_minutes: 60
+
+reporting:
+  output_dir: team_Pearson/coursework_two/outputs/reports
+
+governance:
+  versions:
+    model_version: cw2-model-2026.04
+    factor_definition_version: cw2-factor-spec-2026.04
+    covariance_method_version: cw2-covariance-2026.04
+    risk_overlay_policy_version: cw2-risk-overlay-2026.04
+    recommendation_version: cw2-recommendation-2026.04
+    backtest_engine_version: cw2-backtest-2026.04
+    reporting_version: cw2-reporting-2026.04

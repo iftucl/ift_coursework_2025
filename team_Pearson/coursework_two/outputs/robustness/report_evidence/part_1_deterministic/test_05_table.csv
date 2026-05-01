@@ -1,0 +1,5 @@
+﻿scenario_key,risk_adjusted.sharpe_ratio,stress.static_baseline.excess_ann_return,risk.max_drawdown
+regime_disabled,0.424044,1.6275324103769195,17.656134
+regime_less_sensitive,0.479324,4.213404489447493,19.843801
+regime_mainline,0.514835,7.029111980408077,19.572882
+regime_more_sensitive,0.466449,2.8916865643171974,20.6043

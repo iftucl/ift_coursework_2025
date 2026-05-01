@@ -1,0 +1,10 @@
+[
+  {
+    "event_type": "scenario_set_mainline",
+    "event_at": "2026-05-01T03:28:07.198591Z",
+    "payload": {
+      "scenario_id": "SCN-0001",
+      "scenario_name": "qnative_v2_mainline"
+    }
+  }
+]

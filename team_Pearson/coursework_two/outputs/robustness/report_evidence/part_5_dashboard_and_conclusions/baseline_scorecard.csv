@@ -1,0 +1,6 @@
+﻿criterion_id,criterion_name,passed,evidence
+1,Positive long-run excess return vs primary benchmark,True,"{'threshold': 0.0, 'excess_return_annualized_vs_primary_pct': 0.843966}"
+2,Lower stress max drawdown than static baseline,False,"{'baseline_max_dd_stress_pct': 11.778383, 'strategy_max_dd_stress_pct': 13.180916}"
+3,"At least two of Sharpe, Sortino, IR beat static baseline",True,"{'threshold': 2, 'baseline_sharpe': 0.35220022757746533, 'metrics_beating': 3, 'strategy_sharpe': 0.582195, 'baseline_sortino': 0.5362895726351677, 'strategy_sortino': 0.916735, 'baseline_ir_vs_primary': -0.4627192612995017, 'strategy_ir_vs_primary': 0.125923}"
+4,Excess return survives 25 bps cost robustness,True,"{'threshold': 0.0, 'scenario_key': 'cost_25bps', 'excess_return_annualized_vs_primary_pct': 2.209247, 'annualized_return_pct': 11.572655, 'sharpe_ratio': 0.561460}"
+5,Positive stress-period excess return vs static baseline,False,"{'threshold': 0.0, 'stress_excess_ann_return_vs_static_pct': -1.026478}"

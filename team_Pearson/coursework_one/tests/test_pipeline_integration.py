@@ -3,8 +3,50 @@ import os
 import pytest
 
 import Main
+from modules.db import db_connection as db_connection_mod
+from modules.input import extract_source_a as source_a_mod
 from modules.output.normalize import normalize_records
 from modules.output.quality import run_quality_checks
+
+
+class _FakeScalarResult:
+    def __init__(self, payload):
+        self._payload = payload
+
+    def mappings(self):
+        return self
+
+    def one(self):
+        return self._payload
+
+
+class _FakeConn:
+    def __init__(self, payload):
+        self.payload = payload
+        self.calls = []
+
+    def execute(self, stmt, params):
+        self.calls.append((stmt, params))
+        return _FakeScalarResult(self.payload)
+
+
+class _FakeBeginCtx:
+    def __init__(self, conn):
+        self._conn = conn
+
+    def __enter__(self):
+        return self._conn
+
+    def __exit__(self, exc_type, exc, tb):
+        return False
+
+
+class _FakeEngine:
+    def __init__(self, conn):
+        self._conn = conn
+
+    def begin(self):
+        return _FakeBeginCtx(self._conn)
 
 
 def test_collect_normalize_quality_chain(monkeypatch):
@@ -79,7 +121,10 @@ def test_resolve_enabled_extractors_cli_then_env_then_config_then_default(monkey
     ]
     assert Main._resolve_enabled_extractors(None, {}) == ["source_a", "source_b"]
 
-    with pytest.raises(ValueError, match="Allowed: source_a, source_b"):
+    with pytest.raises(
+        ValueError,
+        match=r"Allowed: \['market_factors', 'source_a', 'source_b'\]",
+    ):
         Main._resolve_enabled_extractors(["source_c"], {})
 
 
@@ -110,3 +155,69 @@ def test_load_dotenv_sets_missing_vars_only(tmp_path, monkeypatch):
     monkeypatch.setenv("ALPHA_VANTAGE_API_KEY", "from_env")
     Main._load_dotenv(str(env_file))
     assert os.getenv("ALPHA_VANTAGE_API_KEY") == "from_env"
+
+
+def test_source_a_supporting_rows_exist_requires_financials_when_registry_expects_them(monkeypatch):
+    conn = _FakeConn({"has_price_rows": True, "has_financial_rows": False})
+    monkeypatch.setattr(db_connection_mod, "get_db_engine", lambda: _FakeEngine(conn))
+    monkeypatch.setattr(source_a_mod, "_rolling_window_start_date", lambda *_: "2025-04-15")
+
+    out = Main._source_a_supporting_rows_exist(
+        run_date="2026-04-15",
+        backfill_years=1,
+        symbol="AAPL",
+        reusable_details={"curated_rows": 100, "financial_rows": 4, "loaded_rows": 104},
+    )
+
+    assert out is False
+    assert conn.calls[0][1]["symbol"] == "AAPL"
+    assert conn.calls[0][1]["start_date"] == "2025-04-15"
+
+
+def test_source_a_supporting_rows_exist_allows_price_only_registry(monkeypatch):
+    conn = _FakeConn({"has_price_rows": True, "has_financial_rows": False})
+    monkeypatch.setattr(db_connection_mod, "get_db_engine", lambda: _FakeEngine(conn))
+    monkeypatch.setattr(source_a_mod, "_rolling_window_start_date", lambda *_: "2025-04-15")
+
+    out = Main._source_a_supporting_rows_exist(
+        run_date="2026-04-15",
+        backfill_years=1,
+        symbol="SPY",
+        reusable_details={"curated_rows": 100, "financial_rows": 0, "loaded_rows": 100},
+    )
+
+    assert out is True
+
+
+def test_source_b_supporting_rows_exist_requires_rows_when_registry_expects_them(monkeypatch):
+    conn = _FakeConn({"has_source_b_rows": False})
+    monkeypatch.setattr(db_connection_mod, "get_db_engine", lambda: _FakeEngine(conn))
+
+    out = Main._source_b_supporting_rows_exist(
+        symbol="AAPL",
+        month_start="2026-02-01",
+        fetch_end="2026-02-28",
+        reusable_details={"articles": 10, "loaded_rows": 19},
+    )
+
+    assert out is False
+    assert conn.calls[0][1]["symbol"] == "AAPL"
+    assert conn.calls[0][1]["month_start"] == "2026-02-01"
+    assert conn.calls[0][1]["fetch_end"] == "2026-02-28"
+
+
+def test_source_b_supporting_rows_exist_allows_empty_registry_without_rows(monkeypatch):
+    monkeypatch.setattr(
+        db_connection_mod,
+        "get_db_engine",
+        lambda: pytest.fail("DB should not be queried when no Source B rows are expected"),
+    )
+
+    out = Main._source_b_supporting_rows_exist(
+        symbol="AAPL",
+        month_start="2026-02-01",
+        fetch_end="2026-02-28",
+        reusable_details={"articles": 0, "loaded_rows": 0},
+    )
+
+    assert out is True

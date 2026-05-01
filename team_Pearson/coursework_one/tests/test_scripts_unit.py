@@ -10,7 +10,6 @@ from types import SimpleNamespace
 import pandas as pd
 import pytest
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS_ROOT = PROJECT_ROOT / "scripts"
 
@@ -27,11 +26,13 @@ def _load_script(name: str):
 
 run_pipeline_and_index = _load_script("run_pipeline_and_index")
 run_scheduled_pipeline = _load_script("run_scheduled_pipeline")
+build_sphinx_docs = _load_script("build_sphinx_docs")
 search_news = _load_script("search_news")
 manage_universe_overrides = _load_script("manage_universe_overrides")
 seed_universe_from_sqlite = _load_script("seed_universe_from_sqlite")
 validate_pipeline_data = _load_script("validate_pipeline_data")
 index_news_to_mongo = _load_script("index_news_to_mongo")
+audit_source_b_boundary = _load_script("audit_source_b_boundary")
 init_db = _load_script("init_db")
 
 
@@ -113,6 +114,22 @@ class _BulkCollection:
     def bulk_write(self, ops, ordered=False):  # noqa: ARG002
         self.calls.append(list(ops))
         return _BulkResult()
+
+
+class _AggregateCollection:
+    def __init__(self, *, count=0, groups=None):
+        self.count = int(count)
+        self.groups = list(groups or [])
+        self.count_query = None
+        self.aggregate_pipeline = None
+
+    def count_documents(self, query):
+        self.count_query = query
+        return self.count
+
+    def aggregate(self, pipeline):
+        self.aggregate_pipeline = pipeline
+        return list(self.groups)
 
 
 class _RowResult:
@@ -259,6 +276,37 @@ def test_run_scheduled_main_invalid_frequency(monkeypatch):
     monkeypatch.setattr(run_scheduled_pipeline, "load_dotenv_if_exists", lambda _p: None)
     with pytest.raises(SystemExit, match="Unsupported frequencies"):
         run_scheduled_pipeline.main()
+
+
+def test_build_sphinx_docs_main(monkeypatch, tmp_path, capsys):
+    source_dir = tmp_path / "docs" / "sphinx" / "source"
+    output_dir = tmp_path / "docs" / "sphinx" / "build" / "html"
+    source_dir.mkdir(parents=True)
+    output_dir.mkdir(parents=True)
+    stale = output_dir / "stale.txt"
+    stale.write_text("old", encoding="utf-8")
+
+    args = SimpleNamespace(
+        builder="html",
+        clean=True,
+        source_dir=str(source_dir),
+        output_dir=str(output_dir),
+    )
+    calls = []
+    monkeypatch.setattr(build_sphinx_docs, "build_parser", lambda: _Parser(args))
+    monkeypatch.setattr(build_sphinx_docs, "load_dotenv_if_exists", lambda _p: None)
+    monkeypatch.setattr(build_sphinx_docs, "PROJECT_ROOT", tmp_path)
+    monkeypatch.setattr(
+        build_sphinx_docs.subprocess,
+        "run",
+        lambda cmd, check, cwd: calls.append((cmd, check, cwd)) or None,
+    )
+
+    assert build_sphinx_docs.main() == 0
+    out = capsys.readouterr().out.strip()
+    assert out == str(output_dir.resolve())
+    assert stale.exists() is False
+    assert calls and calls[0][1] is True
 
 
 def test_search_news_parses_date_bounds():
@@ -410,8 +458,7 @@ def test_manage_universe_override_helpers(monkeypatch, capsys):
 def test_seed_universe_loads_sqlite_and_main(monkeypatch, tmp_path, capsys):
     sqlite_path = tmp_path / "Equity.db"
     with sqlite3.connect(sqlite_path) as con:
-        con.execute(
-            """
+        con.execute("""
             CREATE TABLE equity_static (
                 symbol TEXT,
                 security TEXT,
@@ -420,8 +467,7 @@ def test_seed_universe_loads_sqlite_and_main(monkeypatch, tmp_path, capsys):
                 country TEXT,
                 region TEXT
             )
-            """
-        )
+            """)
         con.executemany(
             "INSERT INTO equity_static VALUES (?, ?, ?, ?, ?, ?)",
             [
@@ -448,33 +494,18 @@ def test_seed_universe_loads_sqlite_and_main(monkeypatch, tmp_path, capsys):
     assert "inserted 2 rows" in capsys.readouterr().out
 
 
-def test_seed_company_static_executes_setup_and_to_sql(monkeypatch):
+def test_seed_company_static_executes_setup_and_insert(monkeypatch):
     engine = _Engine()
     monkeypatch.setattr(seed_universe_from_sqlite, "get_db_engine", lambda: engine)
 
-    to_sql_calls = []
-
-    def _to_sql(self, name, con, schema, if_exists, index, method, chunksize):
-        to_sql_calls.append(
-            {
-                "name": name,
-                "schema": schema,
-                "if_exists": if_exists,
-                "index": index,
-                "method": method,
-                "chunksize": chunksize,
-            }
-        )
-
-    monkeypatch.setattr(pd.DataFrame, "to_sql", _to_sql, raising=False)
-    df = pd.DataFrame(
-        [{"symbol": "AAPL", "security": "Apple", "gics_sector": "Tech"}]
-    )
+    df = pd.DataFrame([{"symbol": "AAPL", "security": "Apple", "gics_sector": "Tech"}])
     rows = seed_universe_from_sqlite.seed_company_static(df)
     assert rows == 1
-    assert len(engine.conn.executed) == 3
-    assert to_sql_calls[0]["name"] == "company_static"
-    assert to_sql_calls[0]["schema"] == "systematic_equity"
+    assert len(engine.conn.executed) == 4
+    insert_stmt, insert_params = engine.conn.executed[-1]
+    assert "INSERT INTO systematic_equity.company_static" in str(insert_stmt)
+    assert insert_params[0]["symbol"] == "AAPL"
+    assert insert_params[0]["gics_industry"] is None
 
 
 def test_validate_pipeline_data_helpers_and_main(monkeypatch, capsys):
@@ -485,7 +516,7 @@ def test_validate_pipeline_data_helpers_and_main(monkeypatch, capsys):
                 "observation_date": datetime(2026, 3, 1),
                 "factor_name": "sentiment_30d_avg",
                 "factor_value": 0.1,
-                "source": "extractor_b",
+                "source": "av+finnhub",
                 "metric_frequency": "daily",
             },
             {
@@ -493,7 +524,7 @@ def test_validate_pipeline_data_helpers_and_main(monkeypatch, capsys):
                 "observation_date": datetime(2026, 3, 2),
                 "factor_name": "article_count_30d",
                 "factor_value": 2.0,
-                "source": "extractor_b",
+                "source": "av+finnhub",
                 "metric_frequency": "daily",
             },
         ]
@@ -509,6 +540,17 @@ def test_validate_pipeline_data_helpers_and_main(monkeypatch, capsys):
     )
     assert coverage["coverage_expected_rows"] == 4
     assert coverage["coverage_missing_rows"] == 2
+    assert coverage["coverage_trailing_unavailable_days"] == 0
+
+    trailing = validate_pipeline_data._validate_daily_symbol_coverage(
+        normalized[normalized["observation_date"] <= datetime(2026, 3, 1).date()],
+        start_date=datetime(2026, 3, 1).date(),
+        end_date=datetime(2026, 3, 2).date(),
+        coverage_factors={"sentiment_30d_avg", "article_count_30d"},
+    )
+    assert trailing["coverage_expected_rows"] == 2
+    assert trailing["coverage_missing_rows"] == 1
+    assert trailing["coverage_trailing_unavailable_days"] == 1
 
     args = SimpleNamespace(
         tolerance=1e-6,
@@ -522,14 +564,18 @@ def test_validate_pipeline_data_helpers_and_main(monkeypatch, capsys):
     monkeypatch.setattr(
         validate_pipeline_data,
         "_validate_daily_return",
-        lambda tol: (10, 0.0),  # noqa: ARG005
+        lambda tol, **kwargs: (10, 0.0),  # noqa: ARG005
     )
     monkeypatch.setattr(
         validate_pipeline_data,
         "_validate_debt_to_equity",
-        lambda tol: (8, 0.0),  # noqa: ARG005
+        lambda tol, **kwargs: (8, 0.0),  # noqa: ARG005
     )
-    monkeypatch.setattr(validate_pipeline_data, "_load_factor_observations", lambda: normalized)
+    monkeypatch.setattr(
+        validate_pipeline_data,
+        "_load_factor_observations",
+        lambda **kwargs: normalized,  # noqa: ARG005
+    )
     monkeypatch.setattr(
         validate_pipeline_data,
         "_validate_common_quality",
@@ -554,6 +600,7 @@ def test_validate_pipeline_data_helpers_and_main(monkeypatch, capsys):
     assert validate_pipeline_data.main() == 0
     out = capsys.readouterr().out
     assert "latest_run_id=run-1" in out
+    assert "validation_scope=all_history" in out
     assert "validation_status=PASS" in out
 
 
@@ -579,6 +626,14 @@ def test_validate_common_quality_and_recompute_helpers(monkeypatch):
             {
                 "symbol": "AAPL",
                 "observation_date": "2026-03-02",
+                "factor_name": "open_price",
+                "factor_value": None,
+                "source": "alpha_vantage",
+                "metric_frequency": "daily",
+            },
+            {
+                "symbol": "AAPL",
+                "observation_date": "2026-03-02",
                 "factor_name": "daily_return",
                 "factor_value": 0.0953101798,
                 "source": "alpha_vantage",
@@ -597,7 +652,7 @@ def test_validate_common_quality_and_recompute_helpers(monkeypatch):
                 "observation_date": "2026-03-02",
                 "factor_name": "news_sentiment_daily",
                 "factor_value": 0.2,
-                "source": "extractor_b",
+                "source": "av+finnhub",
                 "metric_frequency": "daily",
             },
             {
@@ -605,7 +660,7 @@ def test_validate_common_quality_and_recompute_helpers(monkeypatch):
                 "observation_date": "2026-03-02",
                 "factor_name": "news_article_count_daily",
                 "factor_value": 3.0,
-                "source": "extractor_b",
+                "source": "av+finnhub",
                 "metric_frequency": "daily",
             },
             {
@@ -613,7 +668,15 @@ def test_validate_common_quality_and_recompute_helpers(monkeypatch):
                 "observation_date": "2026-03-02",
                 "factor_name": "sentiment_30d_avg",
                 "factor_value": 0.2,
-                "source": "extractor_b",
+                "source": "av+finnhub",
+                "metric_frequency": "daily",
+            },
+            {
+                "symbol": "AAPL",
+                "observation_date": "2026-03-02",
+                "factor_name": "earnings_publication_flag",
+                "factor_value": 1.0,
+                "source": "financial_publish_calendar",
                 "metric_frequency": "daily",
             },
         ]
@@ -627,22 +690,24 @@ def test_validate_common_quality_and_recompute_helpers(monkeypatch):
     assert hard_fail_counts["unexpected_daily_return_null_rows"] == 0
     assert warning_counts["expected_daily_return_null_rows"] == 1
 
-    price_df = factors[
-        ["symbol", "observation_date", "factor_name", "factor_value"]
-    ].copy()
+    price_df = factors[["symbol", "observation_date", "factor_name", "factor_value"]].copy()
     atomics = pd.DataFrame(
         [
             {
                 "symbol": "AAPL",
-                "report_date": "2026-03-01",
+                "observation_date": "2026-03-01",
                 "metric_name": "total_debt",
                 "metric_value": 50.0,
+                "publish_date": "2026-03-01",
+                "source": "edgar",
             },
             {
                 "symbol": "AAPL",
-                "report_date": "2026-03-01",
+                "observation_date": "2026-03-01",
                 "metric_name": "total_shareholder_equity",
                 "metric_value": 25.0,
+                "publish_date": "2026-03-01",
+                "source": "edgar",
             },
         ]
     )
@@ -705,15 +770,19 @@ def test_validate_recompute_helpers_raise_on_large_error(monkeypatch):
         [
             {
                 "symbol": "AAPL",
-                "report_date": "2026-03-01",
+                "observation_date": "2026-03-01",
                 "metric_name": "total_debt",
                 "metric_value": 50.0,
+                "publish_date": "2026-03-01",
+                "source": "edgar",
             },
             {
                 "symbol": "AAPL",
-                "report_date": "2026-03-01",
+                "observation_date": "2026-03-01",
                 "metric_name": "total_shareholder_equity",
                 "metric_value": 25.0,
+                "publish_date": "2026-03-01",
+                "source": "edgar",
             },
         ]
     )
@@ -750,6 +819,55 @@ def test_validate_recompute_helpers_raise_on_large_error(monkeypatch):
         validate_pipeline_data._validate_debt_to_equity(1e-6)
 
 
+def test_validate_debt_to_equity_uses_pit_paired_financial_rows(monkeypatch):
+    monkeypatch.setattr(validate_pipeline_data, "get_db_engine", lambda: _Engine())
+
+    atomics = pd.DataFrame(
+        [
+            {
+                "symbol": "AAPL",
+                "observation_date": "2026-03-01",
+                "metric_name": "total_debt",
+                "metric_value": 100.0,
+                "publish_date": "2026-03-01",
+                "source": "yfinance",
+            },
+            {
+                "symbol": "AAPL",
+                "observation_date": "2026-03-01",
+                "metric_name": "total_debt",
+                "metric_value": 160.0,
+                "publish_date": "2026-03-10",
+                "source": "edgar",
+            },
+            {
+                "symbol": "AAPL",
+                "observation_date": "2026-03-01",
+                "metric_name": "total_shareholder_equity",
+                "metric_value": 50.0,
+                "publish_date": "2026-03-01",
+                "source": "yfinance",
+            },
+        ]
+    )
+    dte_df = pd.DataFrame(
+        [{"symbol": "AAPL", "observation_date": "2026-03-02", "factor_value": 2.0}]
+    )
+
+    read_sql_calls = []
+
+    def _read_sql_dte(_query, _conn):
+        read_sql_calls.append(True)
+        if len(read_sql_calls) == 1:
+            return atomics.copy()
+        return dte_df.copy()
+
+    monkeypatch.setattr(validate_pipeline_data.pd, "read_sql", _read_sql_dte)
+    checked_rows, max_abs_err = validate_pipeline_data._validate_debt_to_equity(1e-6)
+    assert checked_rows == 1
+    assert max_abs_err == pytest.approx(0.0)
+
+
 def test_validate_main_raises_for_invalid_dates_and_failures(monkeypatch):
     args = SimpleNamespace(
         tolerance=1e-6,
@@ -782,9 +900,21 @@ def test_validate_main_raises_for_invalid_dates_and_failures(monkeypatch):
     )
     monkeypatch.setattr(validate_pipeline_data, "parse_args", lambda: args)
     monkeypatch.setattr(validate_pipeline_data, "_load_latest_run_id", lambda: "run-2")
-    monkeypatch.setattr(validate_pipeline_data, "_validate_daily_return", lambda tol: (1, 0.0))
-    monkeypatch.setattr(validate_pipeline_data, "_validate_debt_to_equity", lambda tol: (1, 0.0))
-    monkeypatch.setattr(validate_pipeline_data, "_load_factor_observations", lambda: pd.DataFrame())
+    monkeypatch.setattr(
+        validate_pipeline_data,
+        "_validate_daily_return",
+        lambda tol, **kwargs: (1, 0.0),  # noqa: ARG005
+    )
+    monkeypatch.setattr(
+        validate_pipeline_data,
+        "_validate_debt_to_equity",
+        lambda tol, **kwargs: (1, 0.0),  # noqa: ARG005
+    )
+    monkeypatch.setattr(
+        validate_pipeline_data,
+        "_load_factor_observations",
+        lambda **kwargs: pd.DataFrame(),  # noqa: ARG005
+    )
     monkeypatch.setattr(
         validate_pipeline_data,
         "_validate_common_quality",
@@ -942,12 +1072,18 @@ def test_index_news_to_mongo_helpers_and_main(monkeypatch, capsys):
     assert index_news_to_mongo._build_query_prefix("raw/source_b/news", "2026-03-18") == (
         "raw/source_b/news/run_date=2026-03-18/"
     )
-    assert index_news_to_mongo._parse_symbol_from_object_name(
-        "raw/source_b/news/run_date=2026-03-18/symbol=AAPL.jsonl"
-    ) == "AAPL"
-    assert index_news_to_mongo._parse_run_date_from_object_name(
-        "raw/source_b/news/run_date=2026-03-18/symbol=AAPL.jsonl"
-    ) == "2026-03-18"
+    assert (
+        index_news_to_mongo._parse_symbol_from_object_name(
+            "raw/source_b/news/run_date=2026-03-18/symbol=AAPL.jsonl"
+        )
+        == "AAPL"
+    )
+    assert (
+        index_news_to_mongo._parse_run_date_from_object_name(
+            "raw/source_b/news/run_date=2026-03-18/symbol=AAPL.jsonl"
+        )
+        == "2026-03-18"
+    )
     assert index_news_to_mongo._extract_topics([{"topic": "Tech"}, "tech", "Finance"]) == [
         "tech",
         "finance",
@@ -1134,9 +1270,7 @@ def test_build_minio_client_and_index_news_edge_paths(monkeypatch):
                     b'{"title":"Keep","summary":"summary text long enough for inference",'
                     b'"source":"av","time_published":"20260318T010203"}\n',
                 ),
-                "raw/source_b/news/run_date=2026-03-18/symbol=ERR.jsonl": _Response(
-                    fail=True
-                ),
+                "raw/source_b/news/run_date=2026-03-18/symbol=ERR.jsonl": _Response(fail=True),
             }
 
         def list_objects(self, bucket, prefix, recursive=True):  # noqa: ARG002
@@ -1186,9 +1320,7 @@ def test_index_news_to_mongo_main_without_indexes_and_with_warning(monkeypatch, 
     monkeypatch.setattr(index_news_to_mongo, "load_dotenv_if_exists", lambda _p: None)
     monkeypatch.setattr(index_news_to_mongo, "_configure_logging", lambda level: None)
     monkeypatch.setattr(index_news_to_mongo, "_LANGID_AVAILABLE", False)
-    monkeypatch.setattr(
-        index_news_to_mongo.logger, "warning", lambda msg: warnings.append(msg)
-    )
+    monkeypatch.setattr(index_news_to_mongo.logger, "warning", lambda msg: warnings.append(msg))
     monkeypatch.setattr(
         index_news_to_mongo,
         "_resolve_config",
@@ -1258,6 +1390,119 @@ def test_index_news_to_mongo_main_failure(monkeypatch, capsys):
 
     assert index_news_to_mongo.main() == 1
     assert '"error": "RuntimeError(\'boom\')"' in capsys.readouterr().out
+
+
+def test_audit_source_b_boundary_helpers_and_main(monkeypatch, capsys):
+    since_dt = datetime(2026, 2, 28, tzinfo=UTC)
+    until_dt = datetime(2026, 3, 3, tzinfo=UTC)
+    pipeline = audit_source_b_boundary._build_duplicate_url_pipeline(
+        since_dt=since_dt,
+        until_dt=until_dt,
+    )
+    assert pipeline[0]["$match"]["time_published"]["$gte"] == since_dt
+    assert pipeline[0]["$match"]["time_published"]["$lt"] == until_dt
+    assert pipeline[0]["$match"]["url"]["$ne"] == ""
+
+    coll = _AggregateCollection(count=3, groups=[])
+    report = audit_source_b_boundary.audit_duplicate_urls(
+        coll,
+        since_dt=since_dt,
+        until_dt=until_dt,
+        sample_limit=5,
+    )
+    assert report["status"] == "ok"
+    assert report["articles_in_window"] == 3
+    assert report["duplicate_url_group_count"] == 0
+    assert coll.count_query["time_published"]["$gte"] == since_dt
+
+    args = SimpleNamespace(
+        config="config/conf.yaml",
+        collection="news_articles",
+        since="2026-02-28",
+        until="2026-03-03",
+        sample_limit=5,
+        fail_on_duplicates=True,
+        log_level="INFO",
+        mongo_db="ift_cw",
+    )
+    client = _MongoClient()
+    monkeypatch.setattr(audit_source_b_boundary, "build_parser", lambda: _Parser(args))
+    monkeypatch.setattr(audit_source_b_boundary, "load_dotenv_if_exists", lambda _p: None)
+    monkeypatch.setattr(audit_source_b_boundary, "_configure_logging", lambda level: None)
+    monkeypatch.setattr(
+        audit_source_b_boundary,
+        "_resolve_config",
+        lambda path: {  # noqa: ARG005
+            "mongo": {"db": "ift_cw"},
+            "source_b": {"av_cutoff_date": "2026-03-01"},
+        },
+    )
+    monkeypatch.setattr(
+        audit_source_b_boundary,
+        "resolve_mongo_db",
+        lambda mongo_db, cfg: mongo_db or cfg["db"],
+    )
+    monkeypatch.setattr(
+        audit_source_b_boundary,
+        "build_mongo_collection",
+        lambda mongo_cfg, collection, mongo_db: (
+            client,
+            _AggregateCollection(count=4, groups=[]),
+        ),  # noqa: ARG005
+    )
+
+    assert audit_source_b_boundary.main() == 0
+    out = capsys.readouterr().out
+    assert '"status": "ok"' in out
+    assert '"configured_av_cutoff_date": "2026-03-01"' in out
+    assert client.closed is True
+
+
+def test_audit_source_b_boundary_main_fails_on_duplicate_urls(monkeypatch, capsys):
+    args = SimpleNamespace(
+        config="config/conf.yaml",
+        collection="news_articles",
+        since="2026-02-28",
+        until="2026-03-03",
+        sample_limit=3,
+        fail_on_duplicates=True,
+        log_level="INFO",
+        mongo_db="ift_cw",
+    )
+    client = _MongoClient()
+    duplicate_groups = [
+        {
+            "_id": "https://example.com/dup",
+            "count": 2,
+            "sources": ["Reuters", "Reuters"],
+            "symbols": [["AAPL", "MSFT"], ["AAPL"]],
+            "first_seen": datetime(2026, 2, 28, 9, 0, 0, tzinfo=UTC),
+            "last_seen": datetime(2026, 3, 2, 10, 0, 0, tzinfo=UTC),
+        }
+    ]
+    monkeypatch.setattr(audit_source_b_boundary, "build_parser", lambda: _Parser(args))
+    monkeypatch.setattr(audit_source_b_boundary, "load_dotenv_if_exists", lambda _p: None)
+    monkeypatch.setattr(audit_source_b_boundary, "_configure_logging", lambda level: None)
+    monkeypatch.setattr(
+        audit_source_b_boundary,
+        "_resolve_config",
+        lambda path: {"mongo": {"db": "ift_cw"}, "source_b": {}},  # noqa: ARG005
+    )
+    monkeypatch.setattr(audit_source_b_boundary, "resolve_mongo_db", lambda mongo_db, cfg: mongo_db)
+    monkeypatch.setattr(
+        audit_source_b_boundary,
+        "build_mongo_collection",
+        lambda mongo_cfg, collection, mongo_db: (  # noqa: ARG005
+            client,
+            _AggregateCollection(count=2, groups=duplicate_groups),
+        ),
+    )
+
+    assert audit_source_b_boundary.main() == 2
+    out = capsys.readouterr().out
+    assert '"duplicate_url_group_count": 1' in out
+    assert '"symbols": ["AAPL", "MSFT"]' in out
+    assert client.closed is True
 
 
 def test_init_db_helpers_and_main(monkeypatch, tmp_path, capsys):

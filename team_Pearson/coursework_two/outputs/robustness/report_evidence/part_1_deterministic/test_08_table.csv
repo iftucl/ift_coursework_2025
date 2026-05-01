@@ -1,0 +1,5 @@
+﻿scenario_key,risk_adjusted.sharpe_ratio,portfolio.avg_monthly_recorded_turnover,risk.max_drawdown
+trade_constraint_medium,0.518371,15.489956,19.573662
+trade_constraint_none,0.514835,15.459095,19.572882
+trade_constraint_strong,0.519246,15.443262,19.584394
+trade_constraint_weak,0.515651,15.478155,19.579735

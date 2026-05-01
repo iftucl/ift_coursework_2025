@@ -1,214 +1,202 @@
 # Data Implementation
 
-## Scope
+## Actual Runtime Behavior
 
-This page describes what the current code actually does for extraction, normalization, loading, and factor generation.
+The platform writes data into different stores by responsibility, not by duplication.
 
-Authoritative code paths:
-- `Main.py`
-- `modules/input/extract_source_a.py`
-- `modules/input/extract_source_b.py`
-- `modules/output/normalize.py`
-- `modules/output/quality.py`
-- `modules/output/load.py`
-- `modules/transform/factors.py`
-- `sql/init.sql`
+### Canonical storage split
 
-## 1. Runtime Flow
+- `MinIO`
+  - raw provider payloads
+  - replayable article snapshots
+  - current-month merged Source B state
+  - month-level cursor files
 
-Pipeline execution in `Main.py`:
+- `PostgreSQL`
+  - curated factors and financial atomics
+  - metadata and manifests
+  - CW2 feature and portfolio tables
+  - CW2 operational decision tables
+  - CW2 control-plane and monitoring tables
+  - recommendation workflow objects
+  - backtest, analysis, and report registries
 
-<div>（1）Resolve runtime config (<code>run_date</code>, <code>frequency</code>, <code>backfill_years</code>, enabled extractors).</div>
-<div>（2）Load universe from <code>systematic_equity.company_static</code>.</div>
-<div>（3）Plan work units and manifest state for the run (target symbols, Source B symbol-month windows, reuse eligibility, and final-build gate).</div>
-<div>（4）Extract Source A / Source B atomics by work unit and archive raw payloads to MinIO.</div>
-<div>（5）Split unit outputs:</div>
-<ul style="margin-top: 0.2rem; margin-bottom: 0.2rem;">
-<li>financial atomics -&gt; <code>financial_observations</code></li>
-<li>other atomics/factors -&gt; <code>factor_observations</code></li>
-</ul>
-<div>（6）Normalize and accumulate quality evidence as atomic units are materialized.</div>
-<div>（7）Upsert curated atomics into PostgreSQL incrementally in bounded batches.</div>
-<div>（8）After all planned atomic units reach a terminal manifest state, build final factors globally and upsert back to <code>factor_observations</code>.</div>
+- `MongoDB`
+  - rebuildable `news_articles` serving and search collection
 
-## 2. Frequency Model
+- `Redis`
+  - runtime-only resilience state
+  - token buckets
+  - circuit breakers
+  - Source B dedupe keys
+  - CW2 runtime locks, lock metadata, and heartbeat state
 
-| Layer | Current behavior |
-| --- | --- |
-| Pipeline run cadence | Usually daily (scheduler default), configurable |
-| Atomic collection call | Invoked with `daily` runtime cadence |
-| Source A semantic cadence | Market/news-like fields daily; financial fields filing-period based |
-| Source B fetch cadence | Month-window incremental fetch with lookback buffer |
-| Final factor output cadence | Daily compute first, then sample by `--frequency` |
+- `Kafka`
+  - optional event fan-out
+  - not the primary truth layer
 
-Key clarification:
-- `--frequency` controls final-factor sampling only.
-- It does not change extractor fetch cadence.
+## Source A
 
-## 3. Storage Contract
+Current default runtime behavior:
 
-### Main.py direct write scope
+- market history from `yfinance`
+- fundamental supplement from `EDGAR XBRL`
+- atomic outputs loaded into:
+  - `factor_observations`
+  - `financial_observations`
 
-`Main.py` directly writes to:
-- PostgreSQL:
-  - `systematic_equity.factor_observations`
-  - `systematic_equity.financial_observations`
-  - `systematic_equity.pipeline_runs`
-- MinIO:
-  - Source A / Source B raw snapshots
-  - Source B cursor objects
-  - Source B current-month merged objects
-- MongoDB (default enabled, best-effort):
-  - runs `scripts/index_news_to_mongo.py` post-success
-  - writes search/index collection `ift_cw.news_articles`
-  - disable with `--no-index-mongo`
+Archived Source A raw payloads now also carry:
 
-### 3.1 PostgreSQL curated tables
+- canonical `history[].observation_date`
+- normalized OHLCV/dividend row fields
+- `normalized_schema_version`
+- `provider_payload_version`
+- `schema_validation_status` and `schema_validation_errors`
 
-| Table | Key | Notes |
-| --- | --- | --- |
-| `systematic_equity.factor_observations` | `(symbol, observation_date, factor_name)` | final factors + non-financial atomics; `metric_value` as `NUMERIC(18,6)` |
-| `systematic_equity.financial_observations` | `(symbol, report_date, metric_name)` | filing-period financial atomics with `period_type`, `as_of`, `currency` |
-| `systematic_equity.pipeline_runs` | `run_id` | run lifecycle audit (`running/success/failed`) |
+## Source B
 
-### 3.2 MinIO raw layer
+Current implementation is:
 
-- Source A: `raw/source_a/pricing_fundamentals/...`
-- Source B snapshots: `raw/source_b/news/run_date=.../year=.../month=.../symbol=...jsonl`
-- Source B cursor: `raw/source_b/news_cursor/year=.../month=.../symbol=...json`
-- Source B month-current merged view: `raw/source_b/news_current/...`
+- `Alpha Vantage` for historical windows up to the configured cutoff
+- `Finnhub` for post-cutoff incremental windows
+- Loughran-McDonald sentiment scoring on the normalized article stream
 
-### 3.3 MongoDB search index
+### Raw layer
 
-- Collection: `ift_cw.news_articles`
-- Canonical fields: `time_published`, `symbols`
-- Compatibility aliases: `published_at`, `tickers`
-- Enabled by default in `Main.py` and scheduler/orchestrator scripts; disable with `--no-index-mongo`.
+- `raw/source_b/news/run_date=.../year=.../month=.../symbol=...jsonl`
+- `raw/source_b/news_current/year=.../month=.../symbol=...jsonl`
+- `raw/source_b/news_cursor/year=.../month=.../symbol=...json`
 
-Mongo responsibility split:
-- `Main.py` remains the core ETL path (extract -> normalize -> PostgreSQL load, with raw MinIO archive).
-- MongoDB indexing remains a serving/search layer executed as post-success best-effort by:
-  - `Main.py` (default)
-  - `scripts/run_pipeline_and_index.py`
-  - `scripts/run_scheduled_pipeline.py`
-- This keeps core factor loading independent from search-index availability.
+Current normalized Source B raw objects also carry:
 
-### 3.4 Data lineage
+- canonical `publish_date` and `time_published`
+- `time_precision` to distinguish full timestamps from date-only records
+- `normalized_schema_version`
+- `provider_payload_version`
+- `schema_validation_status` and `schema_validation_errors`
 
-Two lineage paths run in parallel with different ownership:
+### Curated daily atomics
 
-- Analytical source-of-truth lineage (SQL):
-  - `source_a/source_b -> normalize/quality -> PostgreSQL`
-  - final truth tables remain `factor_observations` and `financial_observations`.
+- `news_sentiment_daily`
+- `news_article_count_daily`
 
-- Search-serving lineage (Mongo):
-  - `source_b raw JSONL in MinIO -> Main.py post-success Mongo stage -> ift_cw.news_articles`
-  - this stage is default-enabled and best-effort.
+### Curated event proxies
 
-Field-level lineage (source_b to Mongo):
+- `earnings_news_count_daily`
+- `earnings_negative_news_count_daily`
+- `rating_downgrade_count_daily`
+- `rating_upgrade_count_daily`
 
-- raw article records are normalized by `scripts/index_news_to_mongo.py`.
-- canonical symbol field in Mongo is `symbols`.
-- query/index path is aligned to `symbols`, `time_published`, and text index on `title + summary`.
+These are stored in `factor_observations` and can be consumed downstream by CW2.
+All daily Source B atomics now also populate `publish_date` so news-derived
+features follow the same PIT availability column used elsewhere in the platform.
 
-Auditability hooks:
+## CW2 Feature and Portfolio Layer
 
-- run-level trace: `run_id` and stage events in pipeline logs.
-- raw object trace: MinIO object keys by `run_date/year/month/symbol`.
-- document trace: Mongo `minio_object_keys` references source raw objects.
+CW2 materializes:
 
-Trigger and control rules:
+- investable universe screen
+- first-level sub-scores
+- first-level factor scores
+- regime-aware risk overlay
+- final `portfolio_target_positions`
+- feature and portfolio snapshot registries
+- model input manifests
 
-- `Main.py` triggers Mongo indexing only after core pipeline status is `success`.
-- `--dry-run` skips Mongo indexing.
-- `--no-index-mongo` disables Mongo indexing explicitly.
-- If Mongo indexing fails, run status stays successful for SQL core load and a warning is recorded.
+This makes the monthly portfolio generation process auditable and replayable.
 
-## 4. Metric Definitions
+## CW2 Operational Decision Layer
 
-### 4.1 Atomic metrics
+CW2 also persists a daily operational decision table:
 
-| Metric | Source cadence | Stored cadence | Meaning / Formula | Key rules |
-| --- | --- | --- | --- | --- |
-| `adjusted_close_price` | daily market trading | daily | adjusted close | Alpha Vantage adjusted close and yfinance adjusted-close-aligned history are normalized to the same internal field |
-| `daily_return` | daily market trading | daily | `ln(P_t/P_{t-1})` | null if current/previous price invalid |
-| `dividend_per_share` | daily market series | daily | provider dividend amount | mostly `0`, non-zero on dividend dates |
-| `total_debt` | quarterly filings | quarterly snapshot | provider debt | in `financial_observations` |
-| `total_shareholder_equity` | quarterly filings | quarterly snapshot | provider equity | in `financial_observations` |
-| `book_value` | quarterly filings | quarterly snapshot | provider/derived book value | in `financial_observations` |
-| `shares_outstanding` | quarterly filings | quarterly snapshot | provider shares outstanding | in `financial_observations` |
-| `enterprise_ebitda` | quarterly filings | quarterly snapshot | provider EBITDA field | in `financial_observations` |
-| `enterprise_revenue` | quarterly filings | quarterly snapshot | provider revenue field | in `financial_observations` |
-| `news_sentiment_daily` | daily news flow | daily | daily mean sentiment score | score clipped to `[-1,1]` |
-| `news_article_count_daily` | daily news flow | daily | daily article count | non-negative |
+- `portfolio_update_decisions`
 
-### 4.2 Final factors
+Each row classifies the current run date into one of:
 
-| Metric | Input cadence | Output cadence | Meaning / Formula | Key rules |
-| --- | --- | --- | --- | --- |
-| `momentum_1m` | daily prices | daily (then sampled) | `close/close.shift(20)-1` | requires enough history |
-| `volatility_20d` | daily prices | daily (then sampled) | rolling 20-day std of returns | requires enough history |
-| `dividend_yield` | daily price + dividend | daily as-of | trailing 365-day DPS sum / price | price lookback <= 3 trading days |
-| `pb_ratio` | filing metrics + daily price | daily as-of | `(price*shares_outstanding)/equity` | stale/expire rule + per-symbol winsor |
-| `debt_to_equity` | filing metrics | daily as-of | `debt/equity` | stale/expire rule; equity > 0 |
-| `ebitda_margin` | filing metrics | daily as-of | `ebitda/revenue` | stale/expire rule; revenue > 0 |
-| `sentiment_30d_avg` | `atomic_news` daily | daily (then sampled) | rolling `30D` mean sentiment | no-news calendar days are zero-filled |
-| `article_count_30d` | `atomic_news` daily | daily (then sampled) | rolling `30D` sum count | no-news calendar days are zero-filled; not a direct trading signal in current strategy |
+- `monitor_only`
+- `risk_review`
+- `full_rebalance`
+- `blocked`
 
-## 5. Quality and Missing-Value Rules
+This keeps incremental upstream refreshes, portfolio monitoring, and formal
+rebalance runs separate in a way that can be audited from SQL.
 
-### 5.1 Global rules
+## CW2 Control Plane Layer
 
-- Rows missing any of `observation_date`, `symbol`, `factor_name` are dropped.
-- Invalid timestamps are dropped during normalization.
-- Non-finite numeric values are filtered/flagged before load.
-- DB loaders use upsert semantics for idempotent reruns.
+CW2 also persists control-plane state in SQL through:
 
-### 5.2 Financial staleness and validity
+- `ops_pipeline_runs`
+- `ops_stage_runs`
+- `ops_event_log`
+- `ops_kafka_consumer_ack`
+- `ops_kafka_dead_letter`
+- `ops_kafka_lag_snapshots`
+- `ops_health_snapshots`
+- `quality_snapshots`
 
-- Stale warning: age > `270` days.
-- Hard expire drop: age > `365` days.
-- Applied in as-of selection for `pb_ratio`, `debt_to_equity`, `ebitda_margin`.
-- Numeric coercion (`to_numeric(..., errors="coerce")`) is applied before ratio computation.
-- Rows are skipped for invalid denominator or missing required values.
+These tables keep scheduler context, quality evidence, Kafka consumer audit, and
+health snapshots queryable after the original process has finished.
 
-### 5.3 Price lookback guard
+## Recommendation Layer
 
-For `dividend_yield` and `pb_ratio`:
-- use exact-day price first;
-- fallback to at most 3 prior trading records;
-- require price `>0`, otherwise skip.
+CW2 now publishes formal recommendation objects:
 
-### 5.4 Sentiment chain (Source B)
+- `portfolio_recommendations`
+- `portfolio_recommendation_items`
+- `portfolio_recommendation_events`
+- `portfolio_recommendation_decisions`
 
-- Fetch loop is month-window based with incremental start/end windows.
-- Incremental buffer is controlled by `SOURCE_B_INCREMENTAL_BUFFER_DAYS` (default `3`).
-- Cursor is per `symbol + year-month` with fields `last_ingested_date` and `is_closed`.
-- Closed months are skipped in daily runs to avoid repeated re-fetch.
-- Missing article timestamp fallback uses `fetch_start` (then `month_start`, then legacy `month_end`), not `fetch_end`.
-- Daily atomics are built first, then 30-day rolling factors after calendar-day zero-fill.
+These are the stored, approval-aware representation of end-user investment advice.
 
-## 6. Validation Coverage
+## Backtest, Analysis, and Reporting
 
-`scripts/validate_pipeline_data.py` checks:
-- duplicate key rows
-- required-field completeness
-- invalid frequency/source labels
-- `daily_return` recomputation consistency
-- `debt_to_equity` recomputation consistency
-- sentiment null/negative constraints
-- optional coverage-gap checks
+Backtest outputs are stored in SQL, including:
 
-Minimal replay check:
+- `backtest_runs`
+- `backtest_holdings`
+- `backtest_performance`
+- `backtest_metrics`
+- `backtest_cash_ledger`
+- `backtest_intraday_events`
+- `backtest_intraday_daily_state`
+
+Analysis and reporting layers add:
+
+- relative metrics
+- regime attribution
+- covariance diagnostics
+- scorecard tables
+- report artifact registries
+
+## Kafka Eventing
+
+When enabled, Kafka carries incremental events such as:
+
+- structured news records from CW1
+- daily event-proxy outputs from CW1
+- requested risk actions from CW2
+- executed risk actions from CW2
+- run-status events
+
+This layer is for **fan-out and decoupling**, not primary persistence.
+
+## Airflow + Sphinx
+
+Airflow currently orchestrates:
+
+1. upstream pipeline execution
+2. curated-data validation
+3. Sphinx HTML build
+4. daily CW2 update-decision run
+5. month-end CW2 operate flow
+6. scheduled monthly snapshot backfill plus post-backfill audit
+7. scheduled monthly staged backtest/analyse/report/verify flow
+
+Manual documentation build still uses:
 
 ```bash
-poetry run pytest -q -o addopts='' tests/test_replay_regression.py
+python scripts/build_sphinx_docs.py --clean
 ```
 
-This replay check is advisory (non-blocking) by design.
-
-## 7. Implementation Notes
-
-- Financial atomics are stored in `financial_observations` with filing-period semantics.
-- Final factors are produced daily first, then sampled to requested output frequency.
-- `NUMERIC(18,6)` storage can introduce small rounding differences.
+The shared Sphinx source lives under `coursework_one/docs/sphinx/source`, but it
+documents the combined `CW1 + CW2` platform.

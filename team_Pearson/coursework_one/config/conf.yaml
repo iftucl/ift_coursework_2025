@@ -4,48 +4,138 @@
 pipeline:
   frequency: daily           # How often to run: daily, weekly, monthly, quarterly, annual
   backfill_years: 5          # Number of years of historical data to fetch
-  company_limit: 20          # Max companies to process (null = no limit, useful for testing)
-  enabled_extractors:        # Stage toggles for pluggable extractors
-    - source_a
-    - source_b               # default runs both extractors
+  company_limit: null        # Full-universe default; pass --company-limit for smoke/debug runs
+  enabled_extractors:        # Stage toggles — three logical data layers
+    - source_a               # Structured data: yfinance primary, Alpha Vantage fallback, EDGAR supplement
+    - source_b               # Unstructured data: news/sentiment (AV historical + Finnhub incremental + L-M lexicon)
+    - market_factors         # Derived factors: beta_1y, momentum_1m/6m/12m, vol_60d, liquidity_20d
 
-# Universe filters
+# Universe selection
+# Runtime code reads symbols from PostgreSQL systematic_equity.company_static
+# (or equity_static as fallback). That table is seeded from
+# 000.Database/SQL/Equity.db by scripts/seed_universe_from_sqlite.py.
 universe:
-  country_allowlist: null    # null = no country filtering; use full seeded universe
+  country_allowlist: ["US"]  # Upstream parent scope; CW2 investable_universe.country_allowlist must be a subset
 
-# Logging 
+# Logging
 logging:
   run_log_path: logs/pipeline_runs.jsonl
 
-# Alpha Vantage key is loaded from environment (.env), not from this file.
+# Redis — rate limiter and circuit breaker state store
+redis:
+  host: localhost
+  port: 6380                 # team_pearson_redis (avoids conflict with other teams on 6379)
+  db: 0
+  required: true
+  socket_timeout: 2
+  connect_timeout: 2
+  healthcheck_interval: 30
+
+# Kafka — optional event bus for incremental news/risk fan-out.
+# SQL/MinIO remain the source of truth; Kafka carries transient event messages.
+kafka:
+  enabled: true
+  required: false
+  bootstrap_servers:
+    - localhost:29092
+  client_id: team_pearson_cw1
+  linger_ms: 50
+  batch_size: 16384
+  compression_type: gzip
+  topics:
+    cw1_news_structured: cw1.news.structured.v1
+    cw1_event_proxies: cw1.event.proxies.v1
+    cw2_risk_actions_requested: cw2.risk.actions.requested.v1
+    cw2_risk_actions_executed: cw2.risk.actions.executed.v1
+    platform_run_status: platform.runs.status.v1
+  audit_consumer:
+    enabled: true
+    consumer_group: team_pearson_cw2_audit
+    consumer_component: cw2.kafka_audit_consumer
+    topic_keys:
+      - cw2_risk_actions_requested
+      - cw2_risk_actions_executed
+      - platform_run_status
+    poll_timeout_ms: 1000
+    max_batch_messages: 200
+    max_idle_polls: 3
+    max_retries_per_message: 3
+    lag_warning_threshold: 100
+    freshness_warning_minutes: 60
+    pending_grace_minutes: 2
+    orphan_reconcile_minutes: 60
+
+# MinIO — raw/replay object storage
+minio:
+  endpoint: localhost:9000
+  access_key: ift_bigdata
+  secret_key: minio_password
+  bucket: csreport
+  secure: false
+
+# Finnhub — primary news source (free tier: 60 req/min, ~2yr history)
+finnhub:
+  rate_per_minute: 55        # Conservative (55/60) — safety margin vs hard limit
+  max_history_years: 2       # Finnhub free tier coverage
+
+# SEC EDGAR XBRL — fundamental financial data (free, no key required)
+edgar:
+  rate_per_second: 8         # Conservative (< EDGAR's 10/s limit)
+  pit_fallback_days: 45      # publish_date fallback: report_date + N days
+
+# Market factors
+market_factors:
+  beta_window_days: 252      # Rolling window for beta_1y
+  benchmark_ticker: "SPY"    # Canonical shared benchmark series; CW2 backtest.benchmark_ticker must match
+
+# Source A provider strategy (legacy market/fundamental data)
+source_a:
+  primary_source: yfinance   # Provider order: yfinance -> Alpha Vantage -> EDGAR supplement
+  enable_yfinance_fallback: true  # Legacy flag name: enables secondary provider fallback
+  use_cache: true
+
+source_b:
+  strict_time: false          # true => drop rows with missing/invalid time_published
+  av_cutoff_date: "2026-03-01" # routing anchor: windows ending on/before this date use AV; later dates use Finnhub
+
+# Cross-source coverage contract.
+# These gates fail the run only for unexpected processing gaps.
+# Policy exclusions and zero-article realized windows are recorded but do not fail.
+source_coverage_contract:
+  max_missing_source_a_symbols: 0
+  max_missing_source_b_symbols: 0
+
+# Alpha Vantage — historical news backfill provider.
+# The effective request budget depends on the supplied key tier; historical
+# reproducibility can also rely on archived raw files already stored in MinIO.
+alpha_vantage:
+  api_key_env: ALPHA_VANTAGE_API_KEY   # environment variable holding the API key
+  throttle_seconds: 1.0                # per-request sleep (conservative)
+  max_retries: 3
+  retry_backoff_seconds: 5.0
+
+docs:
+  sphinx_source_dir: docs/sphinx/source
+  sphinx_output_dir: docs/sphinx/build/html
+
+scheduler:
+  orchestrator: airflow
+  dag_id: cw1_pipeline_and_docs
+
+# Shared symbol filtering policy.
+symbol_filter:
+  skip_suffix_symbols: true
+  symbol_regex_allow: "^[A-Z0-9]+$"
+
+# Provider-aware routing.
+routing:
+  av_only_if_regex: "^[A-Z0-9]+$"
+  yf_for_suffixes: [".L", ".TO", ".PA", ".DE"]
+  history_ticker_policy: "skip"
+  history_blocklist: ["ABC", "ADS", "FB", "ATVI", "ABMD", "CELG"]
 
 # Mongo defaults (match docker-compose host mapping: 27019 -> container 27017)
 mongo:
   host: localhost
   port: 27019
   database: ift_cw
-
-# Source A provider strategy
-source_a:
-  primary_source: alpha_vantage
-  enable_yfinance_fallback: true
-  use_cache: true
-
-source_b:
-  strict_time: false          # true => drop rows with missing/invalid time_published
-
-# Shared symbol filtering policy.
-# Suffix-qualified symbols are intentionally excluded across all sources in the
-# current configuration. If suffix handling is enabled in a future revision,
-# these filter parameters should be relaxed accordingly.
-symbol_filter:
-  skip_suffix_symbols: true
-  symbol_regex_allow: "^[A-Z0-9]+$"
-
-# Provider-aware routing.
-# yf_for_suffixes is kept for future use if filtering is disabled later.
-routing:
-  av_only_if_regex: "^[A-Z0-9]+$"
-  yf_for_suffixes: [".L", ".TO", ".PA", ".DE"]
-  history_ticker_policy: "skip"      # skip | try_yf_only
-  history_blocklist: ["ABC", "ADS", "FB", "ATVI", "ABMD", "CELG"]

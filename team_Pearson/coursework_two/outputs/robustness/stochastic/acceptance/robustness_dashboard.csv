@@ -1,0 +1,11 @@
+﻿section,item_key,title,annualized_return,annualized_excess_return,sharpe,max_drawdown,implementation_status
+baseline,mainline_realized,Mainline Realized Baseline,0.12383503780499283,0.016277258992993815,0.7700766759651416,-0.17130801360179226,completed
+test_9,stationary_block_bootstrap,Stationary Block Bootstrap,0.1251000701960073,0.016108197917743948,0.7880017361747255,-0.15503076224232046,completed
+test_10,cost_multiplier_sigma_30pct,Monte Carlo Cost Perturbation (sigma 30%),0.12391214964664854,0.016354370834649523,0.7702645034539688,-0.17137094101937672,completed
+test_10,cost_multiplier_sigma_50pct,Monte Carlo Cost Perturbation (sigma 50%),0.12389324725310957,0.016335468441110557,0.7701452231784197,-0.17137479067838407,completed
+test_10,flat_extra_25bps,Flat +25bps Execution Drag,0.1145215599894287,0.006963781177429684,0.7124488804151942,-0.17706664530669614,completed
+test_11,factor_weight_loose,Factor-weight Dirichlet Neighbourhood (loose),0.10814159000000001,0.03198439138857312,0.518591,0.18813637,completed
+test_11,factor_weight_medium,Factor-weight Dirichlet Neighbourhood (medium),0.11583352499999999,0.03967631970097062,0.5627215000000001,0.18365228,completed
+test_11,factor_weight_tight,Factor-weight Dirichlet Neighbourhood (tight),0.10537825,0.029221050811633953,0.50064,0.19442136,completed
+test_12,rolling_24p_is_1p_oos,Rolling Out-of-Sample (24P IS / 1P OOS),0.166230247887325,-0.0006277264205698518,1.1000701343636818,-0.12067133438993671,completed
+test_13,empirical_mean_covariance,Monte Carlo Path Simulation from Empirical Mean/Covariance,0.12365469723949674,0.01616284912267618,0.7677823062609499,-0.18540807803133852,completed

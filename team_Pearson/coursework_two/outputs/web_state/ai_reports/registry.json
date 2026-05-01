@@ -1,0 +1,13 @@
+[
+  {
+    "report_id": "ai-report-20260501-053951",
+    "generated_at": "2026-05-01T05:39:51.798539Z",
+    "model": "gpt-4.1-mini",
+    "provider_url": "https://api.openai.com/v1",
+    "output_path": "C:\\Users\\grace\\OneDrive\\文档\\IFTE0003 Big Data\\_inspected_zip\\ift_coursework_2025_Team_Pearson-backup-20260418-qnative-v2-current-workspace\\team_Pearson\\coursework_two\\outputs\\web_state\\ai_reports\\ai_report_20260501T054045Z.json",
+    "output_markdown_path": "C:\\Users\\grace\\OneDrive\\文档\\IFTE0003 Big Data\\_inspected_zip\\ift_coursework_2025_Team_Pearson-backup-20260418-qnative-v2-current-workspace\\team_Pearson\\coursework_two\\outputs\\web_state\\ai_reports\\ai_report_20260501T054045Z.md",
+    "output_docx_path": "",
+    "output_pdf_path": "C:\\Users\\grace\\OneDrive\\文档\\IFTE0003 Big Data\\_inspected_zip\\ift_coursework_2025_Team_Pearson-backup-20260418-qnative-v2-current-workspace\\team_Pearson\\coursework_two\\outputs\\web_state\\ai_reports\\ai-report-20260501-053951.pdf",
+    "status": "generated"
+  }
+]

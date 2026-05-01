@@ -1,0 +1,6 @@
+﻿scenario_key,risk_adjusted.sharpe_ratio,return.annualized_return,risk.max_drawdown,static_baseline.excess_return_annualized
+window_mainline,0.582195,11.939623,17.130798,4.323902099790455
+window_minus_3m,0.567716,11.33037,17.130798,3.714649558630368
+window_minus_6m,0.55409,10.780228,17.130798,3.164507159757646
+window_plus_3m,0.562263,11.95739,17.130798,4.722095368394696
+window_plus_6m,0.515719,11.360092,17.129822,4.293670475053069

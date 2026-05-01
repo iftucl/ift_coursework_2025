@@ -1,0 +1,72 @@
+{
+  "reference_id": "cw2_formal_reference_20260420",
+  "reference_date": "2026-04-20",
+  "reference_type": "frozen_metrics_contract",
+  "config_path": "team_Pearson/coursework_two/config/experiments/formal/cw2_formal_20260420_fund_ra3_s30_t50.yaml",
+  "reference_run": {
+    "run_id": "6905e84b-9e16-4106-8c0f-cd9ecce56728",
+    "run_name": "cw2_formal_20260420_fund_ra3_s30_t50",
+    "report_name": "cw2_formal_fund_ra3_s30_t50_20260420_report",
+    "report_generated_at": "2026-04-30T16:14:16.158013+00:00",
+    "start_date": "2021-04-20",
+    "end_date": "2026-04-20",
+    "rebalance_frequency": "quarterly",
+    "benchmark_ticker": "SPY",
+    "transaction_cost_bps": 15.0,
+    "primary_benchmark": "SPY",
+    "secondary_benchmark": "universe_ew",
+    "expected_metrics": {
+      "total_return": 74.115402,
+      "annualized_return": 11.939622,
+      "annualized_volatility": 15.816019,
+      "sharpe_ratio": 0.582195,
+      "max_drawdown": 17.130802,
+      "information_ratio_vs_primary": 0.125923,
+      "benchmark_total_return": 67.755749,
+      "excess_return_vs_primary": 0.843966
+    },
+    "expected_row_counts": {
+      "periods": 59,
+      "trade_blotter_row_count": 855,
+      "scheduled_execution_row_count": 855,
+      "intraday_action_row_count": 0,
+      "scorecard_total": 5
+    },
+    "expected_latest_dates": {
+      "latest_materialized_dates.trade_blotter_trade_date": "2026-01-02",
+      "latest_materialized_dates.performance_period_end_date": "2026-04-01"
+    },
+    "expected_hashes": {
+      "trade_blotter_head_hash": "3887dc488f25c918907a9780d4ed678028b90959528551fa34e578c964fa5cd0",
+      "trade_blotter_full_hash": "2240ddfb1327a2c35be4df75a740c0aaba7eab8ab857d7fae223d94d42e23270"
+    }
+  },
+  "airflow_existing_run_verification": {
+    "status": "not_reverified_for_formal_run",
+    "note": "The previous Airflow existing-run proof belonged to a legacy qnative run and is intentionally not part of the formal 6905 reference contract."
+  },
+  "reproduction_contract": {
+    "requires_external_release_assets": true,
+    "export_script": "team_Pearson/coursework_two/scripts/export_repro_bundle.sh",
+    "restore_script": "team_Pearson/coursework_two/scripts/restore_repro_bundle.sh",
+    "verification_script": "team_Pearson/coursework_two/scripts/verify_reference_metrics.py",
+    "release_bundle_manifest": "team_Pearson/coursework_two/outputs/handoff/cw2_repro_bundle_20260420_formal_s30.json",
+    "release_assets_status": "Generate these assets from the formal environment before publishing a frozen GitHub release. Do not reuse legacy qnative bundles.",
+    "release_assets": [
+      {
+        "role": "postgres",
+        "file_name": "cw2_postgres_export_20260420_formal_s30.tar.gz"
+      },
+      {
+        "role": "upstream",
+        "file_name": "cw2_upstream_export_20260420_formal_s30.tar.gz"
+      }
+    ],
+    "default_metric_tolerance_abs": 0.001,
+    "notes": [
+      "The current formal reference uses SPY as the primary benchmark and universe_ew as the secondary comparison series.",
+      "The exact-metric path is frozen-state restore plus report re-render from run_id 6905e84b-9e16-4106-8c0f-cd9ecce56728.",
+      "A fresh full backtest rerun from the restored frozen state should land very close to the same metrics, but the exact acceptance contract is defined by the report summary comparison."
+    ]
+  }
+}

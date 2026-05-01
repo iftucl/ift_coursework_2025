@@ -1,119 +1,149 @@
 # Architecture Overview
 
-## 1. Objective
+## Platform Scope
 
-Provide a reproducible CW1 pipeline that can start from a fresh environment, ingest multi-source data, enforce quality checks, and persist analytics-ready datasets for Coursework Two.
+The implemented platform is no longer only a `CW1` ETL skeleton. It is now a
+**full pipeline from data collection to portfolio recommendation, backtest reporting, and exact-run reproducibility**.
 
-## 2. System Architecture
+The platform is split into two logical domains:
 
-```{figure} _static/diagrams/system_architecture.svg
-:alt: End-to-end architecture of the CW1 data pipeline
-:width: 100%
-:align: center
+1. `CW1`
+   - upstream ingestion
+   - raw archival
+   - normalization
+   - curated factor and financial atomics
+   - metadata, manifests, and audit
 
-Figure 1. End-to-end architecture of the CW1 data pipeline.
-```
+2. `CW2`
+   - first-level factor scoring
+   - second-level composite alpha
+   - regime-aware portfolio construction
+   - recommendation workflow
+   - backtest, analysis, and reporting
+   - daily/weekly/event-driven risk overlay
 
-The figure documents the implemented architecture around five coordinated layers:
+## Runtime Topology
 
-<div>（1）<code>Inputs</code>: dynamic universe control in PostgreSQL, Source A structured market/fundamental extraction, and Source B unstructured news extraction.</div>
-<div>（2）<code>Core Pipeline</code>: extraction, normalization and quality checks, curated atomic loading, and final factor construction.</div>
-<div>（3）<code>Curated Storage</code>: MinIO source-layer replay storage together with PostgreSQL curated atomics and factor persistence.</div>
-<div>（4）<code>Governance &amp; Audit</code>: run audit, quality evidence, metadata governance, and the local run-log mirror.</div>
-<div>（5）<code>Optional Serving</code>: MongoDB news indexing for searchable serving of Source B records.</div>
+The current production-style runtime has eight operational layers:
 
-Current implementation: dynamic universe selection, trading-day market inputs, quarterly financial atomics, MinIO source-layer replay storage, PostgreSQL curated storage and factor persistence, daily factor construction, and optional MongoDB news serving.
+1. ingestion
+   - `source_a`: `yfinance` market history plus `EDGAR XBRL`
+   - `source_b`: `Alpha Vantage` historical news plus `Finnhub` incremental news
 
-Implementation note:
-- the atomic layer is incrementally materialized per work unit;
-- run-level manifest/materialization state tracks planned, reused, skipped, failed, and completed units;
-- final factor construction starts only after the manifest completion gate is satisfied.
-- team-specific Docker networking is defined in the Pearson override file rather than in the repository-level compose file, so submission changes remain confined to the team folder.
+2. resilience
+   - Redis-backed circuit breakers
+   - Redis-backed token buckets
+   - Redis-backed per-symbol Source B URL dedupe
 
-## 3. End-to-End Data Flow
+3. storage
+   - `MinIO` for raw and replayable objects
+   - `PostgreSQL` for curated truth, portfolio state, backtests, analysis, reporting, and audit
+   - `MongoDB` for rebuildable news search and serving
 
-<div>（1）Resolve runtime parameters with precedence: <code>CLI &gt; .env &gt; config/conf.yaml &gt; defaults</code>.</div>
-<div>（2）Read dynamic universe from PostgreSQL <code>systematic_equity.company_static</code>.</div>
-<div>（3）Plan run-level work units and orchestration state (symbols, Source B symbol-month windows, materialization reuse, completion gate).</div>
-<div>（4）Run extraction:</div>
-<ul style="margin-top: 0.2rem; margin-bottom: 0.2rem;">
-<li>Source A: market and fundamentals</li>
-<li>Source B: news and sentiment</li>
-</ul>
-<div>（5）Archive raw payloads to MinIO for replay and auditability.</div>
-<div>（6）Normalize atomic records and accumulate quality evidence as work units complete.</div>
-<div>（7）Incrementally upsert curated atomic data to PostgreSQL in bounded batches:</div>
-<ul style="margin-top: 0.2rem; margin-bottom: 0.2rem;">
-<li><code>factor_observations</code></li>
-<li><code>financial_observations</code></li>
-<li><code>pipeline_runs</code></li>
-</ul>
-<div>（8）After all planned atomic units reach a terminal manifest state, compute final factors (<code>modules.transform.factors</code>) and write back to curated factors.</div>
-<div>（9）Index Source B records into MongoDB <code>ift_cw.news_articles</code> by default after successful runs (<code>Main.py</code> and scheduler/orchestrator scripts); disable explicitly with <code>--no-index-mongo</code>.</div>
-<ul style="margin-top: 0.2rem; margin-bottom: 0.2rem;">
-<li>Mongo indexing is intentionally handled as a post-run serving step (best-effort).</li>
-</ul>
-<div>（10）Persist metadata governance state:</div>
-<ul style="margin-top: 0.2rem; margin-bottom: 0.2rem;">
-<li><code>dataset_registry</code></li>
-<li><code>schema_versions</code></li>
-<li><code>lineage_edges</code></li>
-<li><code>quality_snapshots</code></li>
-</ul>
+4. control plane
+   - SQL-backed `ops_pipeline_runs` and `ops_stage_runs`
+   - stage-level `quality_snapshots`
+   - Redis-backed runtime locks, heartbeat refresh, and stale-lock recovery
 
-## 4. Storage Topology
+5. eventing
+   - `Kafka` for structured-news fan-out, event proxies, requested risk actions,
+     executed risk actions, and run-status events
 
-### MinIO (raw data lake)
+6. portfolio intelligence
+   - `CW2` first-level factors
+   - regime-aware second-level composite alpha
+   - hybrid selection and long-only constrained mean-variance weighting with
+     the formal factor covariance risk model
+   - daily risk overlay and event-driven actions
 
-- `raw/source_a/pricing_fundamentals/run_date={YYYY-MM-DD}/year={YYYY}/symbol={SYMBOL}.json`
-- `raw/source_b/news/run_date={YYYY-MM-DD}/year={YYYY}/month={MM}/symbol={SYMBOL}.jsonl`
+7. orchestration
+   - `Main.py` entrypoints for `CW1` and `CW2`
+   - scheduler-safe wrappers and Airflow DAGs for recurring and monthly orchestration
 
-### PostgreSQL (curated, audit, metadata)
+8. documentation and reproducibility
+   - shared Sphinx source in `docs/sphinx/source`
+   - manual build via `scripts/build_sphinx_docs.py`
+   - automated build through Airflow
+   - frozen CW2 release bundle and reference verification under `coursework_two/repro/`
 
-- Curated data:
-  - `systematic_equity.factor_observations`
-  - `systematic_equity.financial_observations`
-- Run audit:
-  - `systematic_equity.pipeline_runs`
-- Metadata management:
-  - `systematic_equity.dataset_registry`
-  - `systematic_equity.schema_versions`
-  - `systematic_equity.lineage_edges`
-  - `systematic_equity.quality_snapshots`
+## Source B Design
 
-### MongoDB (serving index; enabled by default in `Main.py` and scheduler/orchestrator scripts)
+Source B follows a single unified pipeline:
 
-- `ift_cw.news_articles`
+1. route by date:
+   - if the window is on or before the configured cutoff, use `Alpha Vantage`
+   - if the window is after the cutoff, use `Finnhub`
+   - if the window crosses the cutoff, split the window and deduplicate the combined result
+2. normalize provider payloads to one article schema
+3. archive raw JSONL to `MinIO`
+4. maintain current-month merged state and per-month cursor files
+5. score article text with the Loughran-McDonald lexicon
+6. emit daily atomics such as:
+   - `news_sentiment_daily`
+   - `news_article_count_daily`
+   - `earnings_news_count_daily`
+   - `earnings_negative_news_count_daily`
+   - `rating_downgrade_count_daily`
+   - `rating_upgrade_count_daily`
+7. optionally fan out structured article and event-proxy messages to `Kafka`
 
-## 5. Reliability and Idempotency
+## CW2 Strategy Design
 
-| Control point | Mechanism |
-| --- | --- |
-| Factor deduplication | Unique key `(symbol, observation_date, factor_name)` |
-| Financial deduplication | Unique key `(symbol, report_date, metric_name)` |
-| Rerun safety | Upsert-based loaders in output layer |
-| Run traceability | `pipeline_runs` status lifecycle (`running/success/failed`) |
+CW2 uses a layered portfolio process:
 
-## 6. Scheduling and Frequency Flexibility
+1. preprocess and neutralize the cross section
+2. compute first-level factors:
+   - `quality`
+   - `value`
+   - `market_technical`
+   - `sentiment`
+   - `dividend`
+3. combine them into regime-aware `composite_alpha`
+4. apply risk overlay screens
+5. select the final investable set
+6. allocate weights with constrained `mean_variance` using the configured
+   `fundamental_factor` covariance model
+7. publish a formal recommendation object
+8. run a database-backed backtest with:
+   - transaction costs
+   - slippage
+   - ADV participation limits
+   - liquidity clipping
+   - cash ledger
+   - daily/weekly/event-driven risk actions
 
-- Main runtime supports `--run-date` and `--frequency`.
-- Scheduler wrapper supports frequency selection:
-  `--only daily,weekly,monthly,quarterly`.
-- Auto job script is intentionally fixed to daily for production default behavior.
+The shared factor framework keeps a `sentiment` group in the formal CW2
+architecture. In the current formal configuration it receives `0.00` weight in
+the normal regime and `0.05` weight in the stress regime, so it should be
+described as stored and supported, but only lightly active under stress.
 
-## 7. Quality and Security Gates
+## Scheduling Design
 
-| Area | Tooling / script |
-| --- | --- |
-| Data consistency | `scripts/validate_pipeline_data.py` |
-| Automated tests | `pytest` with coverage threshold (`>=80%`) |
-| Static security checks | `bandit` |
-| Dependency vulnerability checks | `safety` |
+Airflow owns the orchestrated path:
 
-## 8. Acceptance Checklist (From Zero)
+1. `cw1_pipeline_and_docs`
+   - `run_daily_pipeline`
+   - `validate_curated_data`
+   - `build_sphinx_docs`
+   - `run_cw2_update_decision`
+   - `check_cw2_operate_rebalance_anchor`
+   - `run_cw2_operate_on_rebalance_anchor`
 
-<div>（1）Start containers (PostgreSQL, MongoDB, MinIO).</div>
-<div>（2）Run schema bootstrap (<code>scripts/init_db.py</code>).</div>
-<div>（3）Execute pipeline run (<code>Main.py</code> or small-sample wrapper).</div>
-<div>（4）Validate loaded data (<code>validate_pipeline_data.py</code>).</div>
-<div>（5）Confirm records exist in all required stores.</div>
+2. `cw2_monthly_snapshot_backfill`
+   - `backfill_monthly_snapshots`
+   - `run_post_backfill_readiness_audit`
+   - `audit_kafka_event_bus`
+   - `cleanup_stage_context`
+
+3. `cw2_backtest_analysis_report`
+   - `run_preflight_readiness_audit`
+   - `run_backtest_stage`
+   - `run_analysis_stage`
+   - `run_report_stage`
+   - `verify_reference_contract`
+   - `audit_kafka_event_bus`
+   - `cleanup_stage_context`
+
+This keeps scheduled ingestion, portfolio operations, reporting, and documentation
+inside one controlled operational layer, while the frozen release bundle keeps a
+separate exact-reproduction contract for the formal CW2 run.

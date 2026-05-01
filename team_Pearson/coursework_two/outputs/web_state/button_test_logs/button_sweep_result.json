@@ -1,0 +1,2347 @@
+{
+  "url": "http://127.0.0.1:8011/",
+  "generatedAt": "2026-04-30T23:50:05.620Z",
+  "pagesReached": [
+    "Welcome",
+    "Help",
+    "Artifacts",
+    "Trade Blotter & Execution",
+    "Signal & Factor Builder",
+    "Scenario Builder"
+  ],
+  "counts": {
+    "tested": 43,
+    "skipped": 35,
+    "failures": 143,
+    "consoleErrors": 1,
+    "pageErrors": 0,
+    "requestFailures": 0,
+    "dialogs": 0,
+    "downloads": 0
+  },
+  "tested": [
+    {
+      "page": "Welcome",
+      "text": "Home",
+      "action": "",
+      "attrs": {
+        "data-section": "home",
+        "data-audit-id": "audit-1777592734970-0-1df03acdfe67c8"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "page": "Welcome",
+      "text": "Research Setup",
+      "action": "",
+      "attrs": {
+        "data-section": "research_setup",
+        "data-audit-id": "audit-1777592734970-1-c306ffd47660d8"
+      },
+      "feedback": [
+        "page:Welcome->Scenario Builder"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "page": "Scenario Builder",
+      "text": "Analytics",
+      "action": "",
+      "attrs": {
+        "data-section": "analytics",
+        "data-audit-id": "audit-1777592734970-2-79721227b5fc98"
+      },
+      "feedback": [
+        "page:Scenario Builder->Signal & Factor Builder"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "page": "Signal & Factor Builder",
+      "text": "Portfolio",
+      "action": "",
+      "attrs": {
+        "data-section": "portfolio",
+        "data-audit-id": "audit-1777592734970-3-bfb3bbe4aedaf"
+      },
+      "feedback": [
+        "page:Signal & Factor Builder->Trade Blotter & Execution"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "page": "Trade Blotter & Execution",
+      "text": "Delivery",
+      "action": "",
+      "attrs": {
+        "data-section": "delivery",
+        "data-audit-id": "audit-1777592734970-4-c38269058138b8"
+      },
+      "feedback": [
+        "page:Trade Blotter & Execution->Artifacts"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "page": "Artifacts",
+      "text": "Help",
+      "action": "",
+      "attrs": {
+        "data-section": "help",
+        "data-audit-id": "audit-1777592734970-5-de4fe639058128"
+      },
+      "feedback": [
+        "page:Artifacts->Help"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "page": "Help",
+      "text": "Hide",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592734970-9-df0df1c6209a58"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "page": "Help",
+      "text": "Home",
+      "action": "",
+      "attrs": {
+        "data-section": "home",
+        "data-audit-id": "audit-1777592734970-0-1df03acdfe67c8"
+      },
+      "feedback": [
+        "page:Help->Welcome"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "page": "Welcome",
+      "text": "Analytics",
+      "action": "",
+      "attrs": {
+        "data-section": "analytics",
+        "data-audit-id": "audit-1777592734970-2-79721227b5fc98"
+      },
+      "feedback": [
+        "page:Welcome->Signal & Factor Builder"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "page": "Signal & Factor Builder",
+      "text": "Delivery",
+      "action": "",
+      "attrs": {
+        "data-section": "delivery",
+        "data-audit-id": "audit-1777592734970-4-c38269058138b8"
+      },
+      "feedback": [
+        "page:Signal & Factor Builder->Artifacts"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "page": "Artifacts",
+      "text": "Show",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592734970-9-df0df1c6209a58"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "page": "Artifacts",
+      "text": "Home",
+      "action": "",
+      "attrs": {
+        "data-section": "home",
+        "data-audit-id": "audit-1777592734970-0-1df03acdfe67c8"
+      },
+      "feedback": [
+        "page:Artifacts->Welcome"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "page": "Welcome",
+      "text": "Portfolio",
+      "action": "",
+      "attrs": {
+        "data-section": "portfolio",
+        "data-audit-id": "audit-1777592734970-3-bfb3bbe4aedaf"
+      },
+      "feedback": [
+        "page:Welcome->Trade Blotter & Execution"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "page": "Trade Blotter & Execution",
+      "text": "Help",
+      "action": "",
+      "attrs": {
+        "data-section": "help",
+        "data-audit-id": "audit-1777592734970-5-de4fe639058128"
+      },
+      "feedback": [
+        "page:Trade Blotter & Execution->Help"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "page": "Help",
+      "text": "Research Setup",
+      "action": "",
+      "attrs": {
+        "data-section": "research_setup",
+        "data-audit-id": "audit-1777592734970-1-c306ffd47660d8"
+      },
+      "feedback": [
+        "page:Help->Scenario Builder"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "page": "Scenario Builder",
+      "text": "Portfolio",
+      "action": "",
+      "attrs": {
+        "data-section": "portfolio",
+        "data-audit-id": "audit-1777592734970-3-bfb3bbe4aedaf"
+      },
+      "feedback": [
+        "page:Scenario Builder->Trade Blotter & Execution"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "page": "Trade Blotter & Execution",
+      "text": "Hide",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592734970-9-df0df1c6209a58"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "page": "Trade Blotter & Execution",
+      "text": "Home",
+      "action": "",
+      "attrs": {
+        "data-section": "home",
+        "data-audit-id": "audit-1777592734970-0-1df03acdfe67c8"
+      },
+      "feedback": [
+        "page:Trade Blotter & Execution->Welcome"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "page": "Welcome",
+      "text": "Delivery",
+      "action": "",
+      "attrs": {
+        "data-section": "delivery",
+        "data-audit-id": "audit-1777592734970-4-c38269058138b8"
+      },
+      "feedback": [
+        "page:Welcome->Artifacts"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "page": "Artifacts",
+      "text": "Research Setup",
+      "action": "",
+      "attrs": {
+        "data-section": "research_setup",
+        "data-audit-id": "audit-1777592734970-1-c306ffd47660d8"
+      },
+      "feedback": [
+        "page:Artifacts->Scenario Builder"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "page": "Scenario Builder",
+      "text": "Delivery",
+      "action": "",
+      "attrs": {
+        "data-section": "delivery",
+        "data-audit-id": "audit-1777592734970-4-c38269058138b8"
+      },
+      "feedback": [
+        "page:Scenario Builder->Artifacts"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "page": "Artifacts",
+      "text": "Analytics",
+      "action": "",
+      "attrs": {
+        "data-section": "analytics",
+        "data-audit-id": "audit-1777592734970-2-79721227b5fc98"
+      },
+      "feedback": [
+        "page:Artifacts->Signal & Factor Builder"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "page": "Signal & Factor Builder",
+      "text": "Help",
+      "action": "",
+      "attrs": {
+        "data-section": "help",
+        "data-audit-id": "audit-1777592734970-5-de4fe639058128"
+      },
+      "feedback": [
+        "page:Signal & Factor Builder->Help"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "page": "Help",
+      "text": "Show",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592734970-9-df0df1c6209a58"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "page": "Help",
+      "text": "Analytics",
+      "action": "",
+      "attrs": {
+        "data-section": "analytics",
+        "data-audit-id": "audit-1777592734970-2-79721227b5fc98"
+      },
+      "feedback": [
+        "page:Help->Signal & Factor Builder"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "page": "Signal & Factor Builder",
+      "text": "Hide",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592734970-9-df0df1c6209a58"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "page": "Signal & Factor Builder",
+      "text": "Home",
+      "action": "",
+      "attrs": {
+        "data-section": "home",
+        "data-audit-id": "audit-1777592734970-0-1df03acdfe67c8"
+      },
+      "feedback": [
+        "page:Signal & Factor Builder->Welcome"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "page": "Welcome",
+      "text": "Help",
+      "action": "",
+      "attrs": {
+        "data-section": "help",
+        "data-audit-id": "audit-1777592734970-5-de4fe639058128"
+      },
+      "feedback": [
+        "page:Welcome->Help"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "page": "Help",
+      "text": "Portfolio",
+      "action": "",
+      "attrs": {
+        "data-section": "portfolio",
+        "data-audit-id": "audit-1777592734970-3-bfb3bbe4aedaf"
+      },
+      "feedback": [
+        "page:Help->Trade Blotter & Execution"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "page": "Trade Blotter & Execution",
+      "text": "Show",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592734970-9-df0df1c6209a58"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "page": "Trade Blotter & Execution",
+      "text": "Research Setup",
+      "action": "",
+      "attrs": {
+        "data-section": "research_setup",
+        "data-audit-id": "audit-1777592734970-1-c306ffd47660d8"
+      },
+      "feedback": [
+        "page:Trade Blotter & Execution->Scenario Builder"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "page": "Scenario Builder",
+      "text": "Help",
+      "action": "",
+      "attrs": {
+        "data-section": "help",
+        "data-audit-id": "audit-1777592734970-5-de4fe639058128"
+      },
+      "feedback": [
+        "page:Scenario Builder->Help"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "page": "Help",
+      "text": "Delivery",
+      "action": "",
+      "attrs": {
+        "data-section": "delivery",
+        "data-audit-id": "audit-1777592734970-4-c38269058138b8"
+      },
+      "feedback": [
+        "page:Help->Artifacts"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "page": "Artifacts",
+      "text": "Hide",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592734970-9-df0df1c6209a58"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "page": "Artifacts",
+      "text": "Portfolio",
+      "action": "",
+      "attrs": {
+        "data-section": "portfolio",
+        "data-audit-id": "audit-1777592734970-3-bfb3bbe4aedaf"
+      },
+      "feedback": [
+        "page:Artifacts->Trade Blotter & Execution"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "page": "Trade Blotter & Execution",
+      "text": "Analytics",
+      "action": "",
+      "attrs": {
+        "data-section": "analytics",
+        "data-audit-id": "audit-1777592734970-2-79721227b5fc98"
+      },
+      "feedback": [
+        "page:Trade Blotter & Execution->Signal & Factor Builder"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "page": "Signal & Factor Builder",
+      "text": "Show",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592734970-9-df0df1c6209a58"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "page": "Signal & Factor Builder",
+      "text": "Research Setup",
+      "action": "",
+      "attrs": {
+        "data-section": "research_setup",
+        "data-audit-id": "audit-1777592734970-1-c306ffd47660d8"
+      },
+      "feedback": [
+        "page:Signal & Factor Builder->Scenario Builder"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "page": "Scenario Builder",
+      "text": "Hide",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592734970-9-df0df1c6209a58"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "page": "Scenario Builder",
+      "text": "Home",
+      "action": "",
+      "attrs": {
+        "data-section": "home",
+        "data-audit-id": "audit-1777592734970-0-1df03acdfe67c8"
+      },
+      "feedback": [
+        "page:Scenario Builder->Welcome"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "page": "Welcome",
+      "text": "Show",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592734970-9-df0df1c6209a58"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "page": "Welcome",
+      "text": "Hide",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592734970-9-df0df1c6209a58"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "page": "Welcome",
+      "text": "HWelcome",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592990622-10-c2018e060804e"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    }
+  ],
+  "skipped": [
+    {
+      "page": "Help",
+      "text": "RRobustness LabReview quarterly-rebalanced sensitivity sweeps, period splits, and stochastic robustness outcomes.",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "robustness_lab",
+        "data-audit-id": "audit-1777592734970-18-58024405690ea"
+      },
+      "reason": "unsafe/text"
+    },
+    {
+      "page": "Help",
+      "text": "Save",
+      "action": "save-scenario",
+      "attrs": {
+        "data-action": "save-scenario",
+        "data-audit-id": "audit-1777592734970-21-b491ed9b9bedf"
+      },
+      "reason": "disabled"
+    },
+    {
+      "page": "Help",
+      "text": "Run",
+      "action": "run-baseline",
+      "attrs": {
+        "data-action": "run-baseline",
+        "data-audit-id": "audit-1777592734970-23-f81dd677d74e48"
+      },
+      "reason": "disabled"
+    },
+    {
+      "page": "Help",
+      "text": "Compare",
+      "action": "queue-batch",
+      "attrs": {
+        "data-action": "queue-batch",
+        "data-audit-id": "audit-1777592734970-24-93ac62b7e28c7"
+      },
+      "reason": "disabled"
+    },
+    {
+      "page": "Help",
+      "text": "Generate",
+      "action": "generate-ai-report-analysis",
+      "attrs": {
+        "data-action": "generate-ai-report-analysis",
+        "data-audit-id": "audit-1777592734970-25-1ad06b01cba0d"
+      },
+      "reason": "disabled"
+    },
+    {
+      "page": "Artifacts",
+      "text": "Save",
+      "action": "save-scenario",
+      "attrs": {
+        "data-action": "save-scenario",
+        "data-audit-id": "audit-1777592763164-15-769ae8094cc608"
+      },
+      "reason": "disabled"
+    },
+    {
+      "page": "Artifacts",
+      "text": "Run",
+      "action": "run-baseline",
+      "attrs": {
+        "data-action": "run-baseline",
+        "data-audit-id": "audit-1777592763164-17-0b0154b6ffc5d"
+      },
+      "reason": "disabled"
+    },
+    {
+      "page": "Artifacts",
+      "text": "Compare",
+      "action": "queue-batch",
+      "attrs": {
+        "data-action": "queue-batch",
+        "data-audit-id": "audit-1777592763164-18-13a09d90884d6"
+      },
+      "reason": "disabled"
+    },
+    {
+      "page": "Artifacts",
+      "text": "Generate",
+      "action": "generate-ai-report-analysis",
+      "attrs": {
+        "data-action": "generate-ai-report-analysis",
+        "data-audit-id": "audit-1777592763164-19-5a1a219f068be"
+      },
+      "reason": "disabled"
+    },
+    {
+      "page": "Trade Blotter & Execution",
+      "text": "Save",
+      "action": "save-scenario",
+      "attrs": {
+        "data-action": "save-scenario",
+        "data-audit-id": "audit-1777592787839-15-f21d397efeeef"
+      },
+      "reason": "disabled"
+    },
+    {
+      "page": "Trade Blotter & Execution",
+      "text": "Run",
+      "action": "run-baseline",
+      "attrs": {
+        "data-action": "run-baseline",
+        "data-audit-id": "audit-1777592787839-17-dafc41f15fcd5"
+      },
+      "reason": "disabled"
+    },
+    {
+      "page": "Trade Blotter & Execution",
+      "text": "Compare",
+      "action": "queue-batch",
+      "attrs": {
+        "data-action": "queue-batch",
+        "data-audit-id": "audit-1777592787839-18-422fb05837323"
+      },
+      "reason": "disabled"
+    },
+    {
+      "page": "Trade Blotter & Execution",
+      "text": "Generate",
+      "action": "generate-ai-report-analysis",
+      "attrs": {
+        "data-action": "generate-ai-report-analysis",
+        "data-audit-id": "audit-1777592787839-19-778946e0d414a8"
+      },
+      "reason": "disabled"
+    },
+    {
+      "page": "Signal & Factor Builder",
+      "text": "Save",
+      "action": "save-scenario",
+      "attrs": {
+        "data-action": "save-scenario",
+        "data-audit-id": "audit-1777592833100-15-13b47186efbff"
+      },
+      "reason": "disabled"
+    },
+    {
+      "page": "Signal & Factor Builder",
+      "text": "Run",
+      "action": "run-baseline",
+      "attrs": {
+        "data-action": "run-baseline",
+        "data-audit-id": "audit-1777592833100-17-1a3d479d0e4cb8"
+      },
+      "reason": "disabled"
+    },
+    {
+      "page": "Signal & Factor Builder",
+      "text": "Compare",
+      "action": "queue-batch",
+      "attrs": {
+        "data-action": "queue-batch",
+        "data-audit-id": "audit-1777592833100-18-e481659386a078"
+      },
+      "reason": "disabled"
+    },
+    {
+      "page": "Signal & Factor Builder",
+      "text": "Generate",
+      "action": "generate-ai-report-analysis",
+      "attrs": {
+        "data-action": "generate-ai-report-analysis",
+        "data-audit-id": "audit-1777592833100-19-341a82b2570b18"
+      },
+      "reason": "disabled"
+    },
+    {
+      "page": "Scenario Builder",
+      "text": "Save",
+      "action": "save-scenario",
+      "attrs": {
+        "data-action": "save-scenario",
+        "data-audit-id": "audit-1777592913165-19-b98548c7062ed"
+      },
+      "reason": "unsafe/action:save-scenario"
+    },
+    {
+      "page": "Scenario Builder",
+      "text": "Run",
+      "action": "run-baseline",
+      "attrs": {
+        "data-action": "run-baseline",
+        "data-audit-id": "audit-1777592913165-21-b1dc557e1450e8"
+      },
+      "reason": "unsafe/action:run-baseline"
+    },
+    {
+      "page": "Scenario Builder",
+      "text": "Compare",
+      "action": "queue-batch",
+      "attrs": {
+        "data-action": "queue-batch",
+        "data-audit-id": "audit-1777592913165-22-f69c9fd550a898"
+      },
+      "reason": "disabled"
+    },
+    {
+      "page": "Scenario Builder",
+      "text": "Generate",
+      "action": "generate-ai-report-analysis",
+      "attrs": {
+        "data-action": "generate-ai-report-analysis",
+        "data-audit-id": "audit-1777592913165-23-b9dfe4da3cfa08"
+      },
+      "reason": "disabled"
+    },
+    {
+      "page": "Welcome",
+      "text": "Clear draft",
+      "action": "clear-draft",
+      "attrs": {
+        "data-action": "clear-draft",
+        "data-audit-id": "audit-1777592938327-32-e4de60b32c2398"
+      },
+      "reason": "unsafe/action:clear-draft"
+    },
+    {
+      "page": "Welcome",
+      "text": "Save preset",
+      "action": "save-preset",
+      "attrs": {
+        "data-action": "save-preset",
+        "data-audit-id": "audit-1777592938327-33-dc66050b8118f8"
+      },
+      "reason": "unsafe/action:save-preset"
+    },
+    {
+      "page": "Welcome",
+      "text": "Duplicate preset",
+      "action": "duplicate-preset",
+      "attrs": {
+        "data-action": "duplicate-preset",
+        "data-audit-id": "audit-1777592938327-34-d9b0cfbc8cb25"
+      },
+      "reason": "unsafe/action:duplicate-preset"
+    },
+    {
+      "page": "Welcome",
+      "text": "Rename",
+      "action": "rename-preset",
+      "attrs": {
+        "data-action": "rename-preset",
+        "data-preset": "Base",
+        "data-audit-id": "audit-1777592938327-36-de5ae20a3efe98"
+      },
+      "reason": "unsafe/action:rename-preset"
+    },
+    {
+      "page": "Welcome",
+      "text": "Delete",
+      "action": "delete-preset",
+      "attrs": {
+        "data-action": "delete-preset",
+        "data-preset": "Base",
+        "data-audit-id": "audit-1777592938327-37-1b95ca2414c0d8"
+      },
+      "reason": "unsafe/action:delete-preset"
+    },
+    {
+      "page": "Welcome",
+      "text": "Rename",
+      "action": "rename-preset",
+      "attrs": {
+        "data-action": "rename-preset",
+        "data-preset": "Stress-aware",
+        "data-audit-id": "audit-1777592938327-39-44ab1ab51d2b9"
+      },
+      "reason": "unsafe/action:rename-preset"
+    },
+    {
+      "page": "Welcome",
+      "text": "Delete",
+      "action": "delete-preset",
+      "attrs": {
+        "data-action": "delete-preset",
+        "data-preset": "Stress-aware",
+        "data-audit-id": "audit-1777592938327-40-2a1705e0369828"
+      },
+      "reason": "unsafe/action:delete-preset"
+    },
+    {
+      "page": "Welcome",
+      "text": "Rename",
+      "action": "rename-preset",
+      "attrs": {
+        "data-action": "rename-preset",
+        "data-preset": "Low-turnover",
+        "data-audit-id": "audit-1777592938327-42-9beab59435b0e8"
+      },
+      "reason": "unsafe/action:rename-preset"
+    },
+    {
+      "page": "Welcome",
+      "text": "Delete",
+      "action": "delete-preset",
+      "attrs": {
+        "data-action": "delete-preset",
+        "data-preset": "Low-turnover",
+        "data-audit-id": "audit-1777592938327-43-a2965d2b167d08"
+      },
+      "reason": "unsafe/action:delete-preset"
+    },
+    {
+      "page": "Welcome",
+      "text": "Save",
+      "action": "save-scenario",
+      "attrs": {
+        "data-action": "save-scenario",
+        "data-audit-id": "audit-1777592938327-45-ce8ebaa77d7c98"
+      },
+      "reason": "unsafe/action:save-scenario"
+    },
+    {
+      "page": "Welcome",
+      "text": "Run",
+      "action": "run-baseline",
+      "attrs": {
+        "data-action": "run-baseline",
+        "data-audit-id": "audit-1777592938327-47-535c1509ff777"
+      },
+      "reason": "unsafe/action:run-baseline"
+    },
+    {
+      "page": "Welcome",
+      "text": "Compare",
+      "action": "queue-batch",
+      "attrs": {
+        "data-action": "queue-batch",
+        "data-audit-id": "audit-1777592938327-48-83496a31b14fe8"
+      },
+      "reason": "disabled"
+    },
+    {
+      "page": "Welcome",
+      "text": "Generate",
+      "action": "generate-ai-report-analysis",
+      "attrs": {
+        "data-action": "generate-ai-report-analysis",
+        "data-audit-id": "audit-1777592938327-49-2c3002188509d8"
+      },
+      "reason": "disabled"
+    },
+    {
+      "page": "Welcome",
+      "text": "RRobustness LabReview quarterly-rebalanced sensitivity sweeps, period splits, and stochastic robustness outcomes.",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "robustness_lab",
+        "data-audit-id": "audit-1777592990623-18-cf7ef9c4d2a148"
+      },
+      "reason": "unsafe/text"
+    }
+  ],
+  "failures": [
+    {
+      "page": "Help",
+      "text": "qnative_v2_mainline (Mainline) ▾",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592734970-6-ab781ce16b1288"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592734970-6-ab781ce16b1288\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Help",
+      "text": "Set Mainline",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592734970-7-67332d2c09b858"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592734970-7-67332d2c09b858\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Help",
+      "text": "0 notices",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592734970-8-63305a310c73c8"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592734970-8-63305a310c73c8\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Help",
+      "text": "HWelcome",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592734970-10-ea16c8bbcde168"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592734970-10-ea16c8bbcde168\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Help",
+      "text": "OSystem Overview",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592734970-11-a6fa5e4862eac"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592734970-11-a6fa5e4862eac\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Help",
+      "text": "Open latest workspace",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "overview",
+        "data-audit-id": "audit-1777592734970-12-6eeacf9c11bbc8"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592734970-12-6eeacf9c11bbc8\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Help",
+      "text": "View run history",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "run_history",
+        "data-audit-id": "audit-1777592734970-13-9c8ca2913807a"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592734970-13-9c8ca2913807a\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Help",
+      "text": "SScenario BuilderConfigure universe, sleeves, and threshold assumptions before running research.",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "scenario_builder",
+        "data-audit-id": "audit-1777592734970-14-4b4b193b326f58"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592734970-14-4b4b193b326f58\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Help",
+      "text": "BBacktest RunnerLaunch baseline and batch runs after checking pipeline readiness.",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "backtest_runner",
+        "data-audit-id": "audit-1777592734970-15-5cb6e753db0e48"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592734970-15-5cb6e753db0e48\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Help",
+      "text": "PPerformance DashboardReview NAV, benchmark spread, drawdown, and rolling Sharpe.",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "performance_dashboard",
+        "data-audit-id": "audit-1777592734970-16-1c5d2bd5fd2b"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592734970-16-1c5d2bd5fd2b\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Help",
+      "text": "RRisk DashboardInspect regime state, factor relationships, and exposure changes.",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "risk_dashboard",
+        "data-audit-id": "audit-1777592734970-17-71a54d2c023118"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592734970-17-71a54d2c023118\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Help",
+      "text": "RReport StudioAssemble charts, evidence blocks, and final delivery materials.",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "report_studio",
+        "data-audit-id": "audit-1777592734970-19-4bafa5554ebca8"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592734970-19-4bafa5554ebca8\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Help",
+      "text": "↑",
+      "action": "back-to-top",
+      "attrs": {
+        "data-action": "back-to-top",
+        "data-audit-id": "audit-1777592734970-20-123070c2fadae"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592734970-20-123070c2fadae\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Help",
+      "text": "Preview",
+      "action": "preview-current-work",
+      "attrs": {
+        "data-action": "preview-current-work",
+        "data-audit-id": "audit-1777592734970-22-f8c3ad34f302b8"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592734970-22-f8c3ad34f302b8\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Artifacts",
+      "text": "qnative_v2_mainline (Mainline) ▾",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592763164-6-4ad09067288a88"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592763164-6-4ad09067288a88\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Artifacts",
+      "text": "Set Mainline",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592763164-7-9d3abeda4c3ac8"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592763164-7-9d3abeda4c3ac8\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Artifacts",
+      "text": "0 notices",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592763164-8-47b0d58a0cbfd"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592763164-8-47b0d58a0cbfd\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Artifacts",
+      "text": "?Help",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592763164-10-61cca16e15abf8"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592763164-10-61cca16e15abf8\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Artifacts",
+      "text": "Definitions",
+      "action": "help-benchmark-anchor",
+      "attrs": {
+        "data-action": "help-benchmark-anchor",
+        "data-audit-id": "audit-1777592763164-11-fe2715b80ea5c8"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592763164-11-fe2715b80ea5c8\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Artifacts",
+      "text": "Run modes",
+      "action": "help-run-modes-anchor",
+      "attrs": {
+        "data-action": "help-run-modes-anchor",
+        "data-audit-id": "audit-1777592763164-12-7e007e3cac4b7"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592763164-12-7e007e3cac4b7\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Artifacts",
+      "text": "Platform guide",
+      "action": "help-platform-anchor",
+      "attrs": {
+        "data-action": "help-platform-anchor",
+        "data-audit-id": "audit-1777592763164-13-06b62aea44fbb8"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592763164-13-06b62aea44fbb8\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Artifacts",
+      "text": "↑",
+      "action": "back-to-top",
+      "attrs": {
+        "data-action": "back-to-top",
+        "data-audit-id": "audit-1777592763164-14-962ab61a15937"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592763164-14-962ab61a15937\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Artifacts",
+      "text": "Preview",
+      "action": "preview-current-work",
+      "attrs": {
+        "data-action": "preview-current-work",
+        "data-audit-id": "audit-1777592763164-16-1f1c677d17bb8"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592763164-16-1f1c677d17bb8\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Help",
+      "text": "AArtifacts",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592780925-10-cc1d7a0964b0f8"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592780925-10-cc1d7a0964b0f8\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Help",
+      "text": "RSReport Studio",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592780925-11-d04ded2ce35fb8"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592780925-11-d04ded2ce35fb8\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Help",
+      "text": "Export ZIP",
+      "action": "export-delivery-zip",
+      "attrs": {
+        "data-action": "export-delivery-zip",
+        "data-audit-id": "audit-1777592780925-12-4ef64ead32838"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592780925-12-4ef64ead32838\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Trade Blotter & Execution",
+      "text": "qnative_v2_mainline (Mainline) ▾",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592787839-6-f391c9c90372c8"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592787839-6-f391c9c90372c8\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Trade Blotter & Execution",
+      "text": "Set Mainline",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592787839-7-9a9c267b140cb"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592787839-7-9a9c267b140cb\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Trade Blotter & Execution",
+      "text": "0 notices",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592787839-8-c9a9a23ec2936"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592787839-8-c9a9a23ec2936\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Trade Blotter & Execution",
+      "text": "?Help",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592787839-10-63d0e46f82a708"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592787839-10-63d0e46f82a708\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Trade Blotter & Execution",
+      "text": "Definitions",
+      "action": "help-benchmark-anchor",
+      "attrs": {
+        "data-action": "help-benchmark-anchor",
+        "data-audit-id": "audit-1777592787839-11-31ba3931169038"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592787839-11-31ba3931169038\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Trade Blotter & Execution",
+      "text": "Run modes",
+      "action": "help-run-modes-anchor",
+      "attrs": {
+        "data-action": "help-run-modes-anchor",
+        "data-audit-id": "audit-1777592787839-12-09b3bc77845f18"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592787839-12-09b3bc77845f18\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Trade Blotter & Execution",
+      "text": "Platform guide",
+      "action": "help-platform-anchor",
+      "attrs": {
+        "data-action": "help-platform-anchor",
+        "data-audit-id": "audit-1777592787839-13-7052cf34d2903"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592787839-13-7052cf34d2903\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Trade Blotter & Execution",
+      "text": "↑",
+      "action": "back-to-top",
+      "attrs": {
+        "data-action": "back-to-top",
+        "data-audit-id": "audit-1777592787839-14-25ef467ea0aeb"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592787839-14-25ef467ea0aeb\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Trade Blotter & Execution",
+      "text": "Preview",
+      "action": "preview-current-work",
+      "attrs": {
+        "data-action": "preview-current-work",
+        "data-audit-id": "audit-1777592787839-16-b4a90fd71d8db8"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592787839-16-b4a90fd71d8db8\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Artifacts",
+      "text": "TTrade Blotter & Execution",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592804969-10-1ee1dd2b6d7918"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592804969-10-1ee1dd2b6d7918\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Artifacts",
+      "text": "Refresh preview",
+      "action": "preview-trades",
+      "attrs": {
+        "data-action": "preview-trades",
+        "data-audit-id": "audit-1777592804969-11-f5499e7bf89998"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592804969-11-f5499e7bf89998\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Artifacts",
+      "text": "Open in Runner",
+      "action": "handoff-to-runner",
+      "attrs": {
+        "data-action": "handoff-to-runner",
+        "data-audit-id": "audit-1777592804969-12-2aef94cb11197"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592804969-12-2aef94cb11197\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Artifacts",
+      "text": "Export holdings",
+      "action": "export-holdings",
+      "attrs": {
+        "data-action": "export-holdings",
+        "data-audit-id": "audit-1777592804969-13-2e3596eb200b4"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592804969-13-2e3596eb200b4\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Artifacts",
+      "text": "Open Research Setup",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "optimizer_settings",
+        "data-audit-id": "audit-1777592804969-14-81623104346db"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592804969-14-81623104346db\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Artifacts",
+      "text": "Open Scenario Builder",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "scenario_builder",
+        "data-audit-id": "audit-1777592804969-15-7b9c59a49f124"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592804969-15-7b9c59a49f124\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Artifacts",
+      "text": "All trades▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "trade_filter",
+        "data-control-options": "All trades||Buys only||Sells only||Largest changes",
+        "data-audit-id": "audit-1777592804969-16-96ddf2b5486a28"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592804969-16-96ddf2b5486a28\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Artifacts",
+      "text": "All sectors▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "sector_focus",
+        "data-control-options": "All sectors||Consumer Staples||Energy||Health Care||Information Technology",
+        "data-audit-id": "audit-1777592804969-17-71b90cd710bcb8"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592804969-17-71b90cd710bcb8\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Artifacts",
+      "text": "Driver share▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "attribution_view",
+        "data-control-options": "Driver share||Overlay vs ranking||Constraints only",
+        "data-audit-id": "audit-1777592804969-18-8fdce68e03cfd"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592804969-18-8fdce68e03cfd\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Artifacts",
+      "text": "Preview",
+      "action": "preview-trades",
+      "attrs": {
+        "data-action": "preview-trades",
+        "data-audit-id": "audit-1777592804969-21-11133c199d1ea8"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592804969-21-11133c199d1ea8\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Artifacts",
+      "text": "+",
+      "action": "toggle-floating-controls",
+      "attrs": {
+        "data-action": "toggle-floating-controls",
+        "data-audit-id": "audit-1777592804969-25-f3500b67a3307"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592804969-25-f3500b67a3307\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Artifacts",
+      "text": "AArtifacts",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592824890-10-6239bbded21d88"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592824890-10-6239bbded21d88\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Artifacts",
+      "text": "RSReport Studio",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592824890-11-c01ed56b8699e8"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592824890-11-c01ed56b8699e8\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Artifacts",
+      "text": "Export ZIP",
+      "action": "export-delivery-zip",
+      "attrs": {
+        "data-action": "export-delivery-zip",
+        "data-audit-id": "audit-1777592824890-12-adb9305fd86f7"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592824890-12-adb9305fd86f7\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Signal & Factor Builder",
+      "text": "qnative_v2_mainline (Mainline) ▾",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592833099-6-61885f17bf83b8"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592833099-6-61885f17bf83b8\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Signal & Factor Builder",
+      "text": "Set Mainline",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592833099-7-826ea57608f818"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592833099-7-826ea57608f818\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Signal & Factor Builder",
+      "text": "0 notices",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592833099-8-af12a6dba81e28"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592833099-8-af12a6dba81e28\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Signal & Factor Builder",
+      "text": "?Help",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592833099-10-07665d8a642508"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592833099-10-07665d8a642508\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Signal & Factor Builder",
+      "text": "Definitions",
+      "action": "help-benchmark-anchor",
+      "attrs": {
+        "data-action": "help-benchmark-anchor",
+        "data-audit-id": "audit-1777592833099-11-bbe0331546ccc8"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592833099-11-bbe0331546ccc8\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Signal & Factor Builder",
+      "text": "Run modes",
+      "action": "help-run-modes-anchor",
+      "attrs": {
+        "data-action": "help-run-modes-anchor",
+        "data-audit-id": "audit-1777592833100-12-d9bd62b279922"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592833100-12-d9bd62b279922\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Signal & Factor Builder",
+      "text": "Platform guide",
+      "action": "help-platform-anchor",
+      "attrs": {
+        "data-action": "help-platform-anchor",
+        "data-audit-id": "audit-1777592833100-13-47c46c334e57b"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592833100-13-47c46c334e57b\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Signal & Factor Builder",
+      "text": "↑",
+      "action": "back-to-top",
+      "attrs": {
+        "data-action": "back-to-top",
+        "data-audit-id": "audit-1777592833100-14-1f112979eba228"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592833100-14-1f112979eba228\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Signal & Factor Builder",
+      "text": "Preview",
+      "action": "preview-current-work",
+      "attrs": {
+        "data-action": "preview-current-work",
+        "data-audit-id": "audit-1777592833100-16-ff7a6c0b7644f"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592833100-16-ff7a6c0b7644f\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Help",
+      "text": "FSignal & Factor Builder",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592849637-10-9bd54fb1d089a8"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592849637-10-9bd54fb1d089a8\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Help",
+      "text": "PPerformance Dashboard",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592849637-11-bf4b964822fb3"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592849637-11-bf4b964822fb3\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Help",
+      "text": "RKRisk Dashboard",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592849637-12-c9c357b49669b"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592849637-12-c9c357b49669b\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Help",
+      "text": "RBRobustness Lab",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592849637-13-2e1ef236aecc78"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592849637-13-2e1ef236aecc78\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Help",
+      "text": "Refresh preview",
+      "action": "preview-factors",
+      "attrs": {
+        "data-action": "preview-factors",
+        "data-audit-id": "audit-1777592849637-14-350d841e1387e"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592849637-14-350d841e1387e\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Help",
+      "text": "Open in Runner",
+      "action": "handoff-to-runner",
+      "attrs": {
+        "data-action": "handoff-to-runner",
+        "data-audit-id": "audit-1777592849637-15-8976507ecf8d08"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592849637-15-8976507ecf8d08\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Help",
+      "text": "Open Research Setup",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "scenario_builder",
+        "data-audit-id": "audit-1777592849637-16-7aec38d786f5e"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592849637-16-7aec38d786f5e\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Help",
+      "text": "Open Optimizer Settings",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "optimizer_settings",
+        "data-audit-id": "audit-1777592849637-17-9d936ea836fe9"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592849637-17-9d936ea836fe9\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Help",
+      "text": "Preview",
+      "action": "preview-factors",
+      "attrs": {
+        "data-action": "preview-factors",
+        "data-audit-id": "audit-1777592849637-20-43467abafd7988"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592849637-20-43467abafd7988\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Help",
+      "text": "+",
+      "action": "toggle-floating-controls",
+      "attrs": {
+        "data-action": "toggle-floating-controls",
+        "data-audit-id": "audit-1777592849637-24-a7e53f3864869"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592849637-24-a7e53f3864869\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Help",
+      "text": "TTrade Blotter & Execution",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592869256-10-bd17dcdd4ba4d"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592869256-10-bd17dcdd4ba4d\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Help",
+      "text": "Refresh preview",
+      "action": "preview-trades",
+      "attrs": {
+        "data-action": "preview-trades",
+        "data-audit-id": "audit-1777592869256-11-466144de0d2338"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592869256-11-466144de0d2338\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Help",
+      "text": "Export holdings",
+      "action": "export-holdings",
+      "attrs": {
+        "data-action": "export-holdings",
+        "data-audit-id": "audit-1777592869256-13-f30c211bccb4d8"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592869256-13-f30c211bccb4d8\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Help",
+      "text": "Open Research Setup",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "optimizer_settings",
+        "data-audit-id": "audit-1777592869256-14-3d0a3969176c08"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592869256-14-3d0a3969176c08\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Help",
+      "text": "Open Scenario Builder",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "scenario_builder",
+        "data-audit-id": "audit-1777592869256-15-837c0870fc2668"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592869256-15-837c0870fc2668\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Help",
+      "text": "All trades▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "trade_filter",
+        "data-control-options": "All trades||Buys only||Sells only||Largest changes",
+        "data-audit-id": "audit-1777592869256-16-2e0db430d88818"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592869256-16-2e0db430d88818\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Help",
+      "text": "All sectors▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "sector_focus",
+        "data-control-options": "All sectors||Consumer Staples||Energy||Health Care||Information Technology",
+        "data-audit-id": "audit-1777592869256-17-1c0be0ded421a8"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592869256-17-1c0be0ded421a8\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Help",
+      "text": "Driver share▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "attribution_view",
+        "data-control-options": "Driver share||Overlay vs ranking||Constraints only",
+        "data-audit-id": "audit-1777592869256-18-563766af7b857"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592869256-18-563766af7b857\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Help",
+      "text": "Preview",
+      "action": "preview-trades",
+      "attrs": {
+        "data-action": "preview-trades",
+        "data-audit-id": "audit-1777592869256-21-1ec1cdc279d7f"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592869256-21-1ec1cdc279d7f\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Trade Blotter & Execution",
+      "text": "AArtifacts",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592887238-10-095c4e2b902c48"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592887238-10-095c4e2b902c48\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Trade Blotter & Execution",
+      "text": "RSReport Studio",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592887238-11-127b56ca0104d"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592887238-11-127b56ca0104d\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Trade Blotter & Execution",
+      "text": "Export ZIP",
+      "action": "export-delivery-zip",
+      "attrs": {
+        "data-action": "export-delivery-zip",
+        "data-audit-id": "audit-1777592887238-12-1eb0e60adc14b8"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592887238-12-1eb0e60adc14b8\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Signal & Factor Builder",
+      "text": "TTrade Blotter & Execution",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592893072-10-c5c7845797874"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592893072-10-c5c7845797874\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Signal & Factor Builder",
+      "text": "Refresh preview",
+      "action": "preview-trades",
+      "attrs": {
+        "data-action": "preview-trades",
+        "data-audit-id": "audit-1777592893072-11-a74af624d66bb"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592893072-11-a74af624d66bb\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Signal & Factor Builder",
+      "text": "Open in Runner",
+      "action": "handoff-to-runner",
+      "attrs": {
+        "data-action": "handoff-to-runner",
+        "data-audit-id": "audit-1777592893072-12-0927b54e47d8a8"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592893072-12-0927b54e47d8a8\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Signal & Factor Builder",
+      "text": "Export holdings",
+      "action": "export-holdings",
+      "attrs": {
+        "data-action": "export-holdings",
+        "data-audit-id": "audit-1777592893072-13-e885b9154ea8c8"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592893072-13-e885b9154ea8c8\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Signal & Factor Builder",
+      "text": "Open Research Setup",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "optimizer_settings",
+        "data-audit-id": "audit-1777592893072-14-afde20e107953"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592893072-14-afde20e107953\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Signal & Factor Builder",
+      "text": "Open Scenario Builder",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "scenario_builder",
+        "data-audit-id": "audit-1777592893073-15-ce1db7f3fbc9b"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592893073-15-ce1db7f3fbc9b\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Signal & Factor Builder",
+      "text": "All trades▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "trade_filter",
+        "data-control-options": "All trades||Buys only||Sells only||Largest changes",
+        "data-audit-id": "audit-1777592893073-16-4f714c65a4cca"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592893073-16-4f714c65a4cca\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Signal & Factor Builder",
+      "text": "All sectors▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "sector_focus",
+        "data-control-options": "All sectors||Consumer Staples||Energy||Health Care||Information Technology",
+        "data-audit-id": "audit-1777592893073-17-cce514ab1b822"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592893073-17-cce514ab1b822\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Signal & Factor Builder",
+      "text": "Driver share▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "attribution_view",
+        "data-control-options": "Driver share||Overlay vs ranking||Constraints only",
+        "data-audit-id": "audit-1777592893073-18-2bde695f1b42"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592893073-18-2bde695f1b42\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Signal & Factor Builder",
+      "text": "Preview",
+      "action": "preview-trades",
+      "attrs": {
+        "data-action": "preview-trades",
+        "data-audit-id": "audit-1777592893073-21-e3746a4046bae8"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592893073-21-e3746a4046bae8\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Signal & Factor Builder",
+      "text": "+",
+      "action": "toggle-floating-controls",
+      "attrs": {
+        "data-action": "toggle-floating-controls",
+        "data-audit-id": "audit-1777592893073-25-e7bef1e3104518"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592893073-25-e7bef1e3104518\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Scenario Builder",
+      "text": "qnative_v2_mainline (Mainline) ▾",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592913165-6-87f2a34bd2c09"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592913165-6-87f2a34bd2c09\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Scenario Builder",
+      "text": "Set Mainline",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592913165-7-c8c0d9cf116f3"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592913165-7-c8c0d9cf116f3\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Scenario Builder",
+      "text": "0 notices",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592913165-8-96c1a17418eb98"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592913165-8-96c1a17418eb98\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Scenario Builder",
+      "text": "FSignal & Factor Builder",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592913165-10-68f6ad361be318"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592913165-10-68f6ad361be318\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Scenario Builder",
+      "text": "PPerformance Dashboard",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592913165-11-577413197dc0b8"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592913165-11-577413197dc0b8\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Scenario Builder",
+      "text": "RKRisk Dashboard",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592913165-12-6017b6e4ac707"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592913165-12-6017b6e4ac707\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Scenario Builder",
+      "text": "RBRobustness Lab",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592913165-13-13c6ffea575b1"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592913165-13-13c6ffea575b1\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Scenario Builder",
+      "text": "Refresh preview",
+      "action": "preview-factors",
+      "attrs": {
+        "data-action": "preview-factors",
+        "data-audit-id": "audit-1777592913165-14-6facac780092a8"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592913165-14-6facac780092a8\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Scenario Builder",
+      "text": "Open in Runner",
+      "action": "handoff-to-runner",
+      "attrs": {
+        "data-action": "handoff-to-runner",
+        "data-audit-id": "audit-1777592913165-15-db70c102e5567"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592913165-15-db70c102e5567\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Scenario Builder",
+      "text": "Open Research Setup",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "scenario_builder",
+        "data-audit-id": "audit-1777592913165-16-ca4397d700b6c"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592913165-16-ca4397d700b6c\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Scenario Builder",
+      "text": "Open Optimizer Settings",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "optimizer_settings",
+        "data-audit-id": "audit-1777592913165-17-6f1bd1007df63"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592913165-17-6f1bd1007df63\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Scenario Builder",
+      "text": "↑",
+      "action": "back-to-top",
+      "attrs": {
+        "data-action": "back-to-top",
+        "data-audit-id": "audit-1777592913165-18-841bcdbe86d5e"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592913165-18-841bcdbe86d5e\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Scenario Builder",
+      "text": "Preview",
+      "action": "preview-factors",
+      "attrs": {
+        "data-action": "preview-factors",
+        "data-audit-id": "audit-1777592913165-20-2c97af29a44ea"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592913165-20-2c97af29a44ea\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Scenario Builder",
+      "text": "+",
+      "action": "toggle-floating-controls",
+      "attrs": {
+        "data-action": "toggle-floating-controls",
+        "data-audit-id": "audit-1777592913165-24-64eb5944af2298"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592913165-24-64eb5944af2298\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Welcome",
+      "text": "qnative_v2_mainline (Mainline) ▾",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592938327-6-a8017e026cc3d8"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592938327-6-a8017e026cc3d8\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Welcome",
+      "text": "Set Mainline",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592938327-7-b2198a61ff9dc"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592938327-7-b2198a61ff9dc\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Welcome",
+      "text": "0 notices",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592938327-8-d0f4c38a2a6748"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592938327-8-d0f4c38a2a6748\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Welcome",
+      "text": "SScenario Builder",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592938327-10-4977146b0d233"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592938327-10-4977146b0d233\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Welcome",
+      "text": "UUniverse & Company Selector",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592938327-11-704f5fef7a557"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592938327-11-704f5fef7a557\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Welcome",
+      "text": "RRegime & Threshold Control",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592938327-12-e6c6b27f1ef528"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592938327-12-e6c6b27f1ef528\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Welcome",
+      "text": "PPortfolio Optimizer Settings",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592938327-13-ba71699713599"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592938327-13-ba71699713599\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Welcome",
+      "text": "DData Health",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592938327-14-2da6c54bc74fc8"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592938327-14-2da6c54bc74fc8\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Welcome",
+      "text": "BBacktest Runner",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592938327-15-a4d4408325c85"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592938327-15-a4d4408325c85\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Welcome",
+      "text": "RRun History",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592938327-16-ee1efaeddb79e"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592938327-16-ee1efaeddb79e\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Welcome",
+      "text": "undefined▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "universe",
+        "data-control-options": "US Large Cap||US Broad Market||Defensive Basket",
+        "data-audit-id": "audit-1777592938327-17-225c2bce61584"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592938327-17-225c2bce61584\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Welcome",
+      "text": "Quarterly▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "rebalance",
+        "data-control-options": "Quarterly",
+        "data-audit-id": "audit-1777592938327-18-20c09594f8e1a"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592938327-18-20c09594f8e1a\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Welcome",
+      "text": "undefined✎",
+      "action": "",
+      "attrs": {
+        "data-control-key": "top_n",
+        "data-audit-id": "audit-1777592938327-19-db6659c1fc58a"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592938327-19-db6659c1fc58a\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Welcome",
+      "text": "undefined✎",
+      "action": "",
+      "attrs": {
+        "data-control-key": "vix_threshold",
+        "data-audit-id": "audit-1777592938327-20-b1753212e3b748"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592938327-20-b1753212e3b748\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Welcome",
+      "text": "undefined▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "transaction_cost",
+        "data-control-options": "10bps||15bps||25bps||40bps",
+        "data-audit-id": "audit-1777592938327-21-41120d52068018"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592938327-21-41120d52068018\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Welcome",
+      "text": "Disabled",
+      "action": "",
+      "attrs": {
+        "data-control-key": "neutralisation",
+        "data-audit-id": "audit-1777592938327-22-423549960f9e38"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592938327-22-423549960f9e38\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Welcome",
+      "text": "Value",
+      "action": "",
+      "attrs": {
+        "data-control-key": "factor_sleeves",
+        "data-tag-value": "Value",
+        "data-audit-id": "audit-1777592938327-23-72797b14039c78"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592938327-23-72797b14039c78\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Welcome",
+      "text": "Quality",
+      "action": "",
+      "attrs": {
+        "data-control-key": "factor_sleeves",
+        "data-tag-value": "Quality",
+        "data-audit-id": "audit-1777592938327-24-113f6441eea1d8"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592938327-24-113f6441eea1d8\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Welcome",
+      "text": "Momentum",
+      "action": "",
+      "attrs": {
+        "data-control-key": "factor_sleeves",
+        "data-tag-value": "Momentum",
+        "data-audit-id": "audit-1777592938327-25-aca73fdc43029"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592938327-25-aca73fdc43029\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Welcome",
+      "text": "Dividend",
+      "action": "",
+      "attrs": {
+        "data-control-key": "factor_sleeves",
+        "data-tag-value": "Dividend",
+        "data-audit-id": "audit-1777592938327-26-79e749befe9898"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592938327-26-79e749befe9898\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Welcome",
+      "text": "undefined✎",
+      "action": "",
+      "attrs": {
+        "data-control-key": "hold_cap",
+        "data-audit-id": "audit-1777592938327-27-c45e6ff13d149"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592938327-27-c45e6ff13d149\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Welcome",
+      "text": "undefined▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "benchmark",
+        "data-control-options": "Static baseline + market benchmark||Benchmark only||Custom control portfolio",
+        "data-audit-id": "audit-1777592938327-28-0e9d93692cd008"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592938327-28-0e9d93692cd008\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Welcome",
+      "text": "Disabled",
+      "action": "",
+      "attrs": {
+        "data-control-key": "stress_overlay",
+        "data-audit-id": "audit-1777592938327-29-a9c8d0c0f2b93"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592938327-29-a9c8d0c0f2b93\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Welcome",
+      "text": "undefined▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "lookback_window",
+        "data-control-options": "6 months||12 months||24 months",
+        "data-audit-id": "audit-1777592938327-30-72b7934fa96f78"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592938327-30-72b7934fa96f78\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Welcome",
+      "text": "undefined▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "output_pack",
+        "data-control-options": "NAV + holdings + risk||NAV only||Full artifact bundle",
+        "data-audit-id": "audit-1777592938327-31-8e3aabfa4fef08"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592938327-31-8e3aabfa4fef08\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Welcome",
+      "text": "Apply",
+      "action": "apply-preset",
+      "attrs": {
+        "data-action": "apply-preset",
+        "data-preset": "Base",
+        "data-audit-id": "audit-1777592938327-35-b4ac3f6e38dd"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592938327-35-b4ac3f6e38dd\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Welcome",
+      "text": "Apply",
+      "action": "apply-preset",
+      "attrs": {
+        "data-action": "apply-preset",
+        "data-preset": "Stress-aware",
+        "data-audit-id": "audit-1777592938327-38-0ab083e71d4a1"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592938327-38-0ab083e71d4a1\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Welcome",
+      "text": "Apply",
+      "action": "apply-preset",
+      "attrs": {
+        "data-action": "apply-preset",
+        "data-preset": "Low-turnover",
+        "data-audit-id": "audit-1777592938327-41-9bdf9b8ad50ba"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592938327-41-9bdf9b8ad50ba\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Welcome",
+      "text": "↑",
+      "action": "back-to-top",
+      "attrs": {
+        "data-action": "back-to-top",
+        "data-audit-id": "audit-1777592938327-44-46e44b80709168"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592938327-44-46e44b80709168\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Welcome",
+      "text": "Preview",
+      "action": "preview-current-work",
+      "attrs": {
+        "data-action": "preview-current-work",
+        "data-audit-id": "audit-1777592938327-46-94e9f8237f56a8"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592938327-46-94e9f8237f56a8\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Welcome",
+      "text": "OSystem Overview",
+      "action": "",
+      "attrs": {
+        "data-audit-id": "audit-1777592990622-11-3541c55483b678"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592990622-11-3541c55483b678\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Welcome",
+      "text": "Open latest workspace",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "overview",
+        "data-audit-id": "audit-1777592990622-12-883ac9d20b34"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592990622-12-883ac9d20b34\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Welcome",
+      "text": "View run history",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "run_history",
+        "data-audit-id": "audit-1777592990622-13-21023ba3eca2d8"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592990622-13-21023ba3eca2d8\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Welcome",
+      "text": "SScenario BuilderConfigure universe, sleeves, and threshold assumptions before running research.",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "scenario_builder",
+        "data-audit-id": "audit-1777592990622-14-63098d137c54b"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592990622-14-63098d137c54b\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Welcome",
+      "text": "BBacktest RunnerLaunch baseline and batch runs after checking pipeline readiness.",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "backtest_runner",
+        "data-audit-id": "audit-1777592990622-15-797bbd6d2e59d"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592990622-15-797bbd6d2e59d\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Welcome",
+      "text": "PPerformance DashboardReview NAV, benchmark spread, drawdown, and rolling Sharpe.",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "performance_dashboard",
+        "data-audit-id": "audit-1777592990623-16-a75c78b1da86"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592990623-16-a75c78b1da86\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Welcome",
+      "text": "RRisk DashboardInspect regime state, factor relationships, and exposure changes.",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "risk_dashboard",
+        "data-audit-id": "audit-1777592990623-17-c8b7332c5ce19"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592990623-17-c8b7332c5ce19\"]').first()\u001b[22m\n"
+    },
+    {
+      "page": "Welcome",
+      "text": "RReport StudioAssemble charts, evidence blocks, and final delivery materials.",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "report_studio",
+        "data-audit-id": "audit-1777592990623-19-0b800e088a9038"
+      },
+      "error": "locator.scrollIntoViewIfNeeded: Timeout 1500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-audit-id=\"audit-1777592990623-19-0b800e088a9038\"]').first()\u001b[22m\n"
+    }
+  ],
+  "logs": {
+    "consoleErrors": [
+      {
+        "type": "error",
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      }
+    ],
+    "pageErrors": [],
+    "requestFailures": [],
+    "dialogs": [],
+    "downloads": []
+  }
+}

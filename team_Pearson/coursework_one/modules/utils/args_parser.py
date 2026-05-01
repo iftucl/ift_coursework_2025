@@ -38,7 +38,7 @@ def parse_csv_lower_list(value: str) -> list[str]:
 def build_parser() -> argparse.ArgumentParser:
     """Build and return the project CLI parser."""
     parser = argparse.ArgumentParser(
-        description="CW1 pipeline skeleton (Team Pearson).",
+        description="CW1 shared ingestion, curation, and storage pipeline (Team Pearson).",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(

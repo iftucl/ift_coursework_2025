@@ -1,0 +1,96 @@
+search_name: n30_dev_constrained_search_20260427
+description: >
+  Pre-declared constrained parameter search on the N30 development period.
+  Candidate runs are executed sequentially for compute reasons, but candidate
+  definitions, hard constraints, and ranking rules are fixed ex ante.
+
+development_period:
+  start_date: "2021-04-20"
+  end_date: "2024-09-30"
+  backfill_start_date: "2021-04-01"
+  backfill_end_date: "2024-09-30"
+
+base_config: team_Pearson/coursework_two/config/ablation/ic_informed_prior_nosent_exec_tighter_mainline_inst_quarterly_qnative_v2_mainline_pitfix_n30_dev_isolated.yaml
+
+constraints:
+  min_annualized_return: 11.80
+  min_information_ratio_vs_primary: 0.50
+  max_max_drawdown: 19.50
+  min_beta_raw: 0.90
+  max_beta_raw: 1.00
+  max_avg_monthly_turnover_one_way: 19.00
+  min_scorecard_passed: 3
+
+objective:
+  primary_metric: sharpe_ratio
+  direction: maximize
+  tie_break_order:
+    - lower_max_drawdown
+    - higher_information_ratio_vs_primary
+    - lower_avg_monthly_turnover_one_way
+    - fewer_parameter_changes
+
+candidates:
+  - candidate_id: baseline
+    kind: control
+    config_path: team_Pearson/coursework_two/config/ablation/ic_informed_prior_nosent_exec_tighter_mainline_inst_quarterly_qnative_v2_mainline_pitfix_n30_dev_isolated.yaml
+    report_name: cw2_n30_dev_baseline_20260427_report
+    run_id: e02fb62d-9ba7-43ed-8dcc-8b1642a24c70
+    parameter_changes: 0
+
+  - candidate_id: riskav5
+    kind: single_variable
+    config_path: team_Pearson/coursework_two/config/ablation/ic_informed_prior_nosent_exec_tighter_mainline_inst_quarterly_qnative_v2_mainline_pitfix_n30_riskav5_dev_isolated.yaml
+    report_name: cw2_n30_riskav5_dev_20260427_report
+    run_id: cc12ba05-3fa5-4b95-953e-2bbe1dbf1224
+    parameter_changes: 1
+    overrides:
+      portfolio_construction.covariance.risk_aversion: 5.0
+
+  - candidate_id: riskav5_ridge008
+    kind: paired_increment
+    config_path: team_Pearson/coursework_two/config/ablation/ic_informed_prior_nosent_exec_tighter_mainline_inst_quarterly_qnative_v2_mainline_pitfix_n30_riskav5_ridge008_dev_isolated.yaml
+    report_name: cw2_n30_riskav5_ridge008_dev_20260427_report
+    parameter_changes: 2
+    overrides:
+      portfolio_construction.portfolio_name: cw2_ic_nosent_main_qnative_v2_pitfix_n30_riskav5_ridge008_dev
+      backtest.portfolio_name: cw2_ic_nosent_main_qnative_v2_pitfix_n30_riskav5_ridge008_dev
+      recommendation.portfolio_name: cw2_ic_nosent_main_qnative_v2_pitfix_n30_riskav5_ridge008_dev
+      portfolio_construction.covariance.risk_aversion: 5.0
+      portfolio_construction.covariance.ridge_penalty: 0.08
+
+  - candidate_id: riskav5_ridge010
+    kind: paired_increment
+    config_path: team_Pearson/coursework_two/config/ablation/ic_informed_prior_nosent_exec_tighter_mainline_inst_quarterly_qnative_v2_mainline_pitfix_n30_riskav5_ridge010_dev_isolated.yaml
+    report_name: cw2_n30_riskav5_ridge010_dev_20260427_report
+    parameter_changes: 2
+    overrides:
+      portfolio_construction.portfolio_name: cw2_ic_nosent_main_qnative_v2_pitfix_n30_riskav5_ridge010_dev
+      backtest.portfolio_name: cw2_ic_nosent_main_qnative_v2_pitfix_n30_riskav5_ridge010_dev
+      recommendation.portfolio_name: cw2_ic_nosent_main_qnative_v2_pitfix_n30_riskav5_ridge010_dev
+      portfolio_construction.covariance.risk_aversion: 5.0
+      portfolio_construction.covariance.ridge_penalty: 0.10
+
+  - candidate_id: riskav5_turnover001
+    kind: paired_increment
+    config_path: team_Pearson/coursework_two/config/ablation/ic_informed_prior_nosent_exec_tighter_mainline_inst_quarterly_qnative_v2_mainline_pitfix_n30_riskav5_turnover001_dev_isolated.yaml
+    report_name: cw2_n30_riskav5_turnover001_dev_20260427_report
+    parameter_changes: 2
+    overrides:
+      portfolio_construction.portfolio_name: cw2_ic_nosent_main_qnative_v2_pitfix_n30_riskav5_turnover001_dev
+      backtest.portfolio_name: cw2_ic_nosent_main_qnative_v2_pitfix_n30_riskav5_turnover001_dev
+      recommendation.portfolio_name: cw2_ic_nosent_main_qnative_v2_pitfix_n30_riskav5_turnover001_dev
+      portfolio_construction.covariance.risk_aversion: 5.0
+      portfolio_construction.covariance.turnover_penalty: 0.01
+
+  - candidate_id: riskav5_sector022
+    kind: paired_increment
+    config_path: team_Pearson/coursework_two/config/ablation/ic_informed_prior_nosent_exec_tighter_mainline_inst_quarterly_qnative_v2_mainline_pitfix_n30_riskav5_sector022_dev_isolated.yaml
+    report_name: cw2_n30_riskav5_sector022_dev_20260427_report
+    parameter_changes: 2
+    overrides:
+      portfolio_construction.portfolio_name: cw2_ic_nosent_main_qnative_v2_pitfix_n30_riskav5_sector022_dev
+      backtest.portfolio_name: cw2_ic_nosent_main_qnative_v2_pitfix_n30_riskav5_sector022_dev
+      recommendation.portfolio_name: cw2_ic_nosent_main_qnative_v2_pitfix_n30_riskav5_sector022_dev
+      portfolio_construction.covariance.risk_aversion: 5.0
+      portfolio_construction.max_sector_weight: 0.22

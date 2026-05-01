@@ -1,0 +1,33 @@
+[
+  {
+    "annualized_return": 11.939622,
+    "annualized_volatility": 15.816019,
+    "avg_gross_turnover": 0.27315793220338985,
+    "avg_holdings": 34.47457627118644,
+    "avg_monthly_turnover": 15.352812,
+    "avg_transaction_cost_bps": 4.097369,
+    "avg_turnover": 0.15352815254237287,
+    "benchmark_total_return": 67.755749,
+    "beta": 0.955289,
+    "candidate_id": "fund_ra3_s30_t50",
+    "config_path": "team_Pearson/coursework_two/config/experiments/formal/cw2_formal_20260420_fund_ra3_s30_t50.yaml",
+    "constraint_failures": "",
+    "covariance_method": "fundamental_factor",
+    "diagnostic_rows": 4127,
+    "eligible": true,
+    "information_ratio": 0.125923,
+    "max_drawdown": 17.130802,
+    "max_sector_weight": 0.3,
+    "portfolio_name": "cw2_formal_20260420_fund_ra3_s30_t50",
+    "rank": 1,
+    "risk_aversion": 3.0,
+    "run_id": "6905e84b-9e16-4106-8c0f-cd9ecce56728",
+    "run_name": "cw2_formal_20260420_20260429T031646Z_01_fund_ra3_s30_t50",
+    "sharpe_ratio": 0.582195,
+    "target_rows": 730,
+    "target_snapshot_count": 21,
+    "total_return": 74.115402,
+    "tracking_error": 7.473937,
+    "turnover_cap": 0.5
+  }
+]

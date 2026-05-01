@@ -1,30 +1,31 @@
 # Data Catalog
 
-This catalog lists implemented datasets, owners, and storage locations.
-
-| Dataset Name | Type | Storage | Description | Owner / Role |
-| --- | --- | --- | --- | --- |
-| `company_static` | Structured table | PostgreSQL `systematic_equity.company_static` | Dynamic investable universe (symbols and metadata). | Role 5 |
-| `company_universe_overrides` | Structured table | PostgreSQL `systematic_equity.company_universe_overrides` | Runtime include/exclude overrides applied on top of base universe selection. | Role 5 |
-| `source_a_raw_pricing_fundamentals` | Raw JSON | MinIO `raw/source_a/pricing_fundamentals/...` | Source A raw payloads (Alpha Vantage primary, yfinance fallback). | Role 6 |
-| `source_b_raw_news` | Raw JSONL | MinIO `raw/source_b/news/run_date=.../year=.../month=.../symbol=...jsonl` | Source B raw article text payloads (deduplicated by URL or `title+time_published`). | Role 7 |
-| `source_b_news_current` | Raw JSONL (merged view) | MinIO `raw/source_b/news_current/year=.../month=.../symbol=...jsonl` | Current month merged single-view per symbol (cross-run merge + dedupe + overwrite). | Role 7 |
-| `source_b_news_cursor` | Raw JSON (cursor) | MinIO `raw/source_b/news_cursor/year=.../month=.../symbol=...json` | Incremental cursor metadata (`last_ingested_date`, `is_closed`, fetch window trace fields). | Role 7 |
-| `financial_observations` | Structured long table | PostgreSQL `systematic_equity.financial_observations` | Atomic financial metrics with period semantics (`symbol/report_date/metric/value/currency/period_type`). | Role 8 |
-| `factor_observations` | Structured long table | PostgreSQL `systematic_equity.factor_observations` | Atomic and final factors in EAV format (`symbol/date/factor/value`). | Role 8 |
-| `pipeline_runs` | Structured audit table | PostgreSQL `systematic_equity.pipeline_runs` | Primary run-level audit trail (`running/success/failed`, context, row counts, errors). | Role 8 |
-| `dataset_registry` | Structured metadata table | PostgreSQL `systematic_equity.dataset_registry` | Dataset-level metadata registry (owner, location, refresh policy, key definition). | Role 8 |
-| `schema_versions` | Structured metadata table | PostgreSQL `systematic_equity.schema_versions` | Versioned schema metadata per dataset (`version_tag`, `schema_json`, current flag). | Role 8 |
-| `lineage_edges` | Structured metadata table | PostgreSQL `systematic_equity.lineage_edges` | Dataset lineage edges (`upstream -> downstream`, transformation step). | Role 8 |
-| `quality_snapshots` | Structured metadata table | PostgreSQL `systematic_equity.quality_snapshots` | Run-level quality snapshots persisted as JSONB for trend/audit analysis. | Role 8 |
-| `news_articles` | Document collection | MongoDB `ift_cw.news_articles` | Search/index serving collection for Source B articles, with canonical `tickers` and `time_published`. | Role 8 |
-| `pipeline_runs_jsonl` | JSONL log | Local file `logs/pipeline_runs.jsonl` | Secondary debug mirror of run logs (non-authoritative). | Role 8 |
+| Dataset | Type | Storage | Description |
+| --- | --- | --- | --- |
+| `company_static` | structured table | PostgreSQL `systematic_equity.company_static` | base company universe seeded from `000.Database/SQL/Equity.db` |
+| `company_universe_overrides` | structured table | PostgreSQL `systematic_equity.company_universe_overrides` | runtime include/exclude controls |
+| `source_a_raw_pricing_fundamentals` | raw JSON | MinIO `raw/source_a/{market,financial}/...` | Source A merged raw market and financial payload archive with metric-level provider provenance in the financial layer |
+| `source_b_raw_news` | raw JSONL | MinIO `raw/source_b/news/run_date=.../year=.../month=.../symbol=...jsonl` | Source B monthly provider snapshot |
+| `source_b_news_current` | raw JSONL | MinIO `raw/source_b/news_current/year=.../month=.../symbol=...jsonl` | merged current-month Source B view |
+| `source_b_news_cursor` | raw JSON | MinIO `raw/source_b/news_cursor/year=.../month=.../symbol=...json` | per-symbol per-month incremental cursor |
+| `factor_observations` | structured long table | PostgreSQL `systematic_equity.factor_observations` | atomic and final non-financial factors |
+| `financial_observations` | structured long table | PostgreSQL `systematic_equity.financial_observations` | filing-period financial atomics |
+| `pipeline_runs` | structured audit table | PostgreSQL `systematic_equity.pipeline_runs` | run status, row counts, error notes |
+| `pipeline_stage_events` | structured audit table | PostgreSQL `systematic_equity.pipeline_stage_events` | append-only stage telemetry per run |
+| `dataset_refresh_events` | structured audit table | PostgreSQL `systematic_equity.dataset_refresh_events` | append-only dataset refresh evidence |
+| `dataset_registry` | structured metadata table | PostgreSQL `systematic_equity.dataset_registry` | dataset-level metadata |
+| `schema_versions` | structured metadata table | PostgreSQL `systematic_equity.schema_versions` | schema registry |
+| `lineage_edges` | structured metadata table | PostgreSQL `systematic_equity.lineage_edges` | lineage graph edges |
+| `quality_snapshots` | structured metadata table | PostgreSQL `systematic_equity.quality_snapshots` | quality evidence snapshots |
+| `news_articles` | document collection | MongoDB `ift_cw.news_articles` | rebuildable Source B search layer |
+| `pipeline_runs_jsonl` | JSONL log | `logs/pipeline_runs.jsonl` | local debug mirror only |
 
 ## Notes
 
-- Source A market atomic factors currently include `adjusted_close_price`, `daily_return`, and `dividend_per_share`.
-- Financial atomic metrics (`book_value`, `total_shareholder_equity`, `shares_outstanding`, `total_debt`, `enterprise_ebitda`, `enterprise_revenue`) are persisted to `financial_observations`.
-- Source B alternative atomic factors include `news_sentiment_daily` and `news_article_count_daily`.
-- Final factor computation is handled by `modules/transform/factors.py` and persisted to `factor_observations` (including recomputed technical factors `momentum_1m` and `volatility_20d`).
-- MinIO paths intentionally include `run_date` for traceability and reproducibility.
-- Mongo `news_articles` uses canonical fields `time_published` and `tickers`; compatibility aliases `published_at` and `symbols` are also written with the same values.
+- `Source A` raw storage is a canonical merged replay layer. Market data live under `raw/source_a/market/...`; financial data live under `raw/source_a/financial/...`. Financial payloads keep both the winning value and per-metric provider provenance, including `provider_values_by_metric`, `value_source_by_metric`, and `publish_date_source_by_metric`.
+- `EDGAR` is part of `Source A` financial enrichment, not a separate top-level source. The current raw layer stores the merged result rather than a provider-native `EDGAR` raw archive.
+- `financial_observations` uses `report_date` as the filing-period key and `publish_date` as the primary PIT availability field. `factor_observations` remains keyed by `observation_date`.
+- `CW1 as_of` and `CW2 as_of_date` are intentionally different. `as_of` in CW1 means extraction/audit date; `as_of_date` in CW2 means snapshot/decision date.
+- Source B is fully based on Alpha Vantage (historical) and Finnhub (incremental).
+- Redis is not a business-data catalog store; it is a shared operational state store for resilience controls and dedupe.
+- Sphinx HTML output is published to `docs/sphinx/build/html`.

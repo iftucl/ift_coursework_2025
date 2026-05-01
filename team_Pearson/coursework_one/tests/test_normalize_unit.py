@@ -19,6 +19,7 @@ def test_normalize_from_alternative_keys_and_type_cast():
     assert out[0]["factor_value"] == 1.2
     assert out[0]["source"] == "unknown"
     assert out[0]["metric_frequency"] == "unknown"
+    assert out[0]["publish_date"] == "2026-02-14"
 
 
 def test_normalize_prefers_explicit_factor_value():
@@ -108,6 +109,9 @@ def test_normalize_financial_records_maps_semantic_fields():
     assert row["metric_value"] == 123.4
     assert row["report_date"] == "2025-12-31"
     assert row["as_of"] == "2026-02-14"
+    assert row["publish_date"] == "2026-02-14"
+    assert row["value_source"] == "alpha_vantage"
+    assert row["publish_date_source"] == "fallback_45d"
     assert row["period_type"] == "ttm"
     assert row["currency"] == "USD"
 
@@ -125,3 +129,17 @@ def test_normalize_financial_records_requires_real_report_date():
     ]
     out = normalize_financial_records(raw)
     assert out == []
+
+
+def test_normalize_records_supports_available_date_alias():
+    raw = [
+        {
+            "symbol": "AAPL",
+            "observation_date": "2026-02-14",
+            "factor_name": "sentiment_30d_avg",
+            "value": "0.2",
+            "available_date": "2026-02-15",
+        }
+    ]
+    out = normalize_records(raw)
+    assert out[0]["publish_date"] == "2026-02-15"

@@ -22,8 +22,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from modules.utils.mongo import build_mongo_collection, resolve_mongo_db  # noqa: E402
 from modules.utils.env import load_dotenv_if_exists  # noqa: E402
+from modules.utils.mongo import build_mongo_collection, resolve_mongo_db  # noqa: E402
 
 try:
     import langid  # type: ignore

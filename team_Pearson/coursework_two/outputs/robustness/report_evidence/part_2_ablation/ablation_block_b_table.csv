@@ -1,0 +1,7 @@
+﻿scenario_key,return.annualized_return,risk_adjusted.sharpe_ratio,risk.max_drawdown,portfolio.avg_monthly_recorded_turnover
+no_regime_switch,8.996943,0.424044,17.656134,15.699476
+no_risk_overlay,16.48679,0.762075,20.204513,16.658121
+no_drawdown_brake,11.939623,0.582195,17.130798,15.352812
+no_intraday_trigger,11.939623,0.582195,17.130798,15.352812
+no_liquidity_clipping,11.939623,0.582195,17.130798,15.352812
+no_sector_constraint,10.846314,0.51445,19.572882,15.45022
