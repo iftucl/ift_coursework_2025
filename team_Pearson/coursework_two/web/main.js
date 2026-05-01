@@ -6063,81 +6063,41 @@ function handleAction(action, sourceButton) {
         showToast(apiErrorMessage(error, "Runner preflight failed."), 7000);
       }
     },
-    "queue-batch": () => {
+    "queue-batch": async () => {
       if (blockInvalidLaunch(currentPage)) return;
       syncWorkingScenarioFromPage(currentPage);
-      const now = formatRunTimestamp(new Date());
       normalizeBatchTargets();
       const batchTargets = formState.backtest_runner.batch_targets;
-      const primaryScenario = batchTargets[0] || "Current working scenario";
-      const selectedScenario = primaryScenario === "Current working scenario"
-        ? { name: primaryScenario, config: JSON.parse(JSON.stringify(formState.scenario_builder)) }
-        : { name: primaryScenario, config: JSON.parse(JSON.stringify(scenarioPresetConfigs[primaryScenario] || formState.scenario_builder)) };
-      const scenarioConfig = selectedScenario.config;
-      const runId = `BATCH-${now.compact}`;
-      const scenarioLabel = `Batch compare / ${batchTargets.join(" vs ")}`;
-      store.runHistory.runs.unshift([runId, now.display, scenarioLabel, "Queued", "Pending"]);
-      runtimeState.runLogs[runId] = createRunLogLines({
-        runId,
-        mode: "Batch compare queue",
-        scenarioLabel,
-        owner: formState.backtest_runner.owner,
-        priority: formState.backtest_runner.priority,
-        scenarioConfig,
-      }).concat([
-        `[${now.display.split(" ")[1]}] Batch plan created for ${batchTargets.join(" / ")}`,
-        `[${now.display.split(" ")[1]}] Waiting for worker capacity`,
-      ]);
-      runtimeState.runMeta[runId] = {
-        owner: formState.backtest_runner.owner,
-        job: {
-          run_id: runId,
-          queue_type: "batch_compare",
-          status: "queued",
-          scheduled_for: "",
-        },
-      };
-      runtimeState.latestLogRunId = runId;
-      runtimeState.highlightedRunId = runId;
-      resetRunHistoryFiltersForLiveRuns();
-      dirtyState.backtest_runner = false;
-      persistState();
       const scenarioIds = batchTargets
         .map((name) => getScenarioRecordByName(name)?.scenario_id)
         .filter(Boolean);
-      if (scenarioIds.length >= 2) {
-        void compareBacktestsToApi({
+      if (scenarioIds.length < 2) {
+        showToast("Compare needs at least two saved scenarios before it can enter Run History.", 5000);
+        return;
+      }
+      try {
+        showToast("Checking runner environment before queueing comparison...", 3000);
+        const response = await compareBacktestsToApi({
           scenarioIds,
           owner: formState.backtest_runner.owner,
           priority: formState.backtest_runner.priority,
           artifactBundle: formState.backtest_runner.artifact_bundle,
           notifications: formState.backtest_runner.notifications,
-        }).then((response) => {
-          reconcileProvisionalRunId(runId, response.run_id, "Queued");
-          pushNotification(`backtest_compare_queued: ${response.run_id}`, "info");
-          return refreshRunHistoryFromApi().then(() => {
-            if (currentPage === "run_history") render(false);
-          });
-        }).catch((error) => console.warn("Backtest compare failed to queue.", error));
-      } else {
-        void queueRunnerRequestToApi({
-          run_id: runId,
-          queue_type: "batch_compare",
-          label: scenarioLabel,
-          owner: formState.backtest_runner.owner,
-          priority: formState.backtest_runner.priority,
-          scenario_name: selectedScenario.name,
-          scenario_config: scenarioConfig,
-          batch_targets: batchTargets,
-          scenario_configs: getBatchScenarioConfigMap(batchTargets),
-          artifact_bundle: formState.backtest_runner.artifact_bundle,
-          notifications: formState.backtest_runner.notifications,
-          created_at: new Date().toISOString(),
-          auto_start: true,
         });
+        pushNotification(`backtest_compare_queued: ${response.run_id}`, "info");
+        runtimeState.latestLogRunId = response.run_id;
+        runtimeState.highlightedRunId = response.run_id;
+        resetRunHistoryFiltersForLiveRuns();
+        dirtyState.backtest_runner = false;
+        persistState();
+        await refreshRunHistoryFromApi();
+        jumpToRunHistory();
+        render(false);
+        showToast(`Preflight passed. Compare queued: ${response.run_id}`, 3500);
+      } catch (error) {
+        console.warn("Backtest compare failed to queue.", error);
+        showToast(apiErrorMessage(error, "Comparison preflight failed."), 7000);
       }
-      showToast("Comparison batch queued and added to Run History.");
-      jump("run_history");
     },
     "schedule-nightly": () => {
       syncWorkingScenarioFromPage(currentPage);
