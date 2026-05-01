@@ -49,6 +49,7 @@ if "%SERVER_READY%"=="1" (
 echo [CW2 Web] Starting local web server on %URL%
 if exist "%SERVER_LOG%" del /f /q "%SERVER_LOG%" >nul 2>nul
 if exist "%SERVER_ERR_LOG%" del /f /q "%SERVER_ERR_LOG%" >nul 2>nul
+set "CW2_RUNNER_PYTHON=%PYTHON_EXE%"
 start "CW2 Web Server" /min cmd /c ""%PYTHON_EXE%" -m uvicorn api.main:app --host %HOST% --port %PORT% 1>>"%SERVER_LOG%" 2>>"%SERVER_ERR_LOG%""
 
 set "ATTEMPTS=0"

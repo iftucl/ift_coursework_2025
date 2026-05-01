@@ -3388,12 +3388,19 @@ def _scenario_override_payload(
 
 
 def _resolve_runner_python() -> Path:
+    env_python = str(os.getenv("CW2_RUNNER_PYTHON", "")).strip()
     candidates = [
-        BASE_DIR.parent / "coursework_one" / ".venv" / "Scripts" / "python.exe",
+        Path(env_python) if env_python else None,
+        BASE_DIR.parent / ".venv" / "Scripts" / "python.exe",
+        BASE_DIR.parent / ".venv" / "bin" / "python",
+        BASE_DIR / ".venv" / "Scripts" / "python.exe",
+        BASE_DIR / ".venv" / "bin" / "python",
+        BASE_DIR.parent.parent / ".venv" / "Scripts" / "python.exe",
+        BASE_DIR.parent.parent / ".venv" / "bin" / "python",
         Path(sys.executable),
     ]
     for candidate in candidates:
-        if candidate.exists():
+        if candidate is not None and candidate.exists():
             return candidate
     return Path(sys.executable)
 
