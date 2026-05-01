@@ -12,6 +12,7 @@ import os
 import re
 import shutil
 import signal
+import socket
 import subprocess
 import sys
 import urllib.error
@@ -3459,6 +3460,120 @@ def _resolve_runner_env_vars() -> dict[str, str]:
     return resolved
 
 
+def _runner_preflight_report(queue_type: str | None = None) -> dict[str, Any]:
+    queue_kind = str(queue_type or "").strip().lower()
+    python_exe = _resolve_runner_python()
+    env_vars = _resolve_runner_env_vars()
+    checks: list[dict[str, Any]] = []
+
+    def add_check(name: str, ok: bool, detail: str, fix: str = "") -> None:
+        checks.append({"name": name, "ok": bool(ok), "detail": detail, "fix": fix})
+
+    add_check(
+        "Runner Python",
+        python_exe.exists(),
+        str(python_exe),
+        "Start the site with Launch_CW2_Web.cmd so the project virtual environment is created.",
+    )
+    add_check(
+        "Runner script",
+        RUNNER_SCRIPT_PATH.exists(),
+        str(RUNNER_SCRIPT_PATH),
+        "Restore team_Pearson/coursework_two/scripts/web_runner_job.py.",
+    )
+    add_check(
+        "Baseline config",
+        BASELINE_CONFIG_PATH.exists(),
+        str(BASELINE_CONFIG_PATH),
+        "Restore the formal baseline YAML under config/experiments/formal.",
+    )
+
+    required_scripts = [
+        BASE_DIR / "scripts" / "backfill_monthly_snapshots.py",
+        BASE_DIR / "scripts" / "run_backtest_analysis_report.py",
+    ]
+    if queue_kind == "robustness_sensitivity":
+        required_scripts.append(BASE_DIR / "scripts" / "run_sensitivity_analysis.py")
+    missing_scripts = [str(path) for path in required_scripts if not path.exists()]
+    add_check(
+        "Pipeline scripts",
+        not missing_scripts,
+        "All required scripts are present." if not missing_scripts else "; ".join(missing_scripts),
+        "Restore the missing coursework_two/scripts files before launching a run.",
+    )
+
+    if python_exe.exists():
+        import_probe = "import sqlalchemy, pandas, numpy, yaml, psycopg2"
+        try:
+            completed = subprocess.run(
+                [str(python_exe), "-c", import_probe],
+                text=True,
+                capture_output=True,
+                timeout=20,
+                check=False,
+                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+            )
+            probe_ok = completed.returncode == 0
+            probe_detail = "Required Python packages are importable."
+            if not probe_ok:
+                raw_probe = (completed.stderr or completed.stdout or "").strip()
+                probe_lines = [line.strip() for line in raw_probe.splitlines() if line.strip()]
+                probe_detail = probe_lines[-1] if probe_lines else "Required Python packages are missing."
+            add_check(
+                "Python packages",
+                probe_ok,
+                probe_detail,
+                "Run Launch_CW2_Web.cmd again; it installs requirements-runtime.txt into team_Pearson/.venv.",
+            )
+        except Exception as exc:
+            add_check(
+                "Python packages",
+                False,
+                f"Package probe failed: {exc!r}",
+                "Run Launch_CW2_Web.cmd again; it installs requirements-runtime.txt into team_Pearson/.venv.",
+            )
+
+    db_host = env_vars["POSTGRES_HOST"]
+    db_port = int(env_vars["POSTGRES_PORT"])
+    try:
+        with socket.create_connection((db_host, db_port), timeout=2.0):
+            db_ok = True
+            db_detail = f"{db_host}:{db_port} is reachable."
+    except OSError as exc:
+        db_ok = False
+        db_detail = f"{db_host}:{db_port} is not reachable ({exc})."
+    add_check(
+        "PostgreSQL",
+        db_ok,
+        db_detail,
+        "Start Docker/PostgreSQL, or launch through Launch_CW2_Web.cmd so it can start postgres_db_cw.",
+    )
+
+    failures = [item for item in checks if not item["ok"]]
+    message = "Runner preflight passed."
+    if failures:
+        message = "Runner preflight failed: " + " | ".join(
+            f"{item['name']}: {item['detail']}"
+            + (f" Fix: {item['fix']}" if item.get("fix") else "")
+            for item in failures
+        )
+    return {
+        "ok": not failures,
+        "queue_type": queue_kind or "single_run",
+        "runner_python": str(python_exe),
+        "checks": checks,
+        "message": message,
+    }
+
+
+def _ensure_runner_preflight(payload: RunnerQueuePayload) -> None:
+    if not payload.auto_start or payload.queue_type == "nightly_refresh":
+        return
+    report = _runner_preflight_report(payload.queue_type)
+    if not report["ok"]:
+        raise HTTPException(status_code=503, detail=report["message"])
+
+
 def _materialize_generated_config(
     *,
     run_id: str,
@@ -4381,6 +4496,7 @@ def _build_delivery_zip_payload() -> tuple[str, bytes]:
 
 
 def _queue_runner_payload(payload: RunnerQueuePayload) -> dict[str, Any]:
+    _ensure_runner_preflight(payload)
     created_at = payload.created_at or _utc_now_text()
     queue_record = payload.model_dump()
     queue_record["created_at"] = created_at
@@ -7686,6 +7802,7 @@ def queue_backtest_runner(payload: RunnerQueuePayload) -> dict[str, Any]:
 @app.get("/api/backtest-runner/options")
 def backtest_runner_options() -> dict[str, Any]:
     python_exe = _resolve_runner_python()
+    preflight = _runner_preflight_report("single_run")
     return {
         "baseline_config": str(BASELINE_CONFIG_PATH),
         "backfill_window": {
@@ -7694,7 +7811,8 @@ def backtest_runner_options() -> dict[str, Any]:
         },
         "runner_python": str(python_exe),
         "runner_python_exists": python_exe.exists(),
-        "supports_autostart": python_exe.exists() and RUNNER_SCRIPT_PATH.exists(),
+        "supports_autostart": bool(preflight.get("ok")),
+        "preflight": preflight,
     }
 
 

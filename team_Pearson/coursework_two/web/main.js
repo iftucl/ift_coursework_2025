@@ -1314,6 +1314,14 @@ async function sendApiJson(path, method, payload) {
   return response.json();
 }
 
+function apiErrorMessage(error, fallback = "Request failed.") {
+  const raw = String(error?.message || error || "").trim();
+  if (!raw) return fallback;
+  const marker = " - ";
+  const cleaned = raw.includes(marker) ? raw.slice(raw.indexOf(marker) + marker.length) : raw;
+  return cleaned || fallback;
+}
+
 function buildScaledSeries(length, endValue, startValue = 100) {
   const safeLength = Math.max(length, 2);
   const step = (endValue - startValue) / (safeLength - 1);
@@ -4848,7 +4856,7 @@ function scrollToTop() {
   window.scrollTo({ top: 0, left: 0, behavior: "auto" });
 }
 
-function showToast(message) {
+function showToast(message, duration = 1800) {
   let toast = document.getElementById("app-toast");
   if (!toast) {
     toast = document.createElement("div");
@@ -4861,7 +4869,7 @@ function showToast(message) {
   clearTimeout(showToast.timeoutId);
   showToast.timeoutId = setTimeout(() => {
     toast.classList.remove("is-visible");
-  }, 1800);
+  }, duration);
 }
 
 document.addEventListener("keydown", (event) => {
@@ -6022,35 +6030,15 @@ function handleAction(action, sourceButton) {
       showToast("Draft cleared back to last saved preset.");
       render(false);
     },
-    "run-baseline": () => {
+    "run-baseline": async () => {
       try {
         if (blockInvalidLaunch(currentPage)) return;
         syncWorkingScenarioFromPage(currentPage);
-        const now = formatRunTimestamp(new Date());
         const selectedScenario = getRunnerScenarioSelection();
         const scenarioConfig = selectedScenario.config || {};
-        const runId = `BT-${now.compact}`;
-        const scenarioLabel = `${selectedScenario.name} / top ${scenarioConfig.top_n || "n/a"} / VIX ${scenarioConfig.vix_threshold || "n/a"}`;
-        store.runHistory.runs = sanitizeRunHistoryRows(store.runHistory.runs);
-        store.runHistory.runs.unshift([runId, now.display, scenarioLabel, "Running", "Live"]);
-        store.runHistory.artifacts = [["Latest NAV pack", "Pending"], ["Risk tearsheet", "Pending"], ["Robustness export", "Pending"], ["Slide appendix", "Pending"]];
-        runtimeState.runLogs[runId] = createRunLogLines({
-          runId,
-          mode: "Single baseline run",
-          scenarioLabel,
-          owner: formState.backtest_runner.owner,
-          priority: formState.backtest_runner.priority,
-          scenarioConfig,
-        });
-        runtimeState.runMeta[runId] = { owner: formState.backtest_runner.owner };
-        runtimeState.latestLogRunId = runId;
-        runtimeState.highlightedRunId = runId;
-        resetRunHistoryFiltersForLiveRuns();
-        dirtyState.backtest_runner = false;
-        persistState();
-        jumpToRunHistory();
         const selectedRecord = getScenarioRecordByName(selectedScenario.name);
-        void runBacktestToApi({
+        showToast("Checking runner environment before queueing...", 3000);
+        const response = await runBacktestToApi({
           scenarioId: selectedRecord?.scenario_id || runtimeState.activeScenarioId || null,
           scenarioName: selectedScenario.name,
           scenarioConfig,
@@ -6059,17 +6047,20 @@ function handleAction(action, sourceButton) {
           artifactBundle: formState.backtest_runner.artifact_bundle,
           notifications: formState.backtest_runner.notifications,
           mode: "full",
-        }).then((response) => {
-          reconcileProvisionalRunId(runId, response.run_id, "Queued");
-          pushNotification(`backtest_queued: ${response.run_id}`, "info");
-          return refreshRunHistoryFromApi().then(() => {
-            if (currentPage === "run_history") render(false);
-          });
-        }).catch((error) => console.warn("Backtest run failed to queue.", error));
-        showToast("Baseline run started and added to Run History.");
+        });
+        pushNotification(`backtest_queued: ${response.run_id}`, "info");
+        runtimeState.latestLogRunId = response.run_id;
+        runtimeState.highlightedRunId = response.run_id;
+        resetRunHistoryFiltersForLiveRuns();
+        dirtyState.backtest_runner = false;
+        persistState();
+        await refreshRunHistoryFromApi();
+        jumpToRunHistory();
+        render(false);
+        showToast(`Preflight passed. Run queued: ${response.run_id}`, 3500);
       } catch (error) {
-        console.warn("Run baseline action failed before navigation.", error);
-        showToast("Run baseline failed before entering Run History.");
+        console.warn("Run baseline action failed before queueing.", error);
+        showToast(apiErrorMessage(error, "Runner preflight failed."), 7000);
       }
     },
     "queue-batch": () => {
@@ -6425,62 +6416,41 @@ function handleAction(action, sourceButton) {
       persistState();
       render(false);
     },
-    "run-sensitivity": () => {
+    "run-sensitivity": async () => {
       const s = formState.robustness_lab || {};
       const baseScenarioName = String(s.base_scenario || "Current working scenario");
       const selectedConfig = getScenarioConfigSnapshotByName(baseScenarioName);
       const selectedRecord = getScenarioRecordByName(baseScenarioName);
-      const now = formatRunTimestamp(new Date());
-      const runId = `SENS-${now.compact}`;
       const selectedDimensions = Array.isArray(s.sensitivity_dimensions) ? s.sensitivity_dimensions : [];
-      const scenarioLabel = `Sensitivity / ${baseScenarioName} / ${selectedDimensions.join(" / ") || "No dimensions selected"}`;
-      store.runHistory.runs = sanitizeRunHistoryRows(store.runHistory.runs);
-      store.runHistory.runs.unshift([runId, now.display, scenarioLabel, "Queued", "Pending"]);
-      runtimeState.runLogs[runId] = createRunLogLines({
-        runId,
-        mode: "Robustness sensitivity launch",
-        scenarioLabel,
-        owner: formState.backtest_runner.owner,
-        priority: formState.backtest_runner.priority,
-        scenarioConfig: selectedConfig,
-      }).concat([
-        `[${now.display.split(" ")[1]}] Quarterly-rebalanced sensitivity dimensions: ${selectedDimensions.join(" / ") || "n/a"}`,
-        `[${now.display.split(" ")[1]}] Bootstrap iterations: ${s.bootstrap_iterations || "1000"}`,
-        `[${now.display.split(" ")[1]}] Stochastic mode: ${s.stochastic_mode || "Bootstrap + Monte Carlo"}`,
-        `[${now.display.split(" ")[1]}] Period split definition: ${s.subperiod_definition || "Normal vs stress"}`,
-      ]);
-      runtimeState.runMeta[runId] = { owner: formState.backtest_runner.owner };
-      runtimeState.latestLogRunId = runId;
-      runtimeState.highlightedRunId = runId;
-      resetRunHistoryFiltersForLiveRuns();
-      dirtyState.robustness_lab = false;
-      persistState();
-      jumpToRunHistory();
-      void runSensitivityToApi({
-        scenarioId: selectedRecord?.scenario_id || null,
-        scenarioName: baseScenarioName,
-        scenarioConfig: selectedConfig,
-        baseScenario: baseScenarioName,
-        sensitivityDimensions: selectedDimensions,
-        rangeProfile: s.range_profile,
-        bootstrapIterations: s.bootstrap_iterations,
-        stochasticMode: s.stochastic_mode,
-        subperiodDefinition: s.subperiod_definition,
-        owner: formState.backtest_runner.owner,
-        priority: formState.backtest_runner.priority,
-      }).then((response) => {
-        reconcileProvisionalRunId(runId, response.run_id, "Queued");
-        pushNotification(`robustness_queued: ${response.run_id}`, "info");
-        return refreshRunHistoryFromApi().then(() => {
-          showToast(`Sensitivity run queued: ${response.run_id}`);
-          render(false);
+      try {
+        showToast("Checking runner environment before queueing sensitivity...", 3000);
+        const response = await runSensitivityToApi({
+          scenarioId: selectedRecord?.scenario_id || null,
+          scenarioName: baseScenarioName,
+          scenarioConfig: selectedConfig,
+          baseScenario: baseScenarioName,
+          sensitivityDimensions: selectedDimensions,
+          rangeProfile: s.range_profile,
+          bootstrapIterations: s.bootstrap_iterations,
+          stochasticMode: s.stochastic_mode,
+          subperiodDefinition: s.subperiod_definition,
+          owner: formState.backtest_runner.owner,
+          priority: formState.backtest_runner.priority,
         });
-      }).catch((error) => {
-        console.warn("Robustness sensitivity launch failed.", error);
-        updateRunStatus(runId, "Failed");
-        showToast("Robustness sensitivity launch failed.");
+        pushNotification(`robustness_queued: ${response.run_id}`, "info");
+        runtimeState.latestLogRunId = response.run_id;
+        runtimeState.highlightedRunId = response.run_id;
+        resetRunHistoryFiltersForLiveRuns();
+        dirtyState.robustness_lab = false;
+        persistState();
+        await refreshRunHistoryFromApi();
+        jumpToRunHistory();
         render(false);
-      });
+        showToast(`Preflight passed. Sensitivity queued: ${response.run_id}`, 3500);
+      } catch (error) {
+        console.warn("Robustness sensitivity launch failed.", error);
+        showToast(apiErrorMessage(error, "Robustness sensitivity preflight failed."), 7000);
+      }
     },
     "promote-best-robustness": () => {
       const bestRow = store.robustness.scenarios.reduce((best, row) => {
