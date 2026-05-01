@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Usage &#8212; Coursework One 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=12dfc556" />
+    <script src="_static/documentation_options.js?v=01f34227"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Architecture" href="architecture.html" />
+    <link rel="prev" title="Installation" href="installation.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="usage">
+<h1>Usage<a class="headerlink" href="#usage" title="Link to this heading">¶</a></h1>
+<section id="running-the-pipeline">
+<h2>Running the pipeline<a class="headerlink" href="#running-the-pipeline" title="Link to this heading">¶</a></h2>
+<p>From the <code class="docutils literal notranslate"><span class="pre">coursework_one</span></code> directory:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">poetry</span> <span class="n">run</span> <span class="n">python</span> <span class="n">main</span><span class="o">.</span><span class="n">py</span>
+</pre></div>
+</div>
+<p>The pipeline runs through five stages:</p>
+<ol class="arabic simple">
+<li><p><strong>Connect</strong> — establishes connections to PostgreSQL, MongoDB, and
+MinIO, then creates the database schema if it does not exist.</p></li>
+<li><p><strong>Load universe</strong> — reads the company list from the
+<code class="docutils literal notranslate"><span class="pre">company_static</span></code> table, applies country filters, excludes
+known-bad symbols, and normalises tickers (e.g. <code class="docutils literal notranslate"><span class="pre">BRK.B</span></code> →
+<code class="docutils literal notranslate"><span class="pre">BRK-B</span></code>).</p></li>
+<li><p><strong>Fetch</strong> — pulls daily prices (yfinance), quarterly financials
+(waterfall or SimFin), and risk-free rates (OECD + yfinance
+fallback).</p></li>
+<li><p><strong>Validate</strong> — checks data quality: minimum row counts, null
+percentages, required columns, and symbol coverage. In strict
+mode the pipeline halts on validation failures.</p></li>
+<li><p><strong>Load</strong> — writes validated data to PostgreSQL with duplicate
+prevention (merge-style checks before insert). Logs failures to
+MongoDB.</p></li>
+</ol>
+<p>Pipeline output includes a validation report and a summary of rows
+written per table.</p>
+</section>
+<section id="re-run-safety">
+<h2>Re-run safety<a class="headerlink" href="#re-run-safety" title="Link to this heading">¶</a></h2>
+<p>The pipeline is designed to be re-run safely:</p>
+<ul class="simple">
+<li><p><strong>CTL files</strong> in MinIO track what has been fetched and when. Data
+older than <code class="docutils literal notranslate"><span class="pre">cache_ttl_days</span></code> is re-fetched; recent data is served
+from cache.</p></li>
+<li><p><strong>Duplicate checks</strong> before every PostgreSQL insert prevent double-
+counting. Existing rows (by primary key) are skipped.</p></li>
+<li><p><strong>Stale symbol cleanup</strong> removes data for symbols that are no
+longer in <code class="docutils literal notranslate"><span class="pre">company_static</span></code>.</p></li>
+</ul>
+</section>
+<section id="command-line-flags">
+<h2>Command-line flags<a class="headerlink" href="#command-line-flags" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">--no-schedule</span></code></dt><dd><p>Run the pipeline once and exit immediately. Without this flag the
+pipeline starts a recurring scheduler (prices monthly, fundamentals
+quarterly) that keeps running in the background.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--task</span> <span class="pre">prices</span></code></dt><dd><p>Run only the prices and risk-free rates stage.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--task</span> <span class="pre">fundamentals</span></code></dt><dd><p>Run only the fundamentals stage.</p>
+</dd>
+</dl>
+</section>
+<section id="dev-mode">
+<h2>Dev mode<a class="headerlink" href="#dev-mode" title="Link to this heading">¶</a></h2>
+<p>Set <code class="docutils literal notranslate"><span class="pre">dev.enabled:</span> <span class="pre">true</span></code> in <code class="docutils literal notranslate"><span class="pre">config/conf.yaml</span></code> to limit the
+pipeline to the first N symbols (default 3). This avoids API rate
+limits during development and testing.</p>
+</section>
+<section id="running-tests">
+<h2>Running tests<a class="headerlink" href="#running-tests" title="Link to this heading">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">poetry</span> <span class="n">run</span> <span class="n">pytest</span> <span class="n">tests</span><span class="o">/</span> <span class="o">-</span><span class="n">x</span> <span class="o">-</span><span class="n">q</span>
+</pre></div>
+</div>
+<p>With coverage:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">poetry</span> <span class="n">run</span> <span class="n">pytest</span> <span class="n">tests</span><span class="o">/</span> <span class="o">--</span><span class="n">cov</span><span class="o">=</span><span class="n">modules</span> <span class="o">--</span><span class="n">cov</span><span class="o">-</span><span class="n">report</span><span class="o">=</span><span class="n">term</span><span class="o">-</span><span class="n">missing</span>
+</pre></div>
+</div>
+</section>
+<section id="building-documentation">
+<h2>Building documentation<a class="headerlink" href="#building-documentation" title="Link to this heading">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="n">docs</span>
+<span class="n">poetry</span> <span class="n">run</span> <span class="n">sphinx</span><span class="o">-</span><span class="n">build</span> <span class="o">-</span><span class="n">b</span> <span class="n">html</span> <span class="o">.</span> <span class="n">_build</span><span class="o">/</span><span class="n">html</span>
+</pre></div>
+</div>
+<p>Open <code class="docutils literal notranslate"><span class="pre">_build/html/index.html</span></code> in a browser to view the docs.</p>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">Coursework One</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Usage</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#running-the-pipeline">Running the pipeline</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#re-run-safety">Re-run safety</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#command-line-flags">Command-line flags</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#dev-mode">Dev mode</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#running-tests">Running tests</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#building-documentation">Building documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="architecture.html">Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/data_collector.html">DataFetcher — Data Collection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/data_writer.html">DataWriter — Data Loading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/data_validator.html">DataValidator — Data Validation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/connections.html">Database Connections</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="installation.html" title="previous chapter">Installation</a></li>
+      <li>Next: <a href="architecture.html" title="next chapter">Architecture</a></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.4.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="_sources/usage.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -10,7 +10,6 @@ import yfinance as yf
 from a_pipeline.modules.db_loader import postgres
 from a_pipeline.modules.factors import calculate_factors
 
-
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 CONFIG_PATH = BASE_DIR / "config" / "conf.yaml"
 

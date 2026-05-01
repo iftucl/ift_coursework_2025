@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>modules.input.data_collector.yfinance_fundamentals &#8212; Coursework One 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/alabaster.css?v=12dfc556" />
+    <script src="../../../../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for modules.input.data_collector.yfinance_fundamentals</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;yfinance fundamentals fallback fetcher.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">yfinance</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">yf</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="YFinanceMixin">
+<a class="viewcode-back" href="../../../../api/data_collector.html#modules.input.data_collector.yfinance_fundamentals.YFinanceMixin">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">YFinanceMixin</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;yfinance fundamentals fallback methods for DataFetcher.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_fetch_yfinance_fundamentals</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">symbol</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Fetch quarterly fundamentals from yfinance as lowest-priority</span>
+<span class="sd">        fallback.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            symbol: Stock ticker symbol.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            pd.DataFrame with fundamentals, or empty DataFrame.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">ticker</span> <span class="o">=</span> <span class="n">yf</span><span class="o">.</span><span class="n">Ticker</span><span class="p">(</span><span class="n">symbol</span><span class="p">)</span>
+            <span class="n">bs</span> <span class="o">=</span> <span class="n">ticker</span><span class="o">.</span><span class="n">quarterly_balance_sheet</span>
+            <span class="n">inc</span> <span class="o">=</span> <span class="n">ticker</span><span class="o">.</span><span class="n">quarterly_income_stmt</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;yfinance fundamentals failed for </span><span class="si">%s</span><span class="s2">: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">symbol</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="n">bs</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">bs</span><span class="o">.</span><span class="n">empty</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">inc</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">inc</span><span class="o">.</span><span class="n">empty</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+
+        <span class="n">records</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="n">bs_field_map</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">(</span><span class="s2">&quot;Total Assets&quot;</span><span class="p">,</span> <span class="s2">&quot;total_assets&quot;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;Total Debt&quot;</span><span class="p">,</span> <span class="s2">&quot;total_debt&quot;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;Stockholders Equity&quot;</span><span class="p">,</span> <span class="s2">&quot;book_equity&quot;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;Total Stockholders Equity&quot;</span><span class="p">,</span> <span class="s2">&quot;book_equity&quot;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;Ordinary Shares Number&quot;</span><span class="p">,</span> <span class="s2">&quot;shares_outstanding&quot;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;Share Issued&quot;</span><span class="p">,</span> <span class="s2">&quot;shares_outstanding&quot;</span><span class="p">),</span>
+        <span class="p">]</span>
+        <span class="n">inc_field_map</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">(</span><span class="s2">&quot;Net Income&quot;</span><span class="p">,</span> <span class="s2">&quot;net_income&quot;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;Diluted EPS&quot;</span><span class="p">,</span> <span class="s2">&quot;eps&quot;</span><span class="p">),</span>
+        <span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">bs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">bs</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">col_date</span> <span class="ow">in</span> <span class="n">bs</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+                <span class="n">ts</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="p">(</span><span class="n">col_date</span><span class="p">)</span>
+                <span class="n">quarter</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">ts</span><span class="o">.</span><span class="n">month</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="mi">3</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="n">ts</span><span class="o">.</span><span class="n">year</span><span class="p">,</span> <span class="n">quarter</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">records</span><span class="p">:</span>
+                    <span class="n">records</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s2">&quot;symbol&quot;</span><span class="p">:</span> <span class="n">symbol</span><span class="p">,</span>
+                        <span class="s2">&quot;fiscal_year&quot;</span><span class="p">:</span> <span class="n">ts</span><span class="o">.</span><span class="n">year</span><span class="p">,</span>
+                        <span class="s2">&quot;fiscal_quarter&quot;</span><span class="p">:</span> <span class="n">quarter</span><span class="p">,</span>
+                        <span class="s2">&quot;report_date&quot;</span><span class="p">:</span> <span class="n">ts</span><span class="p">,</span>
+                        <span class="s2">&quot;currency&quot;</span><span class="p">:</span> <span class="s2">&quot;USD&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="s2">&quot;yfinance&quot;</span><span class="p">,</span>
+                    <span class="p">}</span>
+                <span class="k">for</span> <span class="n">item</span><span class="p">,</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">bs_field_map</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">bs</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
+                        <span class="n">val</span> <span class="o">=</span> <span class="n">bs</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">item</span><span class="p">,</span> <span class="n">col_date</span><span class="p">]</span>
+                        <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">notna</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="ow">and</span> <span class="n">records</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">field</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                            <span class="n">records</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">field</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+
+        <span class="k">if</span> <span class="n">inc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">inc</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">col_date</span> <span class="ow">in</span> <span class="n">inc</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+                <span class="n">ts</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="p">(</span><span class="n">col_date</span><span class="p">)</span>
+                <span class="n">quarter</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">ts</span><span class="o">.</span><span class="n">month</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="mi">3</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="n">ts</span><span class="o">.</span><span class="n">year</span><span class="p">,</span> <span class="n">quarter</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">records</span><span class="p">:</span>
+                    <span class="n">records</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s2">&quot;symbol&quot;</span><span class="p">:</span> <span class="n">symbol</span><span class="p">,</span>
+                        <span class="s2">&quot;fiscal_year&quot;</span><span class="p">:</span> <span class="n">ts</span><span class="o">.</span><span class="n">year</span><span class="p">,</span>
+                        <span class="s2">&quot;fiscal_quarter&quot;</span><span class="p">:</span> <span class="n">quarter</span><span class="p">,</span>
+                        <span class="s2">&quot;report_date&quot;</span><span class="p">:</span> <span class="n">ts</span><span class="p">,</span>
+                        <span class="s2">&quot;currency&quot;</span><span class="p">:</span> <span class="s2">&quot;USD&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="s2">&quot;yfinance&quot;</span><span class="p">,</span>
+                    <span class="p">}</span>
+                <span class="k">for</span> <span class="n">item</span><span class="p">,</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">inc_field_map</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">inc</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
+                        <span class="n">val</span> <span class="o">=</span> <span class="n">inc</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">item</span><span class="p">,</span> <span class="n">col_date</span><span class="p">]</span>
+                        <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">notna</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="ow">and</span> <span class="n">records</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">field</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                            <span class="n">records</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">field</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">records</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+
+        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">records</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+        <span class="n">df</span><span class="p">[</span><span class="s2">&quot;report_date&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;report_date&quot;</span><span class="p">],</span> <span class="n">errors</span><span class="o">=</span><span class="s2">&quot;coerce&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">df</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span>
+            <span class="p">[</span><span class="s2">&quot;fiscal_year&quot;</span><span class="p">,</span> <span class="s2">&quot;fiscal_quarter&quot;</span><span class="p">],</span>
+            <span class="n">ascending</span><span class="o">=</span><span class="p">[</span><span class="kc">False</span><span class="p">,</span> <span class="kc">False</span><span class="p">],</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../../index.html">Coursework One</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../architecture.html">Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/data_collector.html">DataFetcher — Data Collection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/data_writer.html">DataWriter — Data Loading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/data_validator.html">DataValidator — Data Validation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/connections.html">Database Connections</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../../index.html">Module code</a><ul>
+  <li><a href="../data_collector.html">modules.input.data_collector</a><ul>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.4.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>modules.input.data_collector &#8212; Coursework One 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=12dfc556" />
+    <script src="../../../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for modules.input.data_collector</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Data fetcher module for retrieving financial data from external APIs.</span>
+
+<span class="sd">Fetches price data, financial statements, and risk-free rates,</span>
+<span class="sd">caching all data as Parquet files in MinIO with CTL control files.</span>
+
+<span class="sd">CTL Pattern:</span>
+<span class="sd">    Every data file (e.g. prices/AAPL.parquet) has a companion control</span>
+<span class="sd">    file (prices/AAPL.ctl) that tracks when it was fetched, how many</span>
+<span class="sd">    rows it contains, and whether it has been loaded into PostgreSQL.</span>
+<span class="sd">    This makes the pipeline idempotent and resumable.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">threading</span><span class="w"> </span><span class="kn">import</span> <span class="n">Lock</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">dotenv</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_dotenv</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.cache</span><span class="w"> </span><span class="kn">import</span> <span class="n">CacheMixin</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.constants</span><span class="w"> </span><span class="kn">import</span> <span class="n">BUCKET</span><span class="p">,</span> <span class="n">SimFinServerError</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.edgar</span><span class="w"> </span><span class="kn">import</span> <span class="n">EdgarMixin</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.fundamentals</span><span class="w"> </span><span class="kn">import</span> <span class="n">FundamentalsMixin</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.prices</span><span class="w"> </span><span class="kn">import</span> <span class="n">PriceMixin</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.rates</span><span class="w"> </span><span class="kn">import</span> <span class="n">RatesMixin</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.simfin</span><span class="w"> </span><span class="kn">import</span> <span class="n">SimFinMixin</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">UtilsMixin</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.yfinance_fundamentals</span><span class="w"> </span><span class="kn">import</span> <span class="n">YFinanceMixin</span>
+
+<span class="n">load_dotenv</span><span class="p">()</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;DataFetcher&quot;</span><span class="p">,</span> <span class="s2">&quot;SimFinServerError&quot;</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="DataFetcher">
+<a class="viewcode-back" href="../../../api/data_collector.html#modules.input.data_collector.DataFetcher">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DataFetcher</span><span class="p">(</span>
+    <span class="n">CacheMixin</span><span class="p">,</span>
+    <span class="n">UtilsMixin</span><span class="p">,</span>
+    <span class="n">PriceMixin</span><span class="p">,</span>
+    <span class="n">EdgarMixin</span><span class="p">,</span>
+    <span class="n">SimFinMixin</span><span class="p">,</span>
+    <span class="n">YFinanceMixin</span><span class="p">,</span>
+    <span class="n">FundamentalsMixin</span><span class="p">,</span>
+    <span class="n">RatesMixin</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fetches financial data from external APIs with MinIO caching.</span>
+
+<span class="sd">    Uses the parquet + CTL (control file) pattern:</span>
+<span class="sd">    - Data is stored as .parquet files in MinIO</span>
+<span class="sd">    - Each data file has a companion .ctl JSON file tracking metadata</span>
+<span class="sd">    - Before fetching, checks if cached data exists via CTL files</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        minio_conn: MinioConnection instance for caching.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">minio_conn</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">minio</span> <span class="o">=</span> <span class="n">minio_conn</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bucket</span> <span class="o">=</span> <span class="n">BUCKET</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">simfin_api_key</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;SIMFIN_API_KEY&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_simfin_min_interval_seconds</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;SIMFIN_MIN_INTERVAL_SECONDS&quot;</span><span class="p">,</span> <span class="s2">&quot;0.55&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_simfin_last_request_ts</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_simfin_rate_limit_lock</span> <span class="o">=</span> <span class="n">Lock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">minio</span><span class="o">.</span><span class="n">_ensure_bucket</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bucket</span><span class="p">)</span>
+        <span class="c1"># SEC EDGAR ticker -&gt; CIK mapping (lazy-loaded on first use)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ticker_to_cik</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_edgar_min_interval_seconds</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;EDGAR_MIN_INTERVAL_SECONDS&quot;</span><span class="p">,</span> <span class="s2">&quot;0.5&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_edgar_last_request_ts</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_edgar_rate_limit_lock</span> <span class="o">=</span> <span class="n">Lock</span><span class="p">()</span>
+        <span class="c1"># Cache TTL (None = never expire)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cache_ttl_days</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># Populated after each fetch -- keyed by &#39;delisted&#39; and &#39;fetch_error&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">price_failures</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fundamentals_failures</span> <span class="o">=</span> <span class="p">{}</span></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">Coursework One</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../architecture.html">Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/data_collector.html">DataFetcher — Data Collection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/data_writer.html">DataWriter — Data Loading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/data_validator.html">DataValidator — Data Validation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/connections.html">Database Connections</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.4.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

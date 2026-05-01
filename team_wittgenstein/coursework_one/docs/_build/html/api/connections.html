@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Database Connections &#8212; Coursework One 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=12dfc556" />
+    <script src="../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="DataValidator — Data Validation" href="data_validator.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="module-modules.db.db_connection">
+<span id="database-connections"></span><h1>Database Connections<a class="headerlink" href="#module-modules.db.db_connection" title="Link to this heading">¶</a></h1>
+<p>Database connection module for PostgreSQL, MongoDB, and MinIO.</p>
+<p>Provides connection classes for all three storage systems used in the
+coursework data pipeline.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="modules.db.db_connection.PostgresConnection">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">modules.db.db_connection.</span></span><span class="sig-name descname"><span class="pre">PostgresConnection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">host</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">database</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">password</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/db/db_connection.html#PostgresConnection"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.db.db_connection.PostgresConnection" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Manages connections and queries to the PostgreSQL database.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>host</strong> – Database host address.</p></li>
+<li><p><strong>port</strong> – Database port number.</p></li>
+<li><p><strong>database</strong> – Name of the database.</p></li>
+<li><p><strong>user</strong> – Database username.</p></li>
+<li><p><strong>password</strong> – Database password.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="modules.db.db_connection.PostgresConnection.read_query">
+<span class="sig-name descname"><span class="pre">read_query</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">query</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/db/db_connection.html#PostgresConnection.read_query"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.db.db_connection.PostgresConnection.read_query" title="Link to this definition">¶</a></dt>
+<dd><p>Execute a SELECT query and return results as a DataFrame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>query</strong> – SQL query string.</p></li>
+<li><p><strong>params</strong> – Optional dictionary of query parameters.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Query results.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="modules.db.db_connection.PostgresConnection.execute">
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">query</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/db/db_connection.html#PostgresConnection.execute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.db.db_connection.PostgresConnection.execute" title="Link to this definition">¶</a></dt>
+<dd><p>Execute a non-returning SQL statement (CREATE, INSERT, etc.).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>query</strong> – SQL statement string.</p></li>
+<li><p><strong>params</strong> – Optional dictionary of query parameters.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="modules.db.db_connection.PostgresConnection.write_dataframe">
+<span class="sig-name descname"><span class="pre">write_dataframe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">table_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">schema</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">if_exists</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'append'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/db/db_connection.html#PostgresConnection.write_dataframe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.db.db_connection.PostgresConnection.write_dataframe" title="Link to this definition">¶</a></dt>
+<dd><p>Write a DataFrame to a PostgreSQL table.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> – DataFrame to write.</p></li>
+<li><p><strong>table_name</strong> – Target table name.</p></li>
+<li><p><strong>schema</strong> – Target schema name.</p></li>
+<li><p><strong>if_exists</strong> – What to do if table exists (‘append’, ‘replace’, ‘fail’).</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="modules.db.db_connection.PostgresConnection.write_dataframe_on_conflict_do_nothing">
+<span class="sig-name descname"><span class="pre">write_dataframe_on_conflict_do_nothing</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">table_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">schema</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conflict_columns</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/db/db_connection.html#PostgresConnection.write_dataframe_on_conflict_do_nothing"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.db.db_connection.PostgresConnection.write_dataframe_on_conflict_do_nothing" title="Link to this definition">¶</a></dt>
+<dd><p>Write rows to PostgreSQL using ON CONFLICT DO NOTHING.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> – DataFrame to write.</p></li>
+<li><p><strong>table_name</strong> – Target table name.</p></li>
+<li><p><strong>schema</strong> – Target schema name.</p></li>
+<li><p><strong>conflict_columns</strong> – Columns defining the conflict target.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="modules.db.db_connection.PostgresConnection.get_company_list">
+<span class="sig-name descname"><span class="pre">get_company_list</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/db/db_connection.html#PostgresConnection.get_company_list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.db.db_connection.PostgresConnection.get_company_list" title="Link to this definition">¶</a></dt>
+<dd><p>Retrieve the full company universe from company_static.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>All companies with symbol, security, sector, etc.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="modules.db.db_connection.PostgresConnection.get_managed_symbol_tables">
+<span class="sig-name descname"><span class="pre">get_managed_symbol_tables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">schema</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'team_wittgenstein'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/db/db_connection.html#PostgresConnection.get_managed_symbol_tables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.db.db_connection.PostgresConnection.get_managed_symbol_tables" title="Link to this definition">¶</a></dt>
+<dd><p>Return tables in the managed schema that include a symbol column.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="modules.db.db_connection.PostgresConnection.get_tracked_symbols">
+<span class="sig-name descname"><span class="pre">get_tracked_symbols</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">schema</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'team_wittgenstein'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/db/db_connection.html#PostgresConnection.get_tracked_symbols"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.db.db_connection.PostgresConnection.get_tracked_symbols" title="Link to this definition">¶</a></dt>
+<dd><p>Return distinct symbols currently present in managed tables.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="modules.db.db_connection.PostgresConnection.delete_symbol_data">
+<span class="sig-name descname"><span class="pre">delete_symbol_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symbols</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">schema</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'team_wittgenstein'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/db/db_connection.html#PostgresConnection.delete_symbol_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.db.db_connection.PostgresConnection.delete_symbol_data" title="Link to this definition">¶</a></dt>
+<dd><p>Delete symbols from all managed schema tables that carry a symbol.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="modules.db.db_connection.PostgresConnection.delete_symbols_missing_from_company_list">
+<span class="sig-name descname"><span class="pre">delete_symbols_missing_from_company_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">current_symbols</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/db/db_connection.html#PostgresConnection.delete_symbols_missing_from_company_list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.db.db_connection.PostgresConnection.delete_symbols_missing_from_company_list" title="Link to this definition">¶</a></dt>
+<dd><p>Delete managed data for symbols no longer present in company_static.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="modules.db.db_connection.PostgresConnection.test_connection">
+<span class="sig-name descname"><span class="pre">test_connection</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/db/db_connection.html#PostgresConnection.test_connection"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.db.db_connection.PostgresConnection.test_connection" title="Link to this definition">¶</a></dt>
+<dd><p>Test the database connection.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if connection is successful.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="modules.db.db_connection.PostgresConnection.execute_sql_file">
+<span class="sig-name descname"><span class="pre">execute_sql_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sql_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/db/db_connection.html#PostgresConnection.execute_sql_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.db.db_connection.PostgresConnection.execute_sql_file" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="modules.db.db_connection.MongoConnection">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">modules.db.db_connection.</span></span><span class="sig-name descname"><span class="pre">MongoConnection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">host</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/db/db_connection.html#MongoConnection"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.db.db_connection.MongoConnection" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Manages connections and operations on the MongoDB database.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>host</strong> – MongoDB host address.</p></li>
+<li><p><strong>port</strong> – MongoDB port number.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="modules.db.db_connection.MongoConnection.insert_one">
+<span class="sig-name descname"><span class="pre">insert_one</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">collection</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">document</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/db/db_connection.html#MongoConnection.insert_one"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.db.db_connection.MongoConnection.insert_one" title="Link to this definition">¶</a></dt>
+<dd><p>Insert a single document into a collection.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db_name</strong> – Database name.</p></li>
+<li><p><strong>collection</strong> – Collection name.</p></li>
+<li><p><strong>document</strong> – Dictionary to insert.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The inserted document’s ID.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="modules.db.db_connection.MongoConnection.insert_many">
+<span class="sig-name descname"><span class="pre">insert_many</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">collection</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">documents</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/db/db_connection.html#MongoConnection.insert_many"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.db.db_connection.MongoConnection.insert_many" title="Link to this definition">¶</a></dt>
+<dd><p>Insert multiple documents into a collection.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db_name</strong> – Database name.</p></li>
+<li><p><strong>collection</strong> – Collection name.</p></li>
+<li><p><strong>documents</strong> – List of dictionaries to insert.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of inserted document IDs.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="modules.db.db_connection.MongoConnection.find">
+<span class="sig-name descname"><span class="pre">find</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">collection</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">query</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/db/db_connection.html#MongoConnection.find"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.db.db_connection.MongoConnection.find" title="Link to this definition">¶</a></dt>
+<dd><p>Query documents from a collection.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db_name</strong> – Database name.</p></li>
+<li><p><strong>collection</strong> – Collection name.</p></li>
+<li><p><strong>query</strong> – Optional filter dictionary. Returns all if None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Matching documents.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="modules.db.db_connection.MongoConnection.test_connection">
+<span class="sig-name descname"><span class="pre">test_connection</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/db/db_connection.html#MongoConnection.test_connection"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.db.db_connection.MongoConnection.test_connection" title="Link to this definition">¶</a></dt>
+<dd><p>Test the MongoDB connection.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if connection is successful.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="modules.db.db_connection.MinioConnection">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">modules.db.db_connection.</span></span><span class="sig-name descname"><span class="pre">MinioConnection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">host</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">access_key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">secret_key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">secure</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/db/db_connection.html#MinioConnection"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.db.db_connection.MinioConnection" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Manages connections and file operations on MinIO object storage.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>host</strong> – MinIO host address (host:port).</p></li>
+<li><p><strong>access_key</strong> – MinIO access key.</p></li>
+<li><p><strong>secret_key</strong> – MinIO secret key.</p></li>
+<li><p><strong>secure</strong> – Whether to use HTTPS. Defaults to False for local dev.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="modules.db.db_connection.MinioConnection.upload_json">
+<span class="sig-name descname"><span class="pre">upload_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bucket</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/db/db_connection.html#MinioConnection.upload_json"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.db.db_connection.MinioConnection.upload_json" title="Link to this definition">¶</a></dt>
+<dd><p>Upload a Python object as JSON to MinIO.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>bucket</strong> – Target bucket name.</p></li>
+<li><p><strong>object_name</strong> – Object key/path in the bucket.</p></li>
+<li><p><strong>data</strong> – Python object serialisable to JSON.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="modules.db.db_connection.MinioConnection.download_json">
+<span class="sig-name descname"><span class="pre">download_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bucket</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/db/db_connection.html#MinioConnection.download_json"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.db.db_connection.MinioConnection.download_json" title="Link to this definition">¶</a></dt>
+<dd><p>Download a JSON object from MinIO and parse it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>bucket</strong> – Source bucket name.</p></li>
+<li><p><strong>object_name</strong> – Object key/path in the bucket.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Parsed Python object, or None if not found.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="modules.db.db_connection.MinioConnection.upload_dataframe">
+<span class="sig-name descname"><span class="pre">upload_dataframe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bucket</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/db/db_connection.html#MinioConnection.upload_dataframe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.db.db_connection.MinioConnection.upload_dataframe" title="Link to this definition">¶</a></dt>
+<dd><p>Upload a DataFrame as Parquet to MinIO.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>bucket</strong> – Target bucket name.</p></li>
+<li><p><strong>object_name</strong> – Object key/path in the bucket.</p></li>
+<li><p><strong>df</strong> – DataFrame to upload.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="modules.db.db_connection.MinioConnection.download_dataframe">
+<span class="sig-name descname"><span class="pre">download_dataframe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bucket</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/db/db_connection.html#MinioConnection.download_dataframe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.db.db_connection.MinioConnection.download_dataframe" title="Link to this definition">¶</a></dt>
+<dd><p>Download a Parquet file from MinIO as a DataFrame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>bucket</strong> – Source bucket name.</p></li>
+<li><p><strong>object_name</strong> – Object key/path in the bucket.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>pd.DataFrame, or None if not found.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="modules.db.db_connection.MinioConnection.list_objects">
+<span class="sig-name descname"><span class="pre">list_objects</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bucket</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/db/db_connection.html#MinioConnection.list_objects"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.db.db_connection.MinioConnection.list_objects" title="Link to this definition">¶</a></dt>
+<dd><p>List objects in a bucket with an optional prefix filter.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>bucket</strong> – Bucket name.</p></li>
+<li><p><strong>prefix</strong> – Optional prefix to filter objects.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Object names matching the prefix.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="modules.db.db_connection.MinioConnection.object_exists">
+<span class="sig-name descname"><span class="pre">object_exists</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bucket</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/db/db_connection.html#MinioConnection.object_exists"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.db.db_connection.MinioConnection.object_exists" title="Link to this definition">¶</a></dt>
+<dd><p>Check if an object exists in a bucket.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>bucket</strong> – Bucket name.</p></li>
+<li><p><strong>object_name</strong> – Object key/path.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if the object exists.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="modules.db.db_connection.MinioConnection.delete_object">
+<span class="sig-name descname"><span class="pre">delete_object</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bucket</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/db/db_connection.html#MinioConnection.delete_object"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.db.db_connection.MinioConnection.delete_object" title="Link to this definition">¶</a></dt>
+<dd><p>Delete an object if it exists in the bucket.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="modules.db.db_connection.MinioConnection.test_connection">
+<span class="sig-name descname"><span class="pre">test_connection</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/db/db_connection.html#MinioConnection.test_connection"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.db.db_connection.MinioConnection.test_connection" title="Link to this definition">¶</a></dt>
+<dd><p>Test the MinIO connection.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if connection is successful.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">Coursework One</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../architecture.html">Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_collector.html">DataFetcher — Data Collection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_writer.html">DataWriter — Data Loading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_validator.html">DataValidator — Data Validation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Database Connections</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#modules.db.db_connection.PostgresConnection"><code class="docutils literal notranslate"><span class="pre">PostgresConnection</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#modules.db.db_connection.MongoConnection"><code class="docutils literal notranslate"><span class="pre">MongoConnection</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#modules.db.db_connection.MinioConnection"><code class="docutils literal notranslate"><span class="pre">MinioConnection</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="data_validator.html" title="previous chapter">DataValidator — Data Validation</a></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.4.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="../_sources/api/connections.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

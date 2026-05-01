@@ -1,0 +1,218 @@
+# =============================================================================
+# Kolmogorov's team
+# Systematic Equity Pipeline – Configuration
+# =============================================================================
+
+dev:
+  config:
+    env_variables:
+      - MINIO_USER
+      - MINIO_PASSWORD
+      - MINIO_URL
+      - POSTGRES_USERNAME
+      - POSTGRES_PASSWORD
+      - POSTGRES_HOST_DEV
+      - POSTGRES_PORT_DEV
+      - POSTGRES_DATABASE
+      - MONGO_HOST
+      - MONGO_PORT
+      - MONGO_USERNAME
+      - MONGO_PASSWORD
+      - KAFKA_BOOTSTRAP_SERVERS
+      - FINNHUB_API_KEY
+      - REFINITIV_USERNAME
+      - REFINITIV_PASSWORD
+      - REFINITIV_APP_KEY
+      - NEWSAPI_KEY
+      - ALPHA_VANTAGE_KEY_1
+      - ALPHA_VANTAGE_KEY_2
+      - ALPHA_VANTAGE_KEY_3
+      - ALPHA_VANTAGE_KEY_4
+      - ALPHA_VANTAGE_KEY_5
+      - ALPHA_VANTAGE_KEY_6
+      - ALPHA_VANTAGE_KEY_7
+      - ALPHA_VANTAGE_KEY_8
+      - ALPHA_VANTAGE_KEY_9
+      - FMP_API_KEY
+      - SIMFIN_API_KEY
+    Database:
+      Postgres:
+        Host: localhost
+        Database: fift
+        Username: postgres
+        Password: postgres
+        Port: 5439
+        Schema: systematic_equity
+      Minio:
+        BucketName: iftbigdata
+        RawDataPath: raw-data
+      MongoDB:
+        Host: localhost
+        Port: 27019
+        Database: ift_cw1
+        Username: ift_bigdata
+        Password: mongo_password
+      Kafka:
+        BootstrapServers: localhost:9092
+  params:
+    Pipeline:
+      lookback_years: 6
+      api_delay_seconds: 0.5
+      max_retries: 3
+      backoff_base: 2.0
+      batch_size: 50
+      fundamentals_workers: 4
+    DataSources:
+      prices:
+        enabled: true
+        priority: P0
+      fundamentals:
+        enabled: true
+        priority: P1
+      fx:
+        enabled: true
+        priority: P0
+        pairs:
+          - "GBPUSD=X"
+          - "EURUSD=X"
+          - "CADUSD=X"
+          - "CHFUSD=X"
+      vix:
+        enabled: true
+        priority: P0
+        ticker: "^VIX"
+      risk_free_rate:
+        enabled: true
+        priority: P2
+        series_id: "DGS3MO"
+      benchmark:
+        enabled: true
+        priority: P1
+        symbols:
+          - "^GSPC"
+      ratios:
+        enabled: true
+        priority: P1
+      esg:
+        enabled: true
+        priority: P2
+    CurrencyMapping:
+      ".L": GBP
+      ".PA": EUR
+      ".AS": EUR
+      ".DE": EUR
+      ".MC": EUR
+      ".MI": EUR
+      ".TO": CAD
+      ".S": CHF
+      default: USD
+    SwissTickerRemap:
+      from_suffix: ".S"
+      to_suffix: ".SW"
+
+docker:
+  config:
+    env_variables:
+      - MINIO_USER
+      - MINIO_PASSWORD
+      - MINIO_URL
+      - POSTGRES_USERNAME
+      - POSTGRES_PASSWORD
+      - POSTGRES_HOST_DOCKER
+      - POSTGRES_PORT_DOCKER
+      - POSTGRES_DATABASE
+      - MONGO_HOST
+      - MONGO_PORT
+      - MONGO_USERNAME
+      - MONGO_PASSWORD
+      - KAFKA_BOOTSTRAP_SERVERS
+      - FINNHUB_API_KEY
+      - REFINITIV_USERNAME
+      - REFINITIV_PASSWORD
+      - REFINITIV_APP_KEY
+      - NEWSAPI_KEY
+      - ALPHA_VANTAGE_KEY_1
+      - ALPHA_VANTAGE_KEY_2
+      - ALPHA_VANTAGE_KEY_3
+      - ALPHA_VANTAGE_KEY_4
+      - ALPHA_VANTAGE_KEY_5
+      - ALPHA_VANTAGE_KEY_6
+      - ALPHA_VANTAGE_KEY_7
+      - ALPHA_VANTAGE_KEY_8
+      - ALPHA_VANTAGE_KEY_9
+      - FMP_API_KEY
+      - SIMFIN_API_KEY
+    Database:
+      Postgres:
+        Host: localhost
+        Database: fift
+        Username: postgres
+        Password: postgres
+        Port: 5439
+        Schema: systematic_equity
+      Minio:
+        BucketName: csreport
+        RawDataPath: raw-data
+      MongoDB:
+        Host: localhost
+        Port: 27019
+        Database: ift_cw1
+        Username: ift_bigdata
+        Password: mongo_password
+      Kafka:
+        BootstrapServers: localhost:9092
+  params:
+    Pipeline:
+      lookback_years: 6
+      api_delay_seconds: 0.5
+      max_retries: 3
+      backoff_base: 2.0
+      batch_size: 50
+      fundamentals_workers: 4
+    DataSources:
+      prices:
+        enabled: true
+        priority: P0
+      fundamentals:
+        enabled: true
+        priority: P1
+      fx:
+        enabled: true
+        priority: P0
+        pairs:
+          - "GBPUSD=X"
+          - "EURUSD=X"
+          - "CADUSD=X"
+          - "CHFUSD=X"
+      vix:
+        enabled: true
+        priority: P0
+        ticker: "^VIX"
+      risk_free_rate:
+        enabled: true
+        priority: P2
+        series_id: "DGS3MO"
+      benchmark:
+        enabled: true
+        priority: P1
+        symbols:
+          - "^GSPC"
+      ratios:
+        enabled: true
+        priority: P1
+      esg:
+        enabled: true
+        priority: P2
+    CurrencyMapping:
+      ".L": GBP
+      ".PA": EUR
+      ".AS": EUR
+      ".DE": EUR
+      ".MC": EUR
+      ".MI": EUR
+      ".TO": CAD
+      ".S": CHF
+      default: USD
+    SwissTickerRemap:
+      from_suffix: ".S"
+      to_suffix: ".SW"

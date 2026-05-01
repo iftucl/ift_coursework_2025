@@ -1,0 +1,36 @@
+services:
+  pgadmin:
+    image: dpage/pgadmin4:8
+    volumes:
+      - ./pgadmin-data:/var/lib/pgadmin
+  miniocw:
+    volumes:
+      - ./minio-data:/data
+  minio_client_cw:
+    entrypoint: >
+      /bin/bash -c "
+      until (/usr/bin/mc alias set minio http://miniocw:9000 ift_bigdata minio_password >/dev/null 2>&1) do echo '...waiting...' && sleep 1; done;
+      sleep 5 && /usr/bin/mc mb --ignore-existing minio/csreport;
+      mc anonymous set public minio/csreport;
+      tail -f /dev/null
+      "
+  minio_reset_cw:
+    container_name: minio_reset_cw
+    image: minio/mc
+    profiles: ["manual-reset"]
+    depends_on:
+      - miniocw
+    networks:
+      iceberg_net:
+    entrypoint: >
+      /bin/bash -c "
+      until (/usr/bin/mc alias set minio http://miniocw:9000 ift_bigdata minio_password >/dev/null 2>&1) do echo '...waiting...' && sleep 1; done;
+      /usr/bin/mc rm -r --force minio/csreport;
+      /usr/bin/mc mb --ignore-existing minio/csreport;
+      mc anonymous set public minio/csreport;
+      echo 'MinIO bucket csreport reset done.'
+      "
+
+networks:
+  iceberg_net:
+    driver: bridge

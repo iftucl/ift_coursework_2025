@@ -1,0 +1,25 @@
+# macOS metadata
+.DS_Store
+._*
+
+# Python cache / virtual artifacts
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Test and coverage artifacts
+.coverage
+coverage.xml
+htmlcov/
+
+# Runtime outputs
+logs/
+
+# Sphinx build output
+docs/sphinx/build/
+
+# Local env
+.env
+
+# Local backup archives
+backups/

@@ -1,0 +1,51 @@
+[tool.poetry]
+name = "coursework-one-russell"
+version = "0.1.0"
+description = "Team Russell - Value Factor Data Pipeline"
+authors = ["Team Russell"]
+readme = "README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.10"
+psycopg2-binary = "^2.9"
+sqlalchemy = "^2.0"
+pymongo = "^4.6"
+yfinance = "^0.2"
+requests = "^2.31"
+confluent-kafka = "^2.4"
+minio = "^7.2"
+pyyaml = "^6.0"
+pydantic = "^2.0"
+pandas = "^2.2"
+numpy = "^2.0"
+scipy = "^1.11"
+click = "^8.1"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4"
+pytest-cov = "^4.1"
+flake8 = "^6.1"
+black = "^23.0"
+isort = "^5.12"
+bandit = "^1.7"
+sphinx = "^8.0"
+sphinx-rtd-theme = "^3.0"
+
+[tool.black]
+line-length = 100
+
+[tool.isort]
+profile = "black"
+line_length = 100
+
+[tool.pytest.ini_options]
+# Run tests per pipeline from each pipeline's own directory:
+#   cd a_pipeline && python -m pytest test/ -v
+#   cd b_pipeline && python -m pytest test/ -v
+#   cd c_pipeline && python -m pytest test/ -v
+addopts = "-v"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -1,0 +1,32 @@
+dev:
+  postgres:
+    host: localhost
+    port: 5439
+    user: postgres
+    password: postgres
+    database: fift
+    schema: systematic_equity
+
+  mongodb:
+    host: localhost
+    port: 27019
+    database: russell_raw
+
+  minio:
+    endpoint: "localhost:9000"
+    access_key: ift_bigdata
+    secret_key: minio_password
+    bucket: csreport
+    secure: false
+
+  kafka:
+    bootstrap_servers: "localhost:9092"
+    group_id: "russell_b_pipeline"
+    topics:
+      prices: "russell.raw_prices"
+      financials: "russell.raw_financials"
+
+  alpha_vantage:
+    api_key: "YOUR_API_KEY_HERE"
+    base_url: "https://www.alphavantage.co/query"
+    requests_per_day: 25
