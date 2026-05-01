@@ -98,7 +98,7 @@ coursework_two/
 ```bash
 # 1. Clone and navigate
 git clone https://github.com/.../ift_coursework_2025.git
-cd ift_coursework_2025/team_09
+cd ift_coursework_2025/team_Wald
 
 # 2. Create .env file at repo root (see API Keys section below for all variables)
 cp .env.example .env   # then fill in your API keys — see table below
