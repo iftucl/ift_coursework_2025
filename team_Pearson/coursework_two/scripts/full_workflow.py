@@ -17,6 +17,7 @@ import sys
 import time
 import urllib.error
 import urllib.request
+import webbrowser
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
@@ -127,6 +128,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--start-services", action="store_true")
     parser.add_argument(
         "--serve", action="store_true", help="Keep the web server open after checks."
+    )
+    parser.add_argument(
+        "--open-browser",
+        action="store_true",
+        help=(
+            "Open the verified web URL in the default browser at the end of the workflow. "
+            "--serve implies this interactive browser launch."
+        ),
     )
     parser.add_argument("--skip-quality", action="store_true")
     parser.add_argument("--skip-chain", action="store_true")
@@ -606,12 +615,22 @@ def _check_web(args: argparse.Namespace, env: dict[str, str]) -> dict[str, Any]:
             "server_started": proc is not None,
         }
     finally:
-        if proc is not None and not bool(args.serve):
+        if proc is not None and not (bool(args.serve) or bool(args.open_browser)):
             proc.terminate()
             try:
                 proc.wait(timeout=10)
             except subprocess.TimeoutExpired:
                 proc.kill()
+
+
+def _open_browser(base_url: str) -> dict[str, Any]:
+    opened = webbrowser.open(base_url, new=2)
+    return {
+        "step": "open_browser",
+        "status": "ok" if opened else "warning",
+        "url": base_url,
+        "opened": bool(opened),
+    }
 
 
 def _write_summary(summary: dict[str, Any]) -> Path:
@@ -680,6 +699,11 @@ def main(argv: list[str] | None = None) -> int:
         if summary.get("web"):
             _print_step_table((summary["web"] or {}).get("checks", []))
             print(f"Web URL: {summary['web']['base_url']}")
+            if bool(args.open_browser) or bool(args.serve):
+                browser_step = _open_browser(str(summary["web"]["base_url"]))
+                summary["steps"].append(browser_step)
+                summary_path = _write_summary(summary)
+                print(f"[{browser_step['status']}] open_browser")
         print(f"Full workflow summary: {summary_path}")
         if bool(args.serve):
             print("Web server is running. Press Ctrl+C to stop.")
