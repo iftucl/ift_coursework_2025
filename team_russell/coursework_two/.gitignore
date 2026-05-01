@@ -1,0 +1,28 @@
+# Generated outputs — do not commit large binaries or data files
+results/_price_cache.parquet
+results/stock_returns.csv
+results/stock_returns_extended.csv
+results/stock_returns_2015_2021.csv
+results/quintile_returns*.csv
+results/momentum_comparison.csv
+results/factor_decomposition.csv
+results/long_short_returns.csv
+results/summary_stats.csv
+results/scoreweight_comparison.csv
+static/factor_values*.csv
+
+# Score-weighting experiment (exploratory, not part of production pipeline)
+scripts/test_score_weighting.py
+scripts/test_sw_full_analysis.py
+results/charts/sw_*.png
+
+# Report and docs (not versioned — submit separately)
+docs/
+
+# Environment / cache
+.DS_Store
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+htmlcov/
