@@ -67,6 +67,12 @@ connected dashboard summaries. `outputs/web_state` stores browser-side workflow
 state such as saved scenarios, audit logs, report history, and local LLM session
 settings.
 
+The slim package is checked into Git only to support reproducible web operation:
+without it, a fresh clone can start the UI but cannot populate the real
+performance, holdings, attribution, artifact, and report-generation surfaces
+unless the reviewer also imports the full local database. Large warehouse tables
+remain excluded.
+
 Scenario preview cards and some risk lenses are derived UI views over the formal
 configuration and output context. AI report generation requires a user-supplied
 API key in the local session; saved API keys are hidden by design.

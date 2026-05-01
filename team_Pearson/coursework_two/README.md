@@ -245,6 +245,12 @@ and the web-facing PostgreSQL CSV extracts needed by the dashboard:
 - `backtest_factor_attribution`, covariance metrics, and covariance contributions
 - portfolio targets, construction diagnostics, source coverage, and static company sectors
 
+This data is committed so the web dashboard, report-studio previews, artifact
+library, and normal generated-output views can work immediately after a fresh
+clone. It is not a general research data dump and it is not intended to replace
+the live PostgreSQL warehouse; it is the minimum formal output context required
+to demonstrate the connected web/report workflow reproducibly.
+
 It intentionally excludes the large research warehouse tables such as
 `factor_observations.csv.gz`, `feature_sub_scores.csv.gz`, and
 `financial_observations.csv.gz`. The API lookup order is:
