@@ -287,15 +287,11 @@ The remaining ~11% gap is primarily due to 73 dynamically-detected delisted tick
 
 All infrastructure is containerised — you do not need to install PostgreSQL, MongoDB, Kafka, or MinIO locally. Everything runs inside Docker containers defined in `docker-compose.yml`.
 
-Start all services at once:
-
 ```bash
+# Start all services at once
 docker compose up -d
-```
 
-Or start specific services:
-
-```bash
+# Or start specific services
 docker compose up --build postgres-db mongodb miniocw zookeeper kafka postgres-seed mongo-seed minio-seed
 ```
 
@@ -563,22 +559,17 @@ sudo ln -s /opt/docker-desktop/bin/docker-compose /usr/local/bin/docker-compose
 ### Checking Your Installation
 
 ```bash
+# Check Python version (must be 3.10+)
 python3 --version
-```
 
-```bash
+# Check Docker is running (if this fails, see Docker PATH Setup above)
 docker --version
-```
-
-```bash
 docker compose version
-```
 
-```bash
+# Check Poetry is installed
 poetry --version
-```
 
-```bash
+# Check Git is installed
 git --version
 ```
 
@@ -619,16 +610,15 @@ cd ift_coursework_2025/team_Wald/coursework_one
 
 **What you should see:** The terminal prompt should now show you are inside the `coursework_one` folder. If you type `ls`, you should see files like `Main.py`, `pyproject.toml`, `docker-compose.yml`, and folders like `modules/`, `test/`, `config/`.
 
-Verify you are in the right directory:
-
 ```bash
+# Verify you are in the right directory
 ls
 ```
 
 **Expected output:**
 ```
 Main.py          config/          docs/            modules/         static/
-README.md        docker-compose.yml  pyproject.toml   test/
+README.md        docker-compose.yml  .env.example  pyproject.toml   test/
 ```
 
 ### Step 2: Start the Docker Infrastructure
@@ -700,14 +690,9 @@ zookeeper_service confluentinc/cp-zookeeper  Up (healthy)
 **If something shows "Exited (1)" or "Restarting"**, check the logs:
 
 ```bash
+# Check logs for a specific service (replace SERVICE_NAME)
 docker compose logs postgres-db
-```
-
-```bash
 docker compose logs mongodb
-```
-
-```bash
 docker compose logs kafka
 ```
 
@@ -816,27 +801,13 @@ poetry run python -c "import yfinance; import pandas; import vaderSentiment; pri
 All dependencies installed successfully
 ```
 
-### Step 5: Create the Environment Variables File
+### Step 5: Set Up Environment Variables
 
-The pipeline requires a `.env.dev` file with database credentials and connection strings. Create it by pasting the following command into your terminal:
+The `.env.dev` file contains database credentials and connection strings. The example file has default values that match the Docker Compose configuration.
 
 ```bash
-cat > .env.dev << 'EOF'
-MINIO_USER=ift_bigdata
-MINIO_PASSWORD=minio_password
-MINIO_URL=localhost:9000
-POSTGRES_USERNAME=postgres
-POSTGRES_PASSWORD=postgres
-POSTGRES_HOST_DEV=localhost
-POSTGRES_PORT_DEV=5439
-POSTGRES_DATABASE=fift
-MONGO_HOST=localhost
-MONGO_PORT=27019
-MONGO_USERNAME=ift_bigdata
-MONGO_PASSWORD=mongo_password
-KAFKA_BOOTSTRAP_SERVERS=localhost:9092
-NEWSAPI_KEY=
-EOF
+# Copy the example environment file
+cp .env.example .env.dev
 ```
 
 **Verify the file was created:**
@@ -845,7 +816,19 @@ EOF
 cat .env.dev
 ```
 
-You should see the 14 environment variables listed above. **You do NOT need to change any values** — the defaults match the Docker Compose setup. The `NEWSAPI_KEY` is optional (tier 3 news gap-fill); the pipeline works without it.
+**Expected output** (the default values work out of the box):
+```
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5439
+POSTGRES_DB=fift
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+MONGO_HOST=localhost
+MONGO_PORT=27019
+...
+```
+
+**You do NOT need to change any values** — the defaults match the Docker Compose setup.
 
 ### Step 6: Run the Test Suite
 
@@ -896,6 +879,7 @@ TOTAL                                            2496    159    94%
 Now you are ready to run the actual data pipeline, which will download real data from Yahoo Finance and GDELT.
 
 ```bash
+# Weekly run (most common — recommended for first execution)
 poetry run python Main.py --env_type dev --frequency weekly
 ```
 
@@ -913,17 +897,13 @@ poetry run python Main.py --env_type dev --frequency weekly
 10. Composite ranking results and Top 20 investment candidates
 11. Final pipeline summary with total records and elapsed time
 
-**Note:** The first full run (weekly or quarterly) processes all 678 companies and may take 30-60 minutes depending on your internet speed and API response times. You can test with a smaller set first.
-
-**Quick test with just 3 companies (takes ~1 minute):**
+**Note:** The first full run (weekly or quarterly) processes all 678 companies and may take 30-60 minutes depending on your internet speed and API response times. You can test with a smaller set first:
 
 ```bash
+# Quick test with just 3 companies (takes ~1 minute)
 poetry run python Main.py --env_type dev --frequency weekly --tickers AAPL MSFT GOOGL
-```
 
-**Dry run — validates configuration without downloading any data:**
-
-```bash
+# Dry run — validates configuration without downloading any data
 poetry run python Main.py --env_type dev --dry_run
 ```
 
@@ -931,25 +911,18 @@ poetry run python Main.py --env_type dev --dry_run
 
 ## 13. How to Run the Pipeline
 
-### Full Run Commands (Copy-Paste These)
+### Full Run Command (Copy-Paste This)
 
-Run these three commands **one at a time** to execute the entire pipeline end-to-end for all 678 companies with default settings (5-year lookback, all data sources).
-
-**On macOS, ensure Docker is in your PATH first (skip if `docker --version` already works):**
+This is the single command to run the entire pipeline end-to-end for all 678 companies with default settings (5-year lookback, all data sources):
 
 ```bash
+# IMPORTANT: On macOS, ensure Docker is in your PATH first:
 export PATH="/Applications/Docker.app/Contents/Resources/bin:$PATH"
-```
 
-**Make sure Docker services are running:**
-
-```bash
+# Make sure Docker services are running
 docker compose up -d
-```
 
-**Run the full pipeline (all 678 companies, all data sources, 5-year history):**
-
-```bash
+# Run the full pipeline (all 678 companies, all data sources, 5-year history)
 poetry run python Main.py --env_type dev --frequency quarterly
 ```
 
@@ -969,92 +942,51 @@ This will:
 
 ### Basic Commands
 
-**Weekly run in development environment (most common usage):**
-
 ```bash
+# Weekly run in development environment (most common usage)
 poetry run python Main.py --env_type dev --frequency weekly
-```
 
-**Daily incremental update (only fetches recent data):**
-
-```bash
+# Daily incremental update (only fetches recent data)
 poetry run python Main.py --env_type dev --frequency daily
-```
 
-**Monthly full refresh:**
-
-```bash
+# Monthly full refresh
 poetry run python Main.py --env_type dev --frequency monthly
-```
 
-**Quarterly with full 5-year lookback and schema re-creation:**
-
-```bash
+# Quarterly with full 5-year lookback and schema re-creation
 poetry run python Main.py --env_type dev --frequency quarterly --init_schema
-```
 
-**Docker environment (use when running from inside a Docker container):**
-
-```bash
+# Docker environment (use when running from inside a Docker container)
 poetry run python Main.py --env_type docker --frequency weekly
 ```
 
 ### Advanced Options
 
-**Run only specific data sources (skip what you don't need):**
-
 ```bash
-poetry run python Main.py --env_type dev --sources prices
-```
+# Run only specific data sources (skip what you don't need)
+poetry run python Main.py --env_type dev --sources prices          # Only stock prices
+poetry run python Main.py --env_type dev --sources news            # Only news articles
+poetry run python Main.py --env_type dev --sources prices news     # Prices and news
+poetry run python Main.py --env_type dev --sources prices news fx  # Everything
 
-```bash
-poetry run python Main.py --env_type dev --sources news
-```
+# Change the historical data lookback period (default: 5 years)
+poetry run python Main.py --env_type dev --frequency quarterly --lookback_years 2   # 2-year history
+poetry run python Main.py --env_type dev --frequency quarterly --lookback_years 5   # 5-year history (default)
+poetry run python Main.py --env_type dev --frequency quarterly --lookback_years 6   # 6-year history
+poetry run python Main.py --env_type dev --frequency quarterly --lookback_years 10  # 10-year history
 
-```bash
-poetry run python Main.py --env_type dev --sources prices news
-```
-
-```bash
-poetry run python Main.py --env_type dev --sources prices news fx
-```
-
-**Change the historical data lookback period (default: 5 years):**
-
-| Lookback | Command |
-|---|---|
-| 2-year history | `poetry run python Main.py --env_type dev --frequency quarterly --lookback_years 2` |
-| 5-year history (default) | `poetry run python Main.py --env_type dev --frequency quarterly --lookback_years 5` |
-| 6-year history | `poetry run python Main.py --env_type dev --frequency quarterly --lookback_years 6` |
-| 10-year history | `poetry run python Main.py --env_type dev --frequency quarterly --lookback_years 10` |
-
-**Process only specific companies (useful for testing):**
-
-```bash
+# Process only specific companies (useful for testing)
 poetry run python Main.py --env_type dev --tickers AAPL MSFT GOOGL
-```
 
-**Custom batch size (smaller batches = slower but less likely to hit rate limits):**
-
-```bash
+# Custom batch size (smaller batches = slower but less likely to hit rate limits)
 poetry run python Main.py --env_type dev --batch_size 25
-```
 
-**Validate configuration without actually downloading any data:**
-
-```bash
+# Validate configuration without actually downloading any data
 poetry run python Main.py --env_type dev --dry_run
-```
 
-**Backfill data for a specific date:**
-
-```bash
+# Backfill data for a specific date
 poetry run python Main.py --env_type dev --run_date 2024-06-15
-```
 
-**Combine multiple options (10-year quarterly refresh for 3 specific tickers):**
-
-```bash
+# Combine multiple options (10-year quarterly refresh for 3 specific tickers)
 poetry run python Main.py --env_type dev --frequency quarterly --lookback_years 10 --tickers AAPL MSFT GOOGL
 ```
 
@@ -1143,7 +1075,7 @@ DataSources:
 
 ### Environment Variables
 
-The `.env.dev` file contains database credentials and connection strings. You create this file manually during installation (see [Step 5](#step-5-create-the-environment-variables-file)). The default values match the Docker Compose configuration and require no changes for standard development use.
+The `.env.dev` file contains database credentials and connection strings. The default values match the Docker Compose configuration and require no changes for standard development use.
 
 ---
 
@@ -1157,7 +1089,8 @@ team_07 Wald/
 │   ├── pyproject.toml                       # Poetry config + all dependencies
 │   ├── poetry.lock                          # Locked dependency versions
 │   ├── docker-compose.yml                   # Docker infrastructure (8 services)
-│   ├── .env.dev                             # Development environment variables (created in Step 5)
+│   ├── .env.dev                             # Development environment variables
+│   ├── .env.example                         # Template for environment variables
 │   ├── .flake8                              # Linting configuration (line length 120)
 │   ├── .gitignore                           # Git ignore rules
 │   ├── README.md                            # This file
@@ -1397,28 +1330,19 @@ The project uses **pytest** as the testing framework with **583 tests** achievin
 
 ### Running Tests
 
-Run the full test suite with verbose output and coverage report:
-
 ```bash
+# Run the full test suite with verbose output and coverage report
 poetry run pytest ./test/ -v --cov=modules --cov-report=term-missing
-```
 
-Run only unit tests (no Docker required):
-
-```bash
+# Run only unit tests (no Docker required)
 poetry run pytest ./test/ -v -m "not integration"
-```
 
-Run integration tests (requires Docker services running):
-
-```bash
+# Run integration tests (requires Docker services running)
 poetry run pytest ./test/ -v -m integration
-```
 
-Generate an HTML coverage report (then open `htmlcov/index.html` in your browser):
-
-```bash
+# Generate an HTML coverage report (opens in browser)
 poetry run pytest ./test/ --cov=modules --cov-report=html
+# Then open htmlcov/index.html in your browser
 ```
 
 ### Test Coverage by Module
@@ -1464,45 +1388,40 @@ All code quality tools are configured in `pyproject.toml` and pass cleanly.
 
 ```bash
 poetry run flake8 modules/ Main.py --max-line-length=120
+# Result: 0 errors, 0 warnings
 ```
-
-Expected result: 0 errors, 0 warnings.
 
 ### Formatting (black)
 
 ```bash
 poetry run black modules/ Main.py test/ --line-length 120 --check
+# Result: All files correctly formatted
 ```
-
-Expected result: All files correctly formatted.
 
 ### Import Sorting (isort)
 
 ```bash
 poetry run isort modules/ Main.py test/ --profile black --check-only
+# Result: All imports correctly sorted
 ```
-
-Expected result: All imports correctly sorted.
 
 ### Security Scanning (bandit)
 
 ```bash
 poetry run bandit -r modules/ -c pyproject.toml
+# Result: No high or medium severity issues
 ```
-
-Expected result: No high or medium severity issues.
 
 ### Documentation (Sphinx)
 
 All modules, classes, and functions have Sphinx-compatible docstrings using `:param`, `:type`, `:return`, `:rtype` notation.
 
-Generate HTML documentation:
-
 ```bash
-cd docs/ && sphinx-build -b html . _build/html && cd ..
+# Generate HTML documentation
+cd docs/
+sphinx-build -b html . _build/html
+# Open docs/_build/html/index.html in browser
 ```
-
-Then open `docs/_build/html/index.html` in your browser.
 
 ---
 
@@ -1556,21 +1475,18 @@ docker compose version
 
 ### Docker Services Won't Start
 
-Check if Docker Desktop is running (must be open as an application):
-
 ```bash
+# Check if Docker Desktop is running (must be open as an application)
 docker info
-```
 
-Check service status:
-
-```bash
+# Check service status
 docker compose ps
-```
 
-Restart all services:
+# View logs for a specific service
+docker compose logs postgres-db
+docker compose logs mongodb
 
-```bash
+# Restart all services
 docker compose down && docker compose up -d
 ```
 
@@ -1588,15 +1504,12 @@ docker compose down && docker compose up -d
 
 ### Tests Failing
 
-Make sure all dependencies are installed:
-
 ```bash
+# Make sure all dependencies are installed
 poetry install
-```
 
-If ift_global is not available, the logger falls back to stdlib — tests still work. If you see import errors, install missing packages:
-
-```bash
+# If ift_global is not available, the logger falls back to stdlib — tests still work
+# If you see import errors, install missing packages:
 poetry add <package-name>
 ```
 
@@ -1805,27 +1718,17 @@ docker exec miniocw mc ls local/iftbigdata/ --recursive | head -30
 
 **Check specific data folders:**
 
-Check price files:
-
 ```bash
+# Check price files
 docker exec miniocw mc ls local/iftbigdata/raw-data/prices/ | head -10
-```
 
-Check financial data files:
-
-```bash
+# Check financial data files
 docker exec miniocw mc ls local/iftbigdata/raw-data/financial/ | head -10
-```
 
-Check company info files:
-
-```bash
+# Check company info files
 docker exec miniocw mc ls local/iftbigdata/raw-data/company_info/ | head -10
-```
 
-Check FX rate files:
-
-```bash
+# Check FX rate files
 docker exec miniocw mc ls local/iftbigdata/raw-data/fx/ | head -10
 ```
 
@@ -1904,15 +1807,11 @@ You can connect to MongoDB using MongoDB Compass:
 
 ### Stop All Services
 
-Stop all Docker containers (preserves data):
-
 ```bash
+# Stop all Docker containers (preserves data)
 docker compose down
-```
 
-Verify all containers are stopped:
-
-```bash
+# Verify all containers are stopped
 docker compose ps
 ```
 
@@ -1923,9 +1822,8 @@ No containers found for project "coursework_one"
 
 ### Restart Services Later
 
-Start services again (all data is preserved in Docker volumes):
-
 ```bash
+# Start services again (all data is preserved in Docker volumes)
 docker compose up -d
 ```
 
@@ -1933,29 +1831,21 @@ docker compose up -d
 
 **Warning:** This deletes ALL data from all databases. Only do this if you want a completely fresh start.
 
-Stop containers AND remove all data volumes:
-
 ```bash
+# Stop containers AND remove all data volumes
 docker compose down -v
-```
 
-Restart with fresh databases (re-seeds 678 companies, recreates schema):
-
-```bash
+# Restart with fresh databases (re-seeds 678 companies, recreates schema)
 docker compose up -d
 ```
 
 ### Remove Everything (Full Cleanup)
 
-Stop containers, remove volumes, remove images:
-
 ```bash
+# Stop containers, remove volumes, remove images
 docker compose down -v --rmi all
-```
 
-Remove any orphaned containers:
-
-```bash
+# Remove any orphaned containers
 docker system prune -f
 ```
 
@@ -1967,79 +1857,41 @@ This section provides a complete, step-by-step walkthrough for running the entir
 
 ### Phase 1: Setup (One-Time)
 
-Run each command below **one at a time**, in order. Do not paste them all at once.
-
-**1. Navigate to the project:**
-
 ```bash
+# 1. Navigate to the project
 cd team_Wald/coursework_one
-```
 
-**2. (macOS only) If `docker --version` gives "command not found", add Docker to your PATH:**
-
-```bash
+# 2. IMPORTANT: Ensure Docker is in your PATH (macOS users)
+#    If "docker" gives "command not found", run this line first:
 export PATH="/Applications/Docker.app/Contents/Resources/bin:$PATH"
-```
 
-**3. Start Docker infrastructure (databases + message broker):**
-
-```bash
+# 3. Start Docker infrastructure (databases + message broker)
 docker compose up -d
-```
 
-**4. Wait 20 seconds for services to initialise, then verify all services are healthy:**
+# 4. Wait 20 seconds for services to initialise
+sleep 20
 
-```bash
-sleep 20 && docker compose ps
-```
+# 5. Verify all services are healthy
+docker compose ps
 
-All core services (`postgres_db_cw`, `mongo_db_cw`, `miniocw`, `kafka_service`, `zookeeper_service`) should show **"Up (healthy)"**. Seed containers (`postgres_seed_cw`, `mongo_seed_cw`, `minio_seed_cw`) should show **"Exited (0)"** — this is normal.
+# 6. Verify 678 companies were seeded
+docker exec postgres_db_cw psql -U postgres -d fift -c \
+  "SELECT COUNT(*) FROM systematic_equity.company_static;"
 
-**5. Verify 678 companies were seeded:**
-
-```bash
-docker exec postgres_db_cw psql -U postgres -d fift -c "SELECT COUNT(*) FROM systematic_equity.company_static;"
-```
-
-Expected output: `678`.
-
-**6. Install Python dependencies:**
-
-```bash
+# 7. Install Python dependencies
 poetry install
-```
 
-**7. Create the environment variables file:**
+# 8. Copy environment file
+cp .env.example .env.dev
 
-```bash
-cat > .env.dev << 'EOF'
-MINIO_USER=ift_bigdata
-MINIO_PASSWORD=minio_password
-MINIO_URL=localhost:9000
-POSTGRES_USERNAME=postgres
-POSTGRES_PASSWORD=postgres
-POSTGRES_HOST_DEV=localhost
-POSTGRES_PORT_DEV=5439
-POSTGRES_DATABASE=fift
-MONGO_HOST=localhost
-MONGO_PORT=27019
-MONGO_USERNAME=ift_bigdata
-MONGO_PASSWORD=mongo_password
-KAFKA_BOOTSTRAP_SERVERS=localhost:9092
-NEWSAPI_KEY=
-EOF
-```
-
-**8. Run tests to verify everything works:**
-
-```bash
+# 9. Run tests to verify everything works
 poetry run pytest ./test/ -v --cov=modules
 ```
 
-**After these 8 steps, you should have:**
+**After these 9 steps, you should have:**
 - All Docker services running (check with `docker compose ps`)
 - 678 companies in the database
-- All tests passing with 80%+ overall coverage (core modules 94-100%)
+- All 583 tests passing with 84% overall coverage (core modules 94-100%)
 - Python dependencies installed
 
 ### Phase 2: Quick Test Run (3 Companies)
@@ -2047,6 +1899,7 @@ poetry run pytest ./test/ -v --cov=modules
 Before running the full 678-company pipeline, test with a small set:
 
 ```bash
+# Run for just 3 companies to verify the pipeline works end-to-end
 poetry run python Main.py --env_type dev --frequency weekly --tickers AAPL MSFT GOOGL
 ```
 
@@ -2059,45 +1912,34 @@ poetry run python Main.py --env_type dev --frequency weekly --tickers AAPL MSFT 
 - Sentiment Score computation and Top 10 table
 - Composite Ranking with investment decisions
 
-**Verify the test data was stored.** Run each command one at a time:
-
-Check prices were loaded:
+**Verify the test data was stored:**
 
 ```bash
-docker exec postgres_db_cw psql -U postgres -d fift -c "SELECT symbol, COUNT(*) AS price_rows FROM systematic_equity.daily_prices GROUP BY symbol;"
-```
+# Check prices were loaded
+docker exec postgres_db_cw psql -U postgres -d fift -c \
+  "SELECT symbol, COUNT(*) AS price_rows FROM systematic_equity.daily_prices GROUP BY symbol;"
 
-Check value scores:
+# Check value scores
+docker exec postgres_db_cw psql -U postgres -d fift -c \
+  "SELECT * FROM systematic_equity.value_metrics;"
 
-```bash
-docker exec postgres_db_cw psql -U postgres -d fift -c "SELECT * FROM systematic_equity.value_metrics;"
-```
-
-Check composite rankings:
-
-```bash
-docker exec postgres_db_cw psql -U postgres -d fift -c "SELECT * FROM systematic_equity.composite_rankings;"
+# Check composite rankings
+docker exec postgres_db_cw psql -U postgres -d fift -c \
+  "SELECT * FROM systematic_equity.composite_rankings;"
 ```
 
 ### Phase 3: Full Pipeline Run (All 678 Companies)
 
-Once the test run succeeds, run the full pipeline. Pick **one** of the following commands:
-
-**Option A — Weekly frequency, 5-year lookback (default, all 678 companies):**
+Once the test run succeeds, run the full pipeline:
 
 ```bash
+# Default: 5-year lookback, weekly frequency, all 678 companies
 poetry run python Main.py --env_type dev --frequency weekly
-```
 
-**Option B — Quarterly full 5-year refresh (recommended for first complete run):**
-
-```bash
+# OR: Full 5-year quarterly refresh (recommended for first complete run)
 poetry run python Main.py --env_type dev --frequency quarterly
-```
 
-**Option C — 10-year deep historical analysis:**
-
-```bash
+# OR: 10-year deep historical analysis
 poetry run python Main.py --env_type dev --frequency quarterly --lookback_years 10
 ```
 
@@ -2105,78 +1947,101 @@ poetry run python Main.py --env_type dev --frequency quarterly --lookback_years 
 
 ### Phase 4: View Final Results
 
-After the pipeline completes, view the investment recommendations. Run each command one at a time.
-
-**See the top 30 investment candidates:**
+After the pipeline completes, view the investment recommendations:
 
 ```bash
-docker exec postgres_db_cw psql -U postgres -d fift -c "SELECT cr.company_id, cs.security AS company_name, cs.gics_sector AS sector, cs.country, cr.value_score, cr.sentiment_score, cr.composite_score, cr.rank, cr.invest_decision FROM systematic_equity.composite_rankings cr JOIN systematic_equity.company_static cs ON cr.company_id = cs.symbol ORDER BY cr.rank ASC LIMIT 30;"
+# See the top 30 investment candidates
+docker exec postgres_db_cw psql -U postgres -d fift -c "
+SELECT
+  cr.company_id,
+  cs.security AS company_name,
+  cs.gics_sector AS sector,
+  cs.country,
+  cr.value_score,
+  cr.sentiment_score,
+  cr.composite_score,
+  cr.rank,
+  cr.invest_decision
+FROM systematic_equity.composite_rankings cr
+JOIN systematic_equity.company_static cs ON cr.company_id = cs.symbol
+ORDER BY cr.rank ASC
+LIMIT 30;
+"
 ```
 
-**See all companies flagged for investment:**
-
 ```bash
-docker exec postgres_db_cw psql -U postgres -d fift -c "SELECT cr.company_id, cs.security AS company_name, cs.gics_sector AS sector, cr.composite_score, cr.rank FROM systematic_equity.composite_rankings cr JOIN systematic_equity.company_static cs ON cr.company_id = cs.symbol WHERE cr.invest_decision = TRUE ORDER BY cr.rank ASC;"
+# See all companies flagged for investment
+docker exec postgres_db_cw psql -U postgres -d fift -c "
+SELECT
+  cr.company_id,
+  cs.security AS company_name,
+  cs.gics_sector AS sector,
+  cr.composite_score,
+  cr.rank
+FROM systematic_equity.composite_rankings cr
+JOIN systematic_equity.company_static cs ON cr.company_id = cs.symbol
+WHERE cr.invest_decision = TRUE
+ORDER BY cr.rank ASC;
+"
 ```
 
-**View pipeline summary statistics:**
-
 ```bash
-docker exec postgres_db_cw psql -U postgres -d fift -c "SELECT 'Total companies' AS metric, COUNT(*)::TEXT AS value FROM systematic_equity.company_static UNION ALL SELECT 'Price records', COUNT(*)::TEXT FROM systematic_equity.daily_prices UNION ALL SELECT 'Value scores', COUNT(*)::TEXT FROM systematic_equity.value_metrics UNION ALL SELECT 'Sentiment scores', COUNT(*)::TEXT FROM systematic_equity.sentiment_scores UNION ALL SELECT 'Composite rankings', COUNT(*)::TEXT FROM systematic_equity.composite_rankings UNION ALL SELECT 'FX rate records', COUNT(*)::TEXT FROM systematic_equity.fx_rates UNION ALL SELECT 'Invest=TRUE companies', COUNT(*)::TEXT FROM systematic_equity.composite_rankings WHERE invest_decision = TRUE;"
+# View pipeline summary statistics
+docker exec postgres_db_cw psql -U postgres -d fift -c "
+SELECT
+  'Total companies' AS metric, COUNT(*)::TEXT AS value FROM systematic_equity.company_static
+UNION ALL
+SELECT 'Price records', COUNT(*)::TEXT FROM systematic_equity.daily_prices
+UNION ALL
+SELECT 'Value scores', COUNT(*)::TEXT FROM systematic_equity.value_metrics
+UNION ALL
+SELECT 'Sentiment scores', COUNT(*)::TEXT FROM systematic_equity.sentiment_scores
+UNION ALL
+SELECT 'Composite rankings', COUNT(*)::TEXT FROM systematic_equity.composite_rankings
+UNION ALL
+SELECT 'FX rate records', COUNT(*)::TEXT FROM systematic_equity.fx_rates
+UNION ALL
+SELECT 'Invest=TRUE companies', COUNT(*)::TEXT FROM systematic_equity.composite_rankings WHERE invest_decision = TRUE;
+"
 ```
 
 ### Phase 5: Run Code Quality Checks
 
-**Linting (should show 0 errors):**
-
 ```bash
+# Linting (should show 0 errors)
 poetry run flake8 modules/ Main.py --max-line-length=120
-```
 
-**Formatting check (should show "All done!"):**
-
-```bash
+# Formatting check (should show "All done!")
 poetry run black modules/ Main.py test/ --line-length 120 --check
-```
 
-**Import sorting check:**
-
-```bash
+# Import sorting check
 poetry run isort modules/ Main.py test/ --profile black --check-only
-```
 
-**Security scanning:**
-
-```bash
+# Security scanning
 poetry run bandit -r modules/ -c pyproject.toml
-```
 
-**Full test suite with coverage:**
-
-```bash
+# Full test suite with coverage
 poetry run pytest ./test/ -v --cov=modules --cov-report=term-missing
 ```
 
 ### Phase 6: Generate Documentation
 
-**Generate Sphinx HTML documentation:**
-
 ```bash
-cd docs/ && sphinx-build -b html . _build/html && cd ..
-```
+# Generate Sphinx HTML documentation
+cd docs/
+sphinx-build -b html . _build/html
+cd ..
 
-The documentation is now at `docs/_build/html/index.html`. Open it in a browser to view the full API reference.
+# The documentation is now at docs/_build/html/index.html
+# Open it in a browser to view the full API reference
+```
 
 ### Phase 7: Shut Down When Done
 
-**Stop all services (data is preserved in Docker volumes):**
-
 ```bash
+# Stop all services (data is preserved)
 docker compose down
-```
 
-**Or if you want a completely fresh start next time (deletes all data):**
-
-```bash
-docker compose down -v
+# Or if you want a fresh start next time:
+# docker compose down -v
 ```
