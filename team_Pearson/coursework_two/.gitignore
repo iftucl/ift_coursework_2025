@@ -20,6 +20,8 @@ outputs/checkpoints/
 outputs/saves/
 outputs/handoff/
 outputs/archive/
+# Local Word handoff drafts used for team communication; formal evidence stays as CSV/PNG/MD.
+outputs/robustness/report_evidence/*.docx
 htmlcov/
 docs/_build/
 .pytest_tmp*/
