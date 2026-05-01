@@ -364,7 +364,8 @@ def test_build_quick_cw2_config_writes_relaxed_profile(tmp_path, monkeypatch):
     assert payload["quality_gates"]["min_risk_overlay_rows"] == 3
     assert payload["quality_gates"]["min_portfolio_targets"] == 3
     assert (
-        payload["portfolio_construction"]["portfolio_name"] == "cw2_core_equity_quick_20260415_c5_y1"
+        payload["portfolio_construction"]["portfolio_name"]
+        == "cw2_core_equity_quick_20260415_c5_y1"
     )
     assert payload["portfolio_construction"]["min_names"] == 3
     assert payload["portfolio_construction"]["min_candidate_pool"] == 3

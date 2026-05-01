@@ -3518,7 +3518,9 @@ def _runner_preflight_report(queue_type: str | None = None) -> dict[str, Any]:
             if not probe_ok:
                 raw_probe = (completed.stderr or completed.stdout or "").strip()
                 probe_lines = [line.strip() for line in raw_probe.splitlines() if line.strip()]
-                probe_detail = probe_lines[-1] if probe_lines else "Required Python packages are missing."
+                probe_detail = (
+                    probe_lines[-1] if probe_lines else "Required Python packages are missing."
+                )
             add_check(
                 "Python packages",
                 probe_ok,

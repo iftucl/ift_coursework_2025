@@ -123,7 +123,9 @@ def _ensure_optional_kafka(metadata: dict[str, Any], env: dict[str, str], log_ha
         return
 
     servers = _kafka_bootstrap_servers(metadata, env)
-    required = _coerce_bool(env.get("KAFKA_REQUIRED"), _coerce_bool(kafka_config.get("required"), False))
+    required = _coerce_bool(
+        env.get("KAFKA_REQUIRED"), _coerce_bool(kafka_config.get("required"), False)
+    )
     if _any_kafka_server_reachable(servers):
         log_handle.write(f"[{_timestamp()}] Kafka preflight ok: {', '.join(servers)}\n")
         return
@@ -150,9 +152,7 @@ def _ensure_optional_kafka(metadata: dict[str, Any], env: dict[str, str], log_ha
                 if completed.stderr.strip():
                     log_handle.write(completed.stderr.strip() + "\n")
             except Exception as exc:
-                log_handle.write(
-                    f"[{_timestamp()}] Kafka auto-start command failed: {exc!r}\n"
-                )
+                log_handle.write(f"[{_timestamp()}] Kafka auto-start command failed: {exc!r}\n")
             log_handle.flush()
             if _wait_for_kafka(servers, timeout_seconds=45):
                 log_handle.write(f"[{_timestamp()}] Kafka preflight ok after auto-start.\n")

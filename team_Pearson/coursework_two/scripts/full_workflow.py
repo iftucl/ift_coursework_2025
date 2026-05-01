@@ -84,7 +84,11 @@ def _python_exe() -> str:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Run the CW2 one-command full workflow.",
+        description=(
+            "Run the CW2 one-command full workflow. By default this executes "
+            "quality checks, the formal full-chain run, robustness bridge, and "
+            "web checks; skip/reuse modes are opt-in flags."
+        ),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument("--run-date", default="2026-04-20")
@@ -126,6 +130,15 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--skip-quality", action="store_true")
     parser.add_argument("--skip-chain", action="store_true")
+    parser.add_argument(
+        "--reuse-existing-formal",
+        action="store_true",
+        help=(
+            "Verify the checked-in formal 6905 report, robustness, repro, and "
+            "web-state artifacts, then skip the expensive data refresh/full-chain "
+            "rerun. Robustness bridge and web checks still run unless skipped."
+        ),
+    )
     parser.add_argument("--skip-robustness", action="store_true")
     parser.add_argument("--skip-web", action="store_true")
     parser.add_argument("--include-pytest", action="store_true")
@@ -369,6 +382,89 @@ def _parse_json_payload(text: str) -> dict[str, Any]:
         return {}
 
 
+def _required_formal_artifacts() -> list[tuple[str, Path]]:
+    report_dir = CW2_ROOT / "outputs" / "reports" / "cw2_formal_fund_ra3_s30_t50_20260420_report"
+    robustness_dir = CW2_ROOT / "outputs" / "robustness"
+    web_state_dir = CW2_ROOT / "outputs" / "web_state"
+    return [
+        ("formal_config", Path(_formal_config_path())),
+        ("reference_run_contract", CW2_ROOT / "repro" / "reference_run_20260420.json"),
+        ("formal_report_markdown", report_dir / "report.md"),
+        ("formal_report_summary", report_dir / "report_summary.json"),
+        ("formal_nav_chart", report_dir / "nav_vs_benchmarks.png"),
+        ("formal_turnover_cost_chart", report_dir / "turnover_and_cost.png"),
+        (
+            "robustness_evidence_pack",
+            robustness_dir / "report_evidence" / "ROBUSTNESS_REPORT_EVIDENCE_PACK.md",
+        ),
+        (
+            "robustness_evidence_index",
+            robustness_dir / "report_evidence" / "REPORT_EVIDENCE_INDEX.md",
+        ),
+        (
+            "robustness_dashboard",
+            robustness_dir / "stochastic" / "acceptance" / "robustness_dashboard.csv",
+        ),
+        ("web_mainline_scenario", web_state_dir / "scenarios" / "_mainline.json"),
+        ("web_ai_report_registry", web_state_dir / "ai_reports" / "registry.json"),
+    ]
+
+
+def _check_existing_formal_artifacts() -> dict[str, Any]:
+    checked = _required_formal_artifacts()
+    missing = [f"{name}: {path}" for name, path in checked if not path.exists()]
+    if missing:
+        raise RuntimeError(
+            "Cannot reuse existing formal artifacts because required files are missing: "
+            + "; ".join(missing)
+        )
+
+    reference_path = CW2_ROOT / "repro" / "reference_run_20260420.json"
+    reference_payload = json.loads(reference_path.read_text(encoding="utf-8"))
+    reference_run_id = (
+        reference_payload.get("reference_run", {}).get("run_id")
+        if isinstance(reference_payload, dict)
+        else None
+    )
+    if reference_run_id != FORMAL_RUN_ID:
+        raise RuntimeError(
+            "Existing formal artifact check found an unexpected reference run id: "
+            f"{reference_run_id!r}; expected {FORMAL_RUN_ID!r}"
+        )
+
+    summary_path = (
+        CW2_ROOT
+        / "outputs"
+        / "reports"
+        / "cw2_formal_fund_ra3_s30_t50_20260420_report"
+        / "report_summary.json"
+    )
+    report_payload = json.loads(summary_path.read_text(encoding="utf-8"))
+    key_metrics = {
+        key: report_payload.get(key)
+        for key in (
+            "total_return",
+            "annualized_return",
+            "annualized_volatility",
+            "sharpe_ratio",
+            "max_drawdown",
+            "information_ratio_vs_primary",
+        )
+        if key in report_payload
+    }
+    return {
+        "step": "reuse_existing_formal_artifacts",
+        "status": "ok",
+        "reused_run_id": FORMAL_RUN_ID,
+        "skipped_stage": "formal_full_chain",
+        "artifact_count": len(checked),
+        "artifacts": [
+            {"name": name, "path": str(path.relative_to(CW2_ROOT))} for name, path in checked
+        ],
+        "key_metrics": key_metrics,
+    }
+
+
 def _run_chain(args: argparse.Namespace, env: dict[str, str]) -> dict[str, Any]:
     py = _python_exe()
     tag = _timestamp()
@@ -551,6 +647,7 @@ def main(argv: list[str] | None = None) -> int:
         "smoke_lookback_years": args.quick_lookback_years,
         "quick_profile": bool(args.quick_profile),
         "quick_lookback_years": args.quick_lookback_years,
+        "reuse_existing_formal": bool(args.reuse_existing_formal),
         "steps": [],
     }
     try:
@@ -565,7 +662,11 @@ def main(argv: list[str] | None = None) -> int:
             summary["steps"].extend(quality_steps)
         infrastructure = _check_infrastructure()
         summary["infrastructure"] = infrastructure
-        if not args.skip_chain:
+        if bool(args.reuse_existing_formal) and not args.skip_chain:
+            reuse_step = _check_existing_formal_artifacts()
+            summary["steps"].append(reuse_step)
+            summary["full_workflow_run_id"] = FORMAL_RUN_ID
+        elif not args.skip_chain:
             chain = _run_chain(args, env)
             summary["steps"].append(chain)
             summary["full_workflow_run_id"] = (chain.get("payload") or {}).get("run_id")
