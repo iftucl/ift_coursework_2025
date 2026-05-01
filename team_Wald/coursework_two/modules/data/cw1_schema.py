@@ -1,6 +1,6 @@
 """
 UCL -- Institute of Finance & Technology
-Author  : Team Wald
+Author  : Team 09
 Topic   : CW1 schema contract — single source of truth for CW1↔CW2 integration
 Project : CW2 - Value-Sentiment Investment Strategy
 

@@ -1,6 +1,6 @@
 """
 UCL -- Institute of Finance & Technology
-Author  : Team Wald
+Author  : Team 09
 Topic   : Main_CW2.py — Single entry point for CW2 backtest
 Project : CW2 - Value-Sentiment Investment Strategy
 

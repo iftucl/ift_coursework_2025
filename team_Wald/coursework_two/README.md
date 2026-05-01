@@ -2,7 +2,7 @@
 
 ## UCL Institute of Finance & Technology
 **IFTE0003: Big Data in Quantitative Finance**
-**Team Wald — Coursework 2** · **v2.8 (Maximum-Performance Tuned)**
+**Team 09 — Coursework 2** · **v2.8 (Maximum-Performance Tuned)**
 
 ---
 

@@ -1,6 +1,6 @@
 """
 UCL -- Institute of Finance & Technology
-Author  : Team Wald
+Author  : Team 09
 Topic   : Config tuning grid for CW2 backtest
 Project : CW2 - Value-Sentiment Investment Strategy
 

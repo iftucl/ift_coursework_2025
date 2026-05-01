@@ -1,6 +1,6 @@
 """
 UCL -- Institute of Finance & Technology
-Author  : Team Wald
+Author  : Team 09
 Topic   : Backtester — quarterly backtest loop with weight drift
 Project : CW2 - Value-Sentiment Investment Strategy
 

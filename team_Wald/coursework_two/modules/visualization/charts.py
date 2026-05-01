@@ -1,6 +1,6 @@
 """
 UCL -- Institute of Finance & Technology
-Author  : Team Wald
+Author  : Team 09
 Topic   : Visualization — all 12 + 2 charts for the CW2 report
 Project : CW2 - Value-Sentiment Investment Strategy
 

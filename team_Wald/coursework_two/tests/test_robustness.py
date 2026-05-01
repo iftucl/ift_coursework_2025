@@ -1,6 +1,6 @@
 """
 UCL -- Institute of Finance & Technology
-Author  : Team Wald
+Author  : Team 09
 Topic   : Unit tests for robustness module
 Project : CW2 - Value-Sentiment Investment Strategy
 

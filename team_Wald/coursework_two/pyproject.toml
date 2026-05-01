@@ -2,7 +2,7 @@
 name = "ift-cw2-backtest"
 version = "2.8.0"
 description = "IFTE0003 CW2: Value-Sentiment Investment Strategy — Backtest & Portfolio Construction"
-authors = ["Team Wald"]
+authors = ["Team 09 <team_09@ucl.ac.uk>"]
 readme = "README.md"
 package-mode = false
 

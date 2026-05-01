@@ -1,6 +1,6 @@
 """
 UCL -- Institute of Finance & Technology
-Author  : Team Wald
+Author  : Team 09
 Topic   : REAL historical sentiment backfill from Alpha Vantage NEWS_SENTIMENT
 Project : CW2 - Value-Sentiment Investment Strategy
 

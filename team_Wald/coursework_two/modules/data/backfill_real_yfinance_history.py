@@ -1,6 +1,6 @@
 """
 UCL -- Institute of Finance & Technology
-Author  : Team Wald
+Author  : Team 09
 Topic   : REAL historical value_metrics backfill from yfinance annual reports
 Project : CW2 - Value-Sentiment Investment Strategy
 

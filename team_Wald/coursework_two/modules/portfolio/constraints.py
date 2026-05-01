@@ -1,6 +1,6 @@
 """
 UCL -- Institute of Finance & Technology
-Author  : Team Wald
+Author  : Team 09
 Topic   : Portfolio constraints (position caps, sector limits)
 Project : CW2 - Value-Sentiment Investment Strategy
 
