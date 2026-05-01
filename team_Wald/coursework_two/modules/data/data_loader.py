@@ -1,6 +1,6 @@
 """
 UCL -- Institute of Finance & Technology
-Author  : Team 09
+Author  : Team Wald
 Topic   : Data loader — point-in-time access to CW1 PostgreSQL + MongoDB
 Project : CW2 - Value-Sentiment Investment Strategy
 

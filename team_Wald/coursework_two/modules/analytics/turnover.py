@@ -1,6 +1,6 @@
 """
 UCL -- Institute of Finance & Technology
-Author  : Team 09
+Author  : Team Wald
 Topic   : Turnover calculation and analysis
 Project : CW2 - Value-Sentiment Investment Strategy
 

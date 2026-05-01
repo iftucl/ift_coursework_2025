@@ -1,6 +1,6 @@
 """
 UCL -- Institute of Finance & Technology
-Author  : Team 09
+Author  : Team Wald
 Topic   : Unit tests for portfolio construction
 Project : CW2 - Value-Sentiment Investment Strategy
 

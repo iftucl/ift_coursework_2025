@@ -1,6 +1,6 @@
 """
 UCL -- Institute of Finance & Technology
-Author  : Team 09
+Author  : Team Wald
 Topic   : Integration tests — mini end-to-end backtest pipeline
 Project : CW2 - Value-Sentiment Investment Strategy
 

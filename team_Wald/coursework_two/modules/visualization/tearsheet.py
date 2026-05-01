@@ -1,6 +1,6 @@
 """
 UCL -- Institute of Finance & Technology
-Author  : Team 09
+Author  : Team Wald
 Topic   : QuantStats tearsheet integration
 Project : CW2 - Value-Sentiment Investment Strategy
 

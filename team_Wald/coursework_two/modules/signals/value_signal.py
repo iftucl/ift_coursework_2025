@@ -1,6 +1,6 @@
 """
 UCL -- Institute of Finance & Technology
-Author  : Team 09
+Author  : Team Wald
 Topic   : Sector-relative value scoring (MSCI Enhanced Value 4-stage pipeline)
 Project : CW2 - Value-Sentiment Investment Strategy
 

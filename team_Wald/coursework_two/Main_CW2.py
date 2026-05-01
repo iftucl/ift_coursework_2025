@@ -1,6 +1,6 @@
 """
 UCL -- Institute of Finance & Technology
-Author  : Team 09
+Author  : Team Wald
 Topic   : Main_CW2.py — Single entry point for CW2 backtest
 Project : CW2 - Value-Sentiment Investment Strategy
 
@@ -152,7 +152,7 @@ def run_pipeline():
     # --- Banner ---
     logger.info("=" * 70)
     logger.info("  CW2 VALUE-SENTIMENT INVESTMENT STRATEGY — BACKTEST PIPELINE")
-    logger.info("  Team 09 — UCL Institute of Finance & Technology")
+    logger.info("  Team Wald — UCL Institute of Finance & Technology")
     logger.info("  IFTE0003: Big Data in Quantitative Finance")
     logger.info("  Run started: %s", datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
     logger.info("=" * 70)

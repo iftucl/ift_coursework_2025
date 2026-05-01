@@ -1,6 +1,6 @@
 """
 UCL -- Institute of Finance & Technology
-Author  : Team 09
+Author  : Team Wald
 Topic   : Random portfolio comparison (skill vs luck)
 Project : CW2 - Value-Sentiment Investment Strategy
 

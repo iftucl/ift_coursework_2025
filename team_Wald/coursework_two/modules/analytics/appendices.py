@@ -1,6 +1,6 @@
 """
 UCL -- Institute of Finance & Technology
-Author  : Team 09
+Author  : Team Wald
 Topic   : Auto-generated appendices F, G, H
 Project : CW2 - Value-Sentiment Investment Strategy
 

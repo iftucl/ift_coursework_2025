@@ -24,4 +24,4 @@ but reads from CW1's database tables for input data via ``data_loader``.
 """
 
 __version__ = '2.0.0'
-__author__ = 'Team 09 — UCL Institute of Finance & Technology'
+__author__ = 'Team Wald — UCL Institute of Finance & Technology'

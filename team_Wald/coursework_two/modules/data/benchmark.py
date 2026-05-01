@@ -1,6 +1,6 @@
 """
 UCL -- Institute of Finance & Technology
-Author  : Team 09
+Author  : Team Wald
 Topic   : Benchmark data retrieval and processing
 Project : CW2 - Value-Sentiment Investment Strategy
 

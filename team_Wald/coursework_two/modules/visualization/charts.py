@@ -1,6 +1,6 @@
 """
 UCL -- Institute of Finance & Technology
-Author  : Team 09
+Author  : Team Wald
 Topic   : Visualization — all 12 + 2 charts for the CW2 report
 Project : CW2 - Value-Sentiment Investment Strategy
 
@@ -364,7 +364,7 @@ def plot_cumulative_returns(
         title='Cumulative Returns',
         subtitle='Growth of $1.00 — log scale — net of 25 bps one-way costs',
         metrics=headline,
-        footer_text='Team 09 · CW2 Value-Sentiment Strategy · Source: yfinance + CW1 pipeline',
+        footer_text='Team Wald · CW2 Value-Sentiment Strategy · Source: yfinance + CW1 pipeline',
     )
 
     # Draw each series with a subtle glow underneath (wider, lower-alpha)
@@ -438,7 +438,7 @@ def plot_drawdown(
             ('Days below −5%', f'{int((drawdown < -0.05).sum())}', PALETTE['navy']),
             ('Periods underwater', f'{len(top_dd)}', PALETTE['text_muted']),
         ],
-        footer_text='Team 09 · CW2 · Top-3 events computed via local-minima enumeration',
+        footer_text='Team Wald · CW2 · Top-3 events computed via local-minima enumeration',
     )
 
     y = drawdown.values * 100
@@ -658,7 +658,7 @@ def plot_monthly_heatmap(
              'Compounded monthly return (%) — YTD column on right, Avg row at bottom',
              ha='left', va='bottom', color=PALETTE['text_muted'], fontsize=10.5)
     fig.text(0.065, 0.03,
-             'Team 09 · CW2 · YTD = compound of available months · Avg = arithmetic mean',
+             'Team Wald · CW2 · YTD = compound of available months · Avg = arithmetic mean',
              ha='left', va='bottom', color=PALETTE['text_muted'], fontsize=8.5,
              style='italic')
 
@@ -705,7 +705,7 @@ def plot_rolling_sharpe(
         title=f'Rolling {window // 21}-Month Sharpe Ratio',
         subtitle='Trailing-window excess-return-to-volatility with regime bands',
         metrics=headline,
-        footer_text=f'Team 09 · CW2 · Rolling window = {window} trading days · Rf = 4% annual',
+        footer_text=f'Team Wald · CW2 · Rolling window = {window} trading days · Rf = 4% annual',
     )
 
     # Reference bands
@@ -777,7 +777,7 @@ def plot_weight_sensitivity_heatmap(
             ('Chosen 60/40', f'{chosen_sharpe:.3f}', PALETTE['deep']),
         ],
         right=0.89,
-        footer_text=f'Team 09 · CW2 · {len(x)}-point sweep — flat region means sentiment has narrow dispersion',
+        footer_text=f'Team Wald · CW2 · {len(x)}-point sweep — flat region means sentiment has narrow dispersion',
     )
 
     ax.fill_between(x, y, y.min() - 0.05,
@@ -855,7 +855,7 @@ def plot_factor_loadings(
              'Newey-West HAC 6-lag 95% CIs    — significance: *** p<0.01, ** p<0.05, * p<0.10',
              ha='left', va='bottom', color=PALETTE['text_muted'], fontsize=10.5)
     fig.text(0.07, 0.02,
-             'Team 09 · CW2 · OLS with Newey-West HAC standard errors (lag = 6)',
+             'Team Wald · CW2 · OLS with Newey-West HAC standard errors (lag = 6)',
              ha='left', va='bottom', color=PALETTE['text_muted'], fontsize=8.5,
              style='italic')
 
@@ -964,7 +964,7 @@ def plot_sector_allocation(
              'Portfolio weight per GICS sector (max 25% sector cap, max 5% stock)',
              ha='left', va='bottom', color=PALETTE['text_muted'], fontsize=10.5)
     fig.text(0.22, 0.03,
-             'Team 09 · CW2 · Weights sum to 100% · Constraint enforced by portfolio constructor',
+             'Team Wald · CW2 · Weights sum to 100% · Constraint enforced by portfolio constructor',
              ha='left', va='bottom', color=PALETTE['text_muted'], fontsize=8.5,
              style='italic')
 
@@ -1055,7 +1055,7 @@ def plot_random_portfolio_histogram(
             ('P(random beats)', f'{random_result.get("prob_random_beats", 0) * 100:.1f}%',
              PALETTE['text_muted']),
         ],
-        footer_text='Team 09 · CW2 · Random portfolios drawn with same sector caps',
+        footer_text='Team Wald · CW2 · Random portfolios drawn with same sector caps',
     )
 
     n, bins, patches = ax.hist(
@@ -1166,7 +1166,7 @@ def plot_threshold_sensitivity(
              'Backtest Sharpe ratio across selection percentile × max D/E filter',
              ha='left', va='bottom', color=PALETTE['text_muted'], fontsize=10.5)
 
-    _footer(fig, 'Team 09 · CW2 · Red box marks spec configuration (top 20% × D/E ≤ 2.0)')
+    _footer(fig, 'Team Wald · CW2 · Red box marks spec configuration (top 20% × D/E ≤ 2.0)')
     _save(fig, output_path)
 
 
@@ -1198,7 +1198,7 @@ def plot_turnover_per_rebalance(
             ('Max rebalance', f'{df["turnover"].max() * 100:.1f}%', PALETTE['red']),
             ('Min rebalance', f'{df["turnover"].min() * 100:.1f}%', PALETTE['teal']),
         ],
-        footer_text='Team 09 · CW2 · Bar height = Σ |Δw| / 2 at each rebalance',
+        footer_text='Team Wald · CW2 · Bar height = Σ |Δw| / 2 at each rebalance',
     )
 
     colors = [PALETTE['navy'] if t >= avg else PALETTE['teal']
@@ -1276,7 +1276,7 @@ def plot_old_vs_new_value_scores(
              'CW1 cross-sectional percentile ranking vs CW2 MSCI sector-relative z-score',
              ha='left', va='bottom', color=PALETTE['text_muted'], fontsize=10.5)
     fig.text(0.22, 0.03,
-             'Team 09 · CW2 · Ehsani, Harvey & Li (2023) — sector neutralisation',
+             'Team Wald · CW2 · Ehsani, Harvey & Li (2023) — sector neutralisation',
              ha='left', va='bottom', color=PALETTE['text_muted'], fontsize=8.5,
              style='italic')
 
@@ -1426,7 +1426,7 @@ def plot_pipeline_flowchart(
         fontsize=11, color=PALETTE['text_muted'], ha='left', va='top',
     )
 
-    _footer(fig, 'Team 09 · CW2 · Master Guide v3 Part D §D1 architecture')
+    _footer(fig, 'Team Wald · CW2 · Master Guide v3 Part D §D1 architecture')
     _save(fig, output_path)
 
 
@@ -1459,7 +1459,7 @@ def plot_diversification_over_time(
              'Effective N, active sector count, and max-sector weight per rebalance',
              ha='left', va='bottom', color=PALETTE['text_muted'], fontsize=10.5)
     fig.text(0.07, 0.02,
-             'Team 09 · CW2 · HHI = Σ w_i² · Effective N = 1/HHI',
+             'Team Wald · CW2 · HHI = Σ w_i² · Effective N = 1/HHI',
              ha='left', va='bottom', color=PALETTE['text_muted'], fontsize=8.5,
              style='italic')
 
@@ -1531,7 +1531,7 @@ def plot_cumulative_cost_impact(
             ('Rebalances', f'{len(df)}', PALETTE['text_muted']),
         ],
         right=0.90,
-        footer_text='Team 09 · CW2 · Flat 25 bps one-way cost per rebalance',
+        footer_text='Team Wald · CW2 · Flat 25 bps one-way cost per rebalance',
     )
 
     ax1.bar(df['date'], df['cost'] * 10000, color=PALETTE['amber'], alpha=0.82,
@@ -1605,7 +1605,7 @@ def plot_executive_summary_card(
     )
     title_ax.text(
         0.022, 0.22,
-        'Executive Summary · Team 09 · IFTE0003 Big Data in Quantitative Finance',
+        'Executive Summary · Team Wald · IFTE0003 Big Data in Quantitative Finance',
         ha='left', va='center', color='#C5CDD7', fontsize=11,
         transform=title_ax.transAxes,
     )
@@ -1782,7 +1782,7 @@ def plot_executive_summary_card(
 
     fig.text(
         0.03, 0.025,
-        'Team 09 · Backtest window 2023-07-31 → 2025-12-31 · '
+        'Team Wald · Backtest window 2023-07-31 → 2025-12-31 · '
         '10 quarterly rebalances · Equal-weight primary · '
         '25 bps one-way costs · PIT 90-day lag · 595 tickers',
         fontsize=9, color=PALETTE['text_muted'], ha='left', va='bottom',

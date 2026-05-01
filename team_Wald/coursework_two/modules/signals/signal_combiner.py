@@ -1,6 +1,6 @@
 """
 UCL -- Institute of Finance & Technology
-Author  : Team 09
+Author  : Team Wald
 Topic   : Signal combination — composite score from value + sentiment
 Project : CW2 - Value-Sentiment Investment Strategy
 

@@ -1,6 +1,6 @@
 """
 UCL -- Institute of Finance & Technology
-Author  : Team 09
+Author  : Team Wald
 Topic   : REAL price correction for CW1 daily_prices table
 Project : CW2 - Value-Sentiment Investment Strategy
 
