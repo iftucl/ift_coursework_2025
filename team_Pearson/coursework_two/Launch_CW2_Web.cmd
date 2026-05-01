@@ -8,6 +8,10 @@ set "URL=http://%HOST%:%PORT%/"
 set "DB_PORT=5439"
 set "DB_CONTAINER=postgres_db_cw"
 set "DOCKER_DESKTOP=C:\Program Files\Docker\Docker\Docker Desktop.exe"
+set "TEAM_DIR=%SCRIPT_DIR%.."
+set "VENV_DIR=%TEAM_DIR%\.venv"
+set "VENV_PYTHON=%VENV_DIR%\Scripts\python.exe"
+set "RUNTIME_REQ=%SCRIPT_DIR%requirements-runtime.txt"
 set "LOG_DIR=%SCRIPT_DIR%outputs\web_state\launcher_logs"
 if not exist "%LOG_DIR%" mkdir "%LOG_DIR%" >nul 2>nul
 set "SERVER_LOG=%LOG_DIR%\uvicorn_8011.out.log"
@@ -18,6 +22,13 @@ cd /d "%SCRIPT_DIR%"
 call :resolve_python
 if errorlevel 1 (
   echo [CW2 Web] Python was not found. Please install Python or fix PATH.
+  pause
+  exit /b 1
+)
+
+call :ensure_runtime_deps
+if errorlevel 1 (
+  echo [CW2 Web] Runtime dependencies could not be installed. See the pip output above.
   pause
   exit /b 1
 )
@@ -128,37 +139,56 @@ exit /b 0
 
 :resolve_python
 set "PYTHON_EXE="
-if exist "C:\Users\grace\miniconda3\python.exe" (
-  set "PYTHON_EXE=C:\Users\grace\miniconda3\python.exe"
+if exist "%VENV_PYTHON%" (
+  set "PYTHON_EXE=%VENV_PYTHON%"
   exit /b 0
 )
-if exist "%SCRIPT_DIR%..\coursework_one\.venv\Scripts\python.exe" (
-  set "PYTHON_EXE=%SCRIPT_DIR%..\coursework_one\.venv\Scripts\python.exe"
-  exit /b 0
-)
+
+call :resolve_bootstrap_python
+if errorlevel 1 exit /b 1
+
+echo [CW2 Web] Creating local virtual environment at %VENV_DIR% ...
+"%BOOTSTRAP_PYTHON%" -m venv "%VENV_DIR%"
+if errorlevel 1 exit /b 1
+if not exist "%VENV_PYTHON%" exit /b 1
+set "PYTHON_EXE=%VENV_PYTHON%"
+exit /b 0
+
+:resolve_bootstrap_python
+set "BOOTSTRAP_PYTHON="
 where python >nul 2>nul
 if not errorlevel 1 (
   for /f "delims=" %%I in ('where python') do (
-    set "PYTHON_EXE=%%I"
+    set "BOOTSTRAP_PYTHON=%%I"
     exit /b 0
   )
 )
 
 where py >nul 2>nul
 if not errorlevel 1 (
-  for /f "delims=" %%I in ('where py') do (
-    set "PYTHON_EXE=%%I"
-    exit /b 0
-  )
+  set "BOOTSTRAP_PYTHON=py"
+  exit /b 0
 )
 
-where python >nul 2>nul
-if not errorlevel 1 (
-  set "PYTHON_EXE=python"
+if exist "C:\Users\grace\miniconda3\python.exe" (
+  set "BOOTSTRAP_PYTHON=C:\Users\grace\miniconda3\python.exe"
   exit /b 0
 )
 
 exit /b 1
+
+:ensure_runtime_deps
+if not exist "%RUNTIME_REQ%" exit /b 1
+"%PYTHON_EXE%" -c "import fastapi, uvicorn, sqlalchemy, psycopg2, pandas, numpy, yaml, matplotlib, docx, reportlab" >nul 2>nul
+if not errorlevel 1 (
+  exit /b 0
+)
+
+echo [CW2 Web] Installing runtime dependencies into %VENV_DIR% ...
+"%PYTHON_EXE%" -m pip install --upgrade pip
+if errorlevel 1 exit /b 1
+"%PYTHON_EXE%" -m pip install -r "%RUNTIME_REQ%"
+exit /b %ERRORLEVEL%
 
 :server_ready
 set "SERVER_READY=0"
