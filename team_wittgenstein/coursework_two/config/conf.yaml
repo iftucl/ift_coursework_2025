@@ -1,0 +1,43 @@
+postgres:
+  host: "localhost"
+  port: 5439
+  database: "fift"
+  user: "postgres"
+  password: "postgres"
+
+liquidity:
+  adtv_lookback_days: 20
+  illiq_lookback_days: 21
+  illiq_removal_pct: 0.10
+  adtv_min_dollar: 1_000_000
+
+composite:
+  ic_lookback_months: 36
+
+backtest:
+  cost_bps: 25.0
+  borrow_rate: 0.0075
+  # Annualised US risk-free rate used for Sharpe/Sortino. Leave blank to
+  # average the risk_free_rates table over the backtest period.
+  risk_free_rate:
+
+portfolio:
+  selection_threshold: 0.10
+  buffer_exit_threshold: 0.20
+  buffer_max_months: 3
+  ewma_lambda: 0.94
+  ewma_lookback_days: 252
+  aum: 50_000_000
+  liquidity_cap_pct: 0.05
+  no_trade_threshold: 0.01
+  adv_lookback_days: 20
+  constraint_tolerance: 0.02
+
+reporting:
+  output_dir: "reports"
+
+# Dev mode: limit symbols to avoid long runtimes during development.
+# Set enabled: false for a full production run.
+dev:
+  enabled: false
+  max_symbols: 100

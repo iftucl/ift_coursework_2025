@@ -13,6 +13,18 @@ SIMFIN_WEIGHTED_SHARES_URL = (
 SEC_EDGAR_COMPANY_TICKERS_URL = "https://www.sec.gov/files/company_tickers.json"
 SEC_EDGAR_USER_AGENT = "TeamWittgenstein/1.0 (bigdata-coursework@university.ac.uk)"
 
+# Map 2-letter country codes to full country names for DB storage
+COUNTRY_CODE_TO_NAME = {
+    "US": "United States",
+    "GB": "United Kingdom",
+    "CA": "Canada",
+    "FR": "France",
+    "DE": "Germany",
+    "CH": "Switzerland",
+    "IT": "Italy",
+    "SP": "Spain",
+}
+
 # Map country codes (from company_static) to OECD 3-letter codes
 COUNTRY_TO_OECD = {
     "US": "USA",
