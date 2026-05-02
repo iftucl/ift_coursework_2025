@@ -1,0 +1,6 @@
+table,row_count,distinct_companies,earliest_date,latest_date,status
+company_static,678,678,,,OK
+daily_prices,1045147,678,2020-01-02,2026-04-16,OK
+value_metrics,26411,605,2021-10-29,2026-04-16,OK
+sentiment_scores,10409,678,2020-01-31,2026-04-16,OK
+composite_rankings,2905,655,2026-03-02,2026-04-16,OK
