@@ -1,0 +1,49 @@
+repos:
+  - repo: local
+    hooks:
+      - id: cw2-black-check
+        name: CW2 black check
+        entry: python -m black --check modules scripts tests api
+        language: system
+        pass_filenames: false
+        types_or: [python]
+
+      - id: cw2-isort-check
+        name: CW2 isort check
+        entry: python -m isort --check-only modules scripts tests api
+        language: system
+        pass_filenames: false
+        types_or: [python]
+
+      - id: cw2-flake8
+        name: CW2 flake8
+        entry: python -m flake8 --jobs=1 modules scripts tests api web
+        language: system
+        pass_filenames: false
+        types_or: [python]
+
+      - id: cw2-bandit
+        name: CW2 bandit medium/high scan
+        entry: python -m bandit -c bandit.yaml -r modules api web -ll
+        language: system
+        pass_filenames: false
+
+      - id: cw2-large-file-check
+        name: CW2 large file check
+        entry: python scripts/check_large_files.py --max-mb 5
+        language: system
+        pass_filenames: false
+
+      - id: cw2-mypy-strict
+        name: CW2 mypy strict manual gate
+        entry: python -m mypy --strict --follow-imports=skip modules api
+        language: system
+        pass_filenames: false
+        stages: [manual]
+
+      - id: cw2-pylint-key-modules
+        name: CW2 pylint key modules manual gate
+        entry: python -m pylint modules api
+        language: system
+        pass_filenames: false
+        stages: [manual]

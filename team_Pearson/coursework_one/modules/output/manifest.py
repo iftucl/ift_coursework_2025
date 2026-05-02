@@ -8,7 +8,6 @@ import os
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
-
 TERMINAL_UNIT_STATUSES = {"success", "failed", "skipped"}
 ATOMIC_MATERIALIZATION_VERSION = "atomic-v1"
 
@@ -155,9 +154,10 @@ class RunManifestTracker:
 
     def ready_for_final_build(self) -> bool:
         """Return True when every planned unit has reached a terminal state."""
-        return self._status_counts.get("pending", 0) == 0 and self._status_counts.get(
-            "running", 0
-        ) == 0
+        return (
+            self._status_counts.get("pending", 0) == 0
+            and self._status_counts.get("running", 0) == 0
+        )
 
     def mark_final_build(
         self,

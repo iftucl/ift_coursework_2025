@@ -1,0 +1,338 @@
+{
+  "analysis_available": true,
+  "annualized_return": 11.939622,
+  "annualized_turnover_ratio": 184.23375,
+  "annualized_turnover_ratio_one_way": 184.23375,
+  "annualized_turnover_ratio_two_way": 327.789534,
+  "annualized_volatility": 15.816019,
+  "avg_executed_gross_turnover": 27.31579322033899,
+  "avg_executed_turnover": 15.352815254237287,
+  "avg_max_participation_used": 0.11491494915254236,
+  "avg_monthly_gross_turnover": 27.315794,
+  "avg_monthly_turnover": 15.352812,
+  "avg_monthly_turnover_one_way": 15.352812,
+  "avg_monthly_turnover_two_way": 27.315794,
+  "avg_requested_gross_turnover": 27.31579322033899,
+  "avg_requested_turnover": 15.352815254237287,
+  "avg_turnover_shortfall": 0.0,
+  "avg_unfilled_buy_weight": 0.0,
+  "avg_unfilled_sell_weight": 0.0,
+  "benchmark_absolute_metrics": {
+    "SPY": {
+      "annualized_return": 11.095655,
+      "annualized_volatility": 14.607061,
+      "calmar_ratio": null,
+      "gross_annualized_return": null,
+      "hit_rate": 61.016949,
+      "hit_rate_positive_periods": 61.016949,
+      "mar_ratio": 0.496045,
+      "max_drawdown": 22.368229,
+      "sharpe_ratio": 0.567559,
+      "sortino_ratio": 0.880877,
+      "total_return": 67.7557
+    },
+    "static_baseline": {
+      "annualized_return": 7.61572,
+      "annualized_volatility": 14.151071,
+      "calmar_ratio": null,
+      "gross_annualized_return": 9.345414,
+      "hit_rate": 57.627119,
+      "hit_rate_positive_periods": 57.627119,
+      "mar_ratio": 0.467982,
+      "max_drawdown": 16.273527,
+      "sharpe_ratio": 0.3522,
+      "sortino_ratio": 0.53629,
+      "total_return": 43.457175
+    },
+    "universe_ew": {
+      "annualized_return": 9.363408,
+      "annualized_volatility": 15.065032,
+      "calmar_ratio": null,
+      "gross_annualized_return": null,
+      "hit_rate": 59.322034,
+      "hit_rate_positive_periods": 59.322034,
+      "mar_ratio": 0.478934,
+      "max_drawdown": 19.5505,
+      "sharpe_ratio": 0.447577,
+      "sortino_ratio": 0.700134,
+      "total_return": 55.2819
+    }
+  },
+  "benchmark_execution_metrics": {
+    "SPY": {
+      "annualized_turnover_ratio_one_way": null,
+      "annualized_turnover_ratio_two_way": null,
+      "avg_monthly_turnover_one_way": null,
+      "avg_monthly_turnover_two_way": null,
+      "avg_transaction_cost_bps": null,
+      "total_cost_drag": null
+    },
+    "static_baseline": {
+      "annualized_turnover_ratio_one_way": 1062.275714,
+      "annualized_turnover_ratio_two_way": 2124.551428,
+      "avg_monthly_turnover_one_way": 88.522976,
+      "avg_monthly_turnover_two_way": 177.045952,
+      "avg_transaction_cost_bps": 13.278446,
+      "total_cost_drag": 1.729694
+    },
+    "universe_ew": {
+      "annualized_turnover_ratio_one_way": null,
+      "annualized_turnover_ratio_two_way": null,
+      "avg_monthly_turnover_one_way": null,
+      "avg_monthly_turnover_two_way": null,
+      "avg_transaction_cost_bps": null,
+      "total_cost_drag": null
+    }
+  },
+  "benchmark_methodology": {
+    "primary_benchmark": {
+      "cost_treatment": "no_strategy_execution_cost_model",
+      "description": "SPY buy-and-hold market benchmark path from the stored backtest benchmark series",
+      "series_name": "SPY"
+    },
+    "secondary_benchmark": {
+      "cost_treatment": "gross_of_trading_costs",
+      "description": "dynamic equal-weight comparison over the investable universe at each backtest period",
+      "series_name": "universe_ew"
+    },
+    "static_baseline": {
+      "configured_cost_bps": 15.0,
+      "cost_treatment": "net_of_configured_trading_costs",
+      "description": "static normal-weight baseline built on the same CW2 factor stack and reconstituted each period",
+      "execution_metrics_reported_separately": true,
+      "series_name": "static_baseline"
+    }
+  },
+  "risk_model_methodology": {
+    "analysis_covariance_method": "fundamental_factor",
+    "annualize_covariance": true,
+    "factor_cov_shrinkage": 0.1,
+    "formula": "Sigma = X F X' + D",
+    "include_sector_factors": true,
+    "model_type": "fundamental_factor_covariance",
+    "portfolio_covariance_method": "fundamental_factor",
+    "risk_aversion": 3.0,
+    "specific_variance_floor_ratio": 0.05,
+    "style_factors": [
+      "market_beta",
+      "size",
+      "value",
+      "momentum",
+      "quality",
+      "volatility",
+      "liquidity",
+      "dividend"
+    ]
+  },
+  "benchmark_ticker": "SPY",
+  "benchmark_total_return": 67.755749,
+  "beta": 0.955289,
+  "beta_raw": 0.955289,
+  "calmar_ratio": 0.696968,
+  "chart_count": 4,
+  "chart_paths": {
+    "drawdown_comparison": "team_Pearson/coursework_two/outputs/reports/cw2_formal_fund_ra3_s30_t50_20260420_report/drawdown_comparison.png",
+    "latest_sector_risk_contribution": "team_Pearson/coursework_two/outputs/reports/cw2_formal_fund_ra3_s30_t50_20260420_report/latest_sector_risk_contribution.png",
+    "nav_vs_benchmarks": "team_Pearson/coursework_two/outputs/reports/cw2_formal_fund_ra3_s30_t50_20260420_report/nav_vs_benchmarks.png",
+    "turnover_and_cost": "team_Pearson/coursework_two/outputs/reports/cw2_formal_fund_ra3_s30_t50_20260420_report/turnover_and_cost.png"
+  },
+  "config_hash": "92427dc4a289faac0ba6eba8f2b3fd38c2f01e23c942b819fc407ac4c557d1a8",
+  "contract_version": "cw2-report-summary-v2",
+  "end_date": "2026-04-20",
+  "excess_return_vs_primary": 0.843966,
+  "feature_snapshot_status": "completed",
+  "final_benchmark_nav": 1.677557,
+  "final_portfolio_nav": 1.741154,
+  "forward_fill_day_total": 0,
+  "forward_filled_periods": 0,
+  "forward_filled_symbol_total": 0,
+  "forward_filled_trade_rows": 0,
+  "generated_at": "2026-04-30T16:14:16.158013+00:00",
+  "gross_annualized_return": 12.491731,
+  "hit_rate": 50.847458,
+  "hit_rate_vs_benchmark_ticker": 50.847458,
+  "holdings_head_hash": "d4e8e88e49e48c51313f38118fda050b8c061ad804d2aa6de3d63db5a02493b6",
+  "holdings_row_count": 2211,
+  "information_ratio_vs_primary": 0.125923,
+  "intraday_action_row_count": 0,
+  "json_path": "team_Pearson/coursework_two/outputs/reports/cw2_formal_fund_ra3_s30_t50_20260420_report/report_summary.json",
+  "latest_materialized_dates": {
+    "benchmark_nav_period_end_date": "2026-04-01",
+    "feature_snapshot_as_of_date": "2026-03-31",
+    "holdings_rebalance_date": "2026-02-27",
+    "performance_period_end_date": "2026-04-01",
+    "portfolio_snapshot_as_of_date": "2026-03-31",
+    "trade_blotter_trade_date": "2026-01-02"
+  },
+  "latest_upstream_dates": {
+    "company_info_date": null,
+    "factor_observation_date": "2026-03-31",
+    "financial_observation_date": "2026-02-28",
+    "previous_position_date": null
+  },
+  "lineage_window": {
+    "first_portfolio_as_of_date": "2021-06-30",
+    "latest_portfolio_as_of_date": "2026-03-31",
+    "snapshot_count": 20,
+    "window_end": "2026-04-20",
+    "window_start": "2021-04-20"
+  },
+  "liquidity_clipped_periods": 0,
+  "liquidity_clipped_trade_rows": 0,
+  "mar_ratio": 0.696968,
+  "markdown_path": "team_Pearson/coursework_two/outputs/reports/cw2_formal_fund_ra3_s30_t50_20260420_report/report.md",
+  "max_drawdown": 17.130802,
+  "max_unfilled_total_weight": 0.0,
+  "periods": 59,
+  "portfolio_name": "cw2_formal_20260420_fund_ra3_s30_t50",
+  "portfolio_snapshot_id": 4078,
+  "portfolio_snapshot_status": "completed",
+  "primary_benchmark": "SPY",
+  "rebalance_frequency": "quarterly",
+  "report_id": "37721d72-5e98-4dc3-addd-8a38c9cd3e31",
+  "report_name": "cw2_formal_fund_ra3_s30_t50_20260420_report",
+  "requested_as_of_date": "2026-03-31",
+  "risk_free_return_method": "daily_forward_filled_calendar_day_compounding_from_annualized_percent_yield",
+  "risk_free_series_name": "us_treasury_3m",
+  "risk_metric_conventions": {
+    "beta_raw": "covariance_of_raw_strategy_and_benchmark_returns_divided_by_benchmark_return_variance",
+    "beta_raw_purpose": "descriptive_benchmark_sensitivity_indicator_used_to_summarize_raw_return_co_movement_and_market_exposure_not_a_capm_pricing_parameter",
+    "information_ratio": "arithmetic_annualized_mean_excess_return_divided_by_annualized_tracking_error",
+    "mar_ratio": "annualized_return_divided_by_full_period_max_drawdown",
+    "sharpe_ratio": "us_treasury_3m_period_return",
+    "sortino_ratio": "us_treasury_3m_period_return",
+    "strategy_hit_rate": "share_of_periods_strategy_return_exceeded_benchmark_ticker_return"
+  },
+  "run_id": "6905e84b-9e16-4106-8c0f-cd9ecce56728",
+  "run_name": "cw2_formal_20260420_20260429T031646Z_01_fund_ra3_s30_t50",
+  "sample_holdings": [
+    {
+      "composite_alpha": 0.786272,
+      "executed_weight": 0.04959039,
+      "execution_date": "2021-07-01T00:00:00",
+      "gics_sector": "Information Technology",
+      "rebalance_date": "2021-06-30T00:00:00",
+      "symbol": "AAPL",
+      "target_weight": 0.04959039
+    },
+    {
+      "composite_alpha": 0.523886,
+      "executed_weight": 0.04959039,
+      "execution_date": "2021-07-01T00:00:00",
+      "gics_sector": "Information Technology",
+      "rebalance_date": "2021-06-30T00:00:00",
+      "symbol": "ADBE",
+      "target_weight": 0.04959039
+    },
+    {
+      "composite_alpha": 1.4977,
+      "executed_weight": 0.04959039,
+      "execution_date": "2021-07-01T00:00:00",
+      "gics_sector": "Consumer Discretionary",
+      "rebalance_date": "2021-06-30T00:00:00",
+      "symbol": "AMZN",
+      "target_weight": 0.04959039
+    },
+    {
+      "composite_alpha": 0.329044,
+      "executed_weight": 0.005,
+      "execution_date": "2021-07-01T00:00:00",
+      "gics_sector": "Consumer Staples",
+      "rebalance_date": "2021-06-30T00:00:00",
+      "symbol": "COST",
+      "target_weight": 0.005
+    },
+    {
+      "composite_alpha": 0.36674,
+      "executed_weight": 0.005,
+      "execution_date": "2021-07-01T00:00:00",
+      "gics_sector": "Consumer Discretionary",
+      "rebalance_date": "2021-06-30T00:00:00",
+      "symbol": "DG",
+      "target_weight": 0.005
+    },
+    {
+      "composite_alpha": 0.399582,
+      "executed_weight": 0.03278263,
+      "execution_date": "2021-07-01T00:00:00",
+      "gics_sector": "Health Care",
+      "rebalance_date": "2021-06-30T00:00:00",
+      "symbol": "DHR",
+      "target_weight": 0.03278263
+    },
+    {
+      "composite_alpha": 0.498483,
+      "executed_weight": 0.04959039,
+      "execution_date": "2021-07-01T00:00:00",
+      "gics_sector": "Real Estate",
+      "rebalance_date": "2021-06-30T00:00:00",
+      "symbol": "EQIX",
+      "target_weight": 0.04959039
+    },
+    {
+      "composite_alpha": 0.520892,
+      "executed_weight": 0.04959039,
+      "execution_date": "2021-07-01T00:00:00",
+      "gics_sector": "Industrials",
+      "rebalance_date": "2021-06-30T00:00:00",
+      "symbol": "EXPD",
+      "target_weight": 0.04959039
+    },
+    {
+      "composite_alpha": 0.878163,
+      "executed_weight": 0.04959039,
+      "execution_date": "2021-07-01T00:00:00",
+      "gics_sector": "Real Estate",
+      "rebalance_date": "2021-06-30T00:00:00",
+      "symbol": "EXR",
+      "target_weight": 0.04959039
+    },
+    {
+      "composite_alpha": 0.310191,
+      "executed_weight": 0.005,
+      "execution_date": "2021-07-01T00:00:00",
+      "gics_sector": "Health Care",
+      "rebalance_date": "2021-06-30T00:00:00",
+      "symbol": "GILD",
+      "target_weight": 0.005
+    }
+  ],
+  "sample_rebalance_dates": [
+    "2021-06-30",
+    "2021-07-30",
+    "2021-08-31",
+    "2021-09-30",
+    "2021-10-29",
+    "2021-11-30",
+    "2021-12-31",
+    "2022-01-31",
+    "2022-02-28",
+    "2022-03-31"
+  ],
+  "scheduled_execution_row_count": 855,
+  "scorecard_passed": 3,
+  "scorecard_total": 5,
+  "secondary_benchmark": "universe_ew",
+  "sharpe_ratio": 0.582195,
+  "snapshot_id": "fd1bfa51-f09c-460d-92e5-8895f7ddb087",
+  "source_table_row_counts": {
+    "company_info_rows": 505,
+    "factor_snapshot_rows": 8359,
+    "financial_snapshot_rows": 23975,
+    "previous_position_rows": 40
+  },
+  "start_date": "2021-04-20",
+  "total_return": 74.115402,
+  "trade_blotter_full_hash": "2240ddfb1327a2c35be4df75a740c0aaba7eab8ab857d7fae223d94d42e23270",
+  "trade_blotter_head_hash": "3887dc488f25c918907a9780d4ed678028b90959528551fa34e578c964fa5cd0",
+  "trade_blotter_row_count": 855,
+  "transaction_cost_bps": 15.0,
+  "version_bundle": {
+    "backtest_engine_version": "cw2-backtest-2026.04",
+    "covariance_method_version": "cw2-covariance-2026.04",
+    "factor_definition_version": "cw2-factor-spec-2026.04",
+    "model_version": "cw2-model-2026.04",
+    "reporting_version": "cw2-reporting-2026.04",
+    "risk_overlay_policy_version": "cw2-risk-overlay-2026.04"
+  }
+}

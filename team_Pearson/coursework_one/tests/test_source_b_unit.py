@@ -1,30 +1,11 @@
 from __future__ import annotations
 
 import importlib
-import sys
 from datetime import date
 
 import pytest
 
 source_b = importlib.import_module("modules.input.extract_source_b")
-
-
-def test_resolve_alpha_key_reads_env(monkeypatch):
-    monkeypatch.setenv("ALPHA_VANTAGE_API_KEY", "abc123")
-    assert source_b._resolve_alpha_key({}) == "abc123"
-
-
-def test_resolve_alpha_key_ignores_placeholders(monkeypatch):
-    monkeypatch.delenv("ALPHA_VANTAGE_API_KEY", raising=False)
-    out = source_b._resolve_alpha_key({"api": {"alpha_vantage_key": "YOUR_KEY"}})
-    assert out == ""
-
-
-def test_resolve_alpha_key_reads_legacy_conf_field(monkeypatch):
-    monkeypatch.delenv("ALPHA_VANTAGE_API_KEY", raising=False)
-    monkeypatch.delenv("ALPHA_VANTAGE_KEY", raising=False)
-    out = source_b._resolve_alpha_key({"alpha_vantage": {"api_key": "abc123"}})
-    assert out == "abc123"
 
 
 def test_minio_config_normalizes_endpoint(monkeypatch):
@@ -35,40 +16,13 @@ def test_minio_config_normalizes_endpoint(monkeypatch):
     assert cfg["secure"] is False
 
 
-def test_month_helpers():
-    months = source_b._month_end_dates("2026-02-14", 1)
-    assert len(months) == 12
-    assert months[0] == date(2025, 2, 28)
-    assert months[-1] == date(2026, 1, 31)
-    assert months[-1] <= date(2026, 2, 14)
-    months_inc = source_b._month_end_dates("2026-02-14", 0)
-    assert months_inc == [date(2026, 2, 14)]
-    start, end = source_b._month_time_range(date(2026, 2, 28))
-    assert start == "20260201T0000"
-    assert end == "20260228T2359"
-    key = source_b._raw_object_path("AAPL", "2026-02-14", date(2026, 2, 28))
-    assert "run_date=2026-02-14" in key and "month=02" in key and "symbol=AAPL.jsonl" in key
+def test_month_windows_cover_backfill_and_incremental():
+    windows = source_b._month_windows("2026-02-14", 1)
+    assert windows[0] == (date(2025, 2, 1), date(2025, 2, 28))
+    assert windows[-1] == (date(2026, 2, 1), date(2026, 2, 14))
 
-
-def test_dedupe_articles_prefers_url_fallback_title_ts():
-    feed = [
-        {
-            "url": "https://a.com/1",
-            "title": "A",
-            "summary": "x",
-            "time_published": "20260201T010101",
-        },
-        {
-            "url": "https://a.com/1",
-            "title": "A dup",
-            "summary": "x",
-            "time_published": "20260201T010102",
-        },
-        {"url": "", "title": "No URL", "summary": "x", "time_published": "20260201T020000"},
-        {"url": "", "title": "No URL", "summary": "x2", "time_published": "20260201T020000"},
-    ]
-    out = source_b._dedupe_articles(feed)
-    assert len(out) == 2
+    incremental = source_b._month_windows("2026-02-14", 0)
+    assert incremental == [(date(2026, 2, 1), date(2026, 2, 14))]
 
 
 def test_article_dedupe_key_prefers_article_id_then_url_then_source_title_date():
@@ -105,9 +59,7 @@ def test_merge_month_articles_incoming_overwrites_existing_on_same_key():
         {"url": "https://x.com/1", "title": "Old", "summary": "old"},
         {"url": "https://x.com/2", "title": "Keep", "summary": "keep"},
     ]
-    incoming = [
-        {"url": "https://x.com/1", "title": "New", "summary": "new"},
-    ]
+    incoming = [{"url": "https://x.com/1", "title": "New", "summary": "new"}]
     merged = source_b._merge_month_articles(existing, incoming)
     by_url = {row["url"]: row for row in merged}
     assert len(merged) == 2
@@ -115,7 +67,54 @@ def test_merge_month_articles_incoming_overwrites_existing_on_same_key():
     assert by_url["https://x.com/2"]["title"] == "Keep"
 
 
-def test_missing_timestamp_articles_do_not_collapse_to_fetch_end(monkeypatch):
+def test_fetch_provider_articles_routes_av_before_cutoff(monkeypatch):
+    """Windows before av_cutoff_date should use AV, not Finnhub."""
+    monkeypatch.setattr(
+        source_b,
+        "_fetch_av_articles",
+        lambda symbol, fetch_start, fetch_end, config=None: [  # noqa: ARG005
+            {
+                "url": "https://x.com/av1",
+                "title": "AV article",
+                "summary": "Strong profit",
+                "time_published": "20260210T090000",
+                "source": "Reuters",
+                "data_source": "alpha_vantage",
+            }
+        ],
+    )
+    monkeypatch.setattr(
+        source_b,
+        "_fetch_finnhub_articles",
+        lambda symbol, fetch_start, fetch_end: [  # noqa: ARG005
+            {
+                "url": "https://x.com/fh1",
+                "title": "Finnhub article",
+                "summary": "Weak loss",
+                "time_published": "20260210T090000",
+                "source": "Bloomberg",
+                "data_source": "finnhub",
+            }
+        ],
+    )
+    # cutoff = 2026-03-05, window ends before cutoff → AV only
+    monkeypatch.setattr(
+        source_b,
+        "_resolve_av_cutoff_date",
+        lambda config=None: date(2026, 3, 5),
+    )
+    monkeypatch.setattr(source_b, "_resolve_alpha_key", lambda config=None: "test-key")
+
+    out = source_b._fetch_provider_articles(
+        "AAPL",
+        fetch_start=date(2026, 2, 10),
+        fetch_end=date(2026, 2, 28),
+    )
+    urls = [row["url"] for row in out]
+    assert urls == ["https://x.com/av1"]
+
+
+def test_missing_timestamp_articles_use_fetch_start_not_fetch_end(monkeypatch):
     monkeypatch.delenv("CW1_TEST_MODE", raising=False)
     raw_payloads = [
         {
@@ -132,84 +131,164 @@ def test_missing_timestamp_articles_do_not_collapse_to_fetch_end(monkeypatch):
         }
     ]
     out = source_b.transform_source_b_features(raw_payloads, ["AAPL"], "2026-02-14", "daily")
-    by_factor = {}
-    for row in out:
-        by_factor.setdefault(row["factor_name"], []).append(row)
-
-    cnt_rows = by_factor["news_article_count_daily"]
+    cnt_rows = [r for r in out if r["factor_name"] == "news_article_count_daily"]
     cnt_by_date = {r["observation_date"]: r["factor_value"] for r in cnt_rows}
     assert cnt_by_date["2026-02-10"] == 2.0
     assert cnt_by_date["2026-02-12"] == 1.0
-    # Key guard: missing-time rows must not be squeezed into fetch_end/run_date.
     assert "2026-02-14" not in cnt_by_date
+    assert {r["publish_date"] for r in cnt_rows} == {"2026-02-10", "2026-02-12"}
 
 
-def test_merge_is_idempotent_for_repeated_same_input():
-    article = {
-        "article_id": "id-1",
-        "url": "https://x.com/1",
-        "source": "Reuters",
-        "title": "A",
-        "time_published": "20260213T101010",
-    }
-    merged_once = source_b._merge_month_articles([], [article])
-    merged_twice = source_b._merge_month_articles(merged_once, [article])
-    assert len(merged_once) == 1
-    assert len(merged_twice) == 1
-
-    payload = [
+def test_strict_time_drops_missing_timestamp_rows(monkeypatch):
+    monkeypatch.delenv("CW1_TEST_MODE", raising=False)
+    raw_payloads = [
         {
             "symbol": "AAPL",
-            "fetch_start": "2026-02-13",
-            "feed": merged_twice,
+            "fetch_start": "2026-02-10",
+            "feed": [
+                {"title": "No ts", "summary": "s", "time_published": ""},
+                {"title": "Has ts", "summary": "s", "time_published": "20260212T120000"},
+            ],
         }
     ]
-    out = source_b.transform_source_b_features(payload, ["AAPL"], "2026-02-14", "daily")
-    count_rows = [r for r in out if r["factor_name"] == "news_article_count_daily"]
-    assert len(count_rows) == 1
-    assert count_rows[0]["factor_value"] == 1.0
-
-
-def test_month_incremental_merge_builds_complete_coverage_with_dedup():
-    first_run = [
-        {
-            "url": f"https://x.com/{d}",
-            "title": f"d{d}",
-            "source": "Reuters",
-            "time_published": f"202602{d:02d}T090000",
-        }
-        for d in range(1, 14)
-    ]
-    # Simulate second incremental window with overlap from buffer (12-13) plus new (14-15).
-    second_run = [
-        {
-            "url": f"https://x.com/{d}",
-            "title": f"d{d}",
-            "source": "Reuters",
-            "time_published": f"202602{d:02d}T090000",
-        }
-        for d in range(12, 16)
-    ]
-
-    merged = source_b._merge_month_articles(first_run, second_run)
-    assert len(merged) == 15
-    got_days = sorted(int(str(r["time_published"])[6:8]) for r in merged)
-    assert got_days == list(range(1, 16))
-
-
-def test_monthly_current_helpers_no_minio_config_are_noop():
-    key = source_b._monthly_current_object_path("AAPL", date(2026, 2, 1))
-    assert "raw/source_b/news_current/" in key
-    loaded = source_b._load_current_month_articles(
-        config={}, symbol="AAPL", month_start=date(2026, 2, 1)
+    out = source_b.transform_source_b_features(
+        raw_payloads,
+        ["AAPL"],
+        "2026-02-14",
+        "daily",
+        config={"source_b": {"strict_time": True}},
     )
-    assert loaded == []
-    source_b._save_current_month_articles(
-        config={},
-        symbol="AAPL",
-        month_start=date(2026, 2, 1),
-        articles=[{"url": "https://x.com/1"}],
+    cnt_rows = [r for r in out if r["factor_name"] == "news_article_count_daily"]
+    assert cnt_rows == [
+        {
+            "symbol": "AAPL",
+            "observation_date": "2026-02-12",
+            "factor_name": "news_article_count_daily",
+            "factor_value": 1.0,
+            "source": "av+finnhub",
+            "metric_frequency": "daily",
+            "source_report_date": "2026-02-12",
+            "publish_date": "2026-02-12",
+            "timestamp_inferred": 0,
+        }
+    ]
+
+
+def test_strict_time_accepts_provider_publish_date_when_timestamp_missing(monkeypatch):
+    monkeypatch.delenv("CW1_TEST_MODE", raising=False)
+    raw_payloads = [
+        {
+            "symbol": "AAPL",
+            "fetch_start": "2026-02-10",
+            "feed": [
+                {
+                    "title": "Provider date only",
+                    "summary": "s",
+                    "time_published": "",
+                    "publish_date": "2026-02-11",
+                },
+            ],
+        }
+    ]
+    out = source_b.transform_source_b_features(
+        raw_payloads,
+        ["AAPL"],
+        "2026-02-14",
+        "daily",
+        config={"source_b": {"strict_time": True}},
     )
+    cnt_rows = [r for r in out if r["factor_name"] == "news_article_count_daily"]
+    assert cnt_rows[0]["observation_date"] == "2026-02-11"
+    assert cnt_rows[0]["publish_date"] == "2026-02-11"
+
+
+def test_normalize_article_adds_schema_and_provider_version_metadata():
+    article = source_b._normalize_article(
+        {
+            "headline": "Provider event",
+            "summary": "Analyst downgrade after earnings miss.",
+            "publish_date": "2026-02-12",
+            "url": "https://example.com/aapl1",
+            "topics": "earnings",
+            "ticker_sentiment": [{"ticker": "AAPL"}],
+        },
+        fallback_symbol="AAPL",
+    )
+    assert article is not None
+    assert article["publish_date"] == "2026-02-12"
+    assert article["time_published"] == "20260212T000000"
+    assert article["time_precision"] == "date"
+    assert article["normalized_schema_version"] == "v2"
+    assert article["provider_payload_version"] == "news_sentiment_v1"
+    assert article["schema_validation_status"] == "warning"
+    assert "topics_scalar_coerced" in article["schema_validation_errors"]
+
+
+def test_transform_source_b_features_emits_event_proxy_counts(monkeypatch):
+    monkeypatch.delenv("CW1_TEST_MODE", raising=False)
+    raw_payloads = [
+        {
+            "symbol": "AAPL",
+            "fetch_start": "2026-02-10",
+            "feed": [
+                {
+                    "title": "Apple downgraded after weak guidance",
+                    "summary": "Analysts downgrade shares after earnings miss and guidance cut.",
+                    "time_published": "20260212T120000",
+                },
+                {
+                    "title": "Apple beats earnings estimates",
+                    "summary": "Broker upgrades the stock after strong quarter.",
+                    "time_published": "20260212T140000",
+                },
+            ],
+        }
+    ]
+    out = source_b.transform_source_b_features(raw_payloads, ["AAPL"], "2026-02-14", "daily")
+    by_factor = {row["factor_name"]: row for row in out if row["observation_date"] == "2026-02-12"}
+    assert by_factor["earnings_news_count_daily"]["factor_value"] == 2.0
+    assert by_factor["earnings_negative_news_count_daily"]["factor_value"] == 1.0
+    assert by_factor["rating_downgrade_count_daily"]["factor_value"] == 1.0
+    assert by_factor["rating_upgrade_count_daily"]["factor_value"] == 1.0
+
+
+def test_build_source_b_kafka_payloads_returns_article_and_proxy_events(monkeypatch):
+    monkeypatch.delenv("CW1_TEST_MODE", raising=False)
+    raw_payload = {
+        "symbol": "AAPL",
+        "fetch_start": "2026-02-10",
+        "feed": [
+            {
+                "title": "Apple downgraded after weak guidance",
+                "summary": "Analysts downgrade shares after earnings miss.",
+                "time_published": "20260212T120000",
+                "url": "https://example.com/aapl1",
+                "data_source": "alpha_vantage",
+            }
+        ],
+    }
+    records = source_b.transform_source_b_features([raw_payload], ["AAPL"], "2026-02-14", "daily")
+
+    payloads = source_b.build_source_b_kafka_payloads(
+        raw_payload=raw_payload,
+        records=records,
+        run_id="run-1",
+        run_date="2026-02-14",
+    )
+
+    assert len(payloads["news_structured"]) == 1
+    article = payloads["news_structured"][0]
+    assert article["symbol"] == "AAPL"
+    assert article["earnings_negative"] is True
+    assert article["rating_downgrade"] is True
+    assert article["normalized_schema_version"] == "v2"
+    assert article["provider_payload_version"] == "news_sentiment_v1"
+    assert article["publish_date"] == "2026-02-12"
+
+    proxy_names = {row["factor_name"] for row in payloads["event_proxies"]}
+    assert "news_sentiment_daily" in proxy_names
+    assert "earnings_negative_news_count_daily" in proxy_names
+    assert all(row["publish_date"] for row in payloads["event_proxies"])
 
 
 def test_score_text_fallback_branch(monkeypatch):
@@ -233,598 +312,275 @@ def test_score_text_lm_branch(monkeypatch):
     assert score > 0
 
 
-def test_compute_sentiment_scores_from_text(monkeypatch):
-    monkeypatch.setattr(source_b, "_LM_ANALYZER", False)
-    feed = [
-        {"title": "Strong profit growth", "summary": "Positive outlook and upgrade"},
-        {"title": "Weak quarter and loss", "summary": "Negative risk remains"},
-        {"title": "", "summary": ""},
-    ]
-    scores = source_b.compute_sentiment_scores(feed)
-    assert len(scores) == 2
-    assert scores[0] > scores[1]
-
-
-def test_fetch_news_for_month_success(monkeypatch):
-    class FakeResp:
-        @staticmethod
-        def raise_for_status():
-            return None
-
-        @staticmethod
-        def json():
-            return {"feed": [{"title": "ok", "summary": "ok"}]}
-
-    def fake_get(url, params, timeout):  # noqa: ARG001
-        assert params["function"] == "NEWS_SENTIMENT"
-        return FakeResp()
-
-    monkeypatch.setattr(source_b.requests, "get", fake_get)
-    payload = source_b._fetch_news_for_month("AAPL", date(2026, 2, 28), "k")
-    assert "feed" in payload
-
-
-def test_fetch_news_for_month_invalid_url(monkeypatch):
-    monkeypatch.setattr(source_b, "ALPHA_VANTAGE_BASE_URL", "http://evil.local/query")
-    with pytest.raises(RuntimeError):
-        source_b._fetch_news_for_month("AAPL", date(2026, 2, 28), "k")
-
-
-def test_ingest_source_b_raw_returns_empty_without_key(monkeypatch):
-    monkeypatch.delenv("ALPHA_VANTAGE_API_KEY", raising=False)
-    monkeypatch.delenv("ALPHA_VANTAGE_KEY", raising=False)
-    out = source_b.ingest_source_b_raw(["AAPL"], "2026-02-14", 1, "daily", config={})
-    assert out == []
-
-
-def test_source_b_symbol_filter_default_skips_suffix():
-    cfg = {"symbol_filter": {"skip_suffix_symbols": True, "symbol_regex_allow": r"^[A-Z0-9]+$"}}
-    symbols = source_b._filter_symbols_for_source_b(["AAPL", "VOD.L", "AAPL"], config=cfg)
-    assert symbols == ["AAPL"]
-
-
-def test_source_b_symbol_filter_can_relax_rules():
-    cfg = {"symbol_filter": {"skip_suffix_symbols": False, "symbol_regex_allow": r"^[A-Z0-9.]+$"}}
-    symbols = source_b._filter_symbols_for_source_b(["AAPL", "VOD.L"], config=cfg)
-    assert symbols == ["AAPL", "VOD.L"]
-
-
-def test_ingest_source_b_raw_collects_payloads(monkeypatch):
-    monkeypatch.setenv("ALPHA_VANTAGE_API_KEY", "k")
-    monkeypatch.setattr(
-        source_b,
-        "_month_windows",
-        lambda run_date, backfill_years: [(date(2026, 2, 1), date(2026, 2, 14))],
-    )
-    monkeypatch.setattr(
-        source_b,
-        "_fetch_news_for_range",
-        lambda symbol, api_key, time_from, time_to: {
-            "feed": [{"title": "good", "summary": "profit"}]
-        },
-    )
-    monkeypatch.setattr(source_b, "_load_month_cursor_closed", lambda *args, **kwargs: False)
-    monkeypatch.setattr(source_b, "_load_month_cursor", lambda *args, **kwargs: None)
-    monkeypatch.setattr(source_b, "_save_month_cursor", lambda *args, **kwargs: None)
-    monkeypatch.setattr(source_b, "_load_current_month_articles", lambda *args, **kwargs: [])
-    monkeypatch.setattr(source_b, "_save_current_month_articles", lambda *args, **kwargs: None)
-    monkeypatch.setattr(source_b, "_save_raw_to_minio", lambda *args, **kwargs: None)
-    monkeypatch.setattr(source_b.time, "sleep", lambda *_args: None)
-    out = source_b.ingest_source_b_raw(["AAPL"], "2026-02-14", 1, "daily", config={})
-    assert len(out) == 1
-    assert out[0]["symbol"] == "AAPL"
-    assert out[0]["month_start"] == "2026-02-01"
-    assert out[0]["month_end"] == "2026-02-28"
-    assert out[0]["fetch_start"] == "2026-02-01"
-    assert out[0]["fetch_end"] == "2026-02-14"
-
-
-def test_ingest_source_b_raw_respects_skip_month_keys(monkeypatch):
-    monkeypatch.setenv("ALPHA_VANTAGE_API_KEY", "k")
-    monkeypatch.setattr(
-        source_b,
-        "_month_windows",
-        lambda run_date, backfill_years: [
-            (date(2026, 1, 1), date(2026, 1, 31)),
-            (date(2026, 2, 1), date(2026, 2, 14)),
-        ],
-    )
-    monkeypatch.setattr(source_b, "_load_month_cursor_closed", lambda *args, **kwargs: False)
-    monkeypatch.setattr(source_b, "_load_month_cursor", lambda *args, **kwargs: None)
-    monkeypatch.setattr(source_b, "_save_month_cursor", lambda *args, **kwargs: None)
-    monkeypatch.setattr(source_b, "_load_current_month_articles", lambda *args, **kwargs: [])
-    monkeypatch.setattr(source_b, "_save_current_month_articles", lambda *args, **kwargs: None)
-    monkeypatch.setattr(source_b, "_save_raw_to_minio", lambda *args, **kwargs: None)
-    monkeypatch.setattr(source_b.time, "sleep", lambda *_args: None)
-
-    seen = []
-
-    def _fake_fetch(symbol, api_key, time_from, time_to):  # noqa: ARG001
-        seen.append((time_from, time_to))
-        return {"feed": []}
-
-    monkeypatch.setattr(source_b, "_fetch_news_for_range", _fake_fetch)
-
-    out = source_b.ingest_source_b_raw(
-        ["AAPL"],
-        "2026-02-14",
-        1,
-        "daily",
-        config={},
-        skip_month_keys={"AAPL:2026-01-01:2026-01-31"},
-    )
-
-    assert len(out) == 1
-    assert out[0]["month_start"] == "2026-02-01"
-    assert seen == [("20260201T0000", "20260214T2359")]
-
-
-def test_ingest_source_b_raw_incremental_range_uses_buffer(monkeypatch):
-    monkeypatch.setenv("ALPHA_VANTAGE_API_KEY", "k")
-    monkeypatch.setattr(
-        source_b,
-        "_month_windows",
-        lambda run_date, backfill_years: [(date(2026, 2, 1), date(2026, 2, 15))],
-    )
-    monkeypatch.setattr(source_b, "SOURCE_B_INCREMENTAL_BUFFER_DAYS", 3)
-    monkeypatch.setattr(source_b, "_load_month_cursor_closed", lambda *args, **kwargs: False)
-    monkeypatch.setattr(source_b, "_load_month_cursor", lambda *args, **kwargs: date(2026, 2, 13))
-
-    captured = {}
-
-    def _fake_fetch(symbol, api_key, time_from, time_to):
-        captured["time_from"] = time_from
-        captured["time_to"] = time_to
-        return {"feed": []}
-
-    monkeypatch.setattr(source_b, "_fetch_news_for_range", _fake_fetch)
-    monkeypatch.setattr(source_b, "_save_month_cursor", lambda *args, **kwargs: None)
-    monkeypatch.setattr(source_b, "_load_current_month_articles", lambda *args, **kwargs: [])
-    monkeypatch.setattr(source_b, "_save_current_month_articles", lambda *args, **kwargs: None)
-    monkeypatch.setattr(source_b, "_save_raw_to_minio", lambda *args, **kwargs: None)
-    monkeypatch.setattr(source_b.time, "sleep", lambda *_args: None)
-
-    out = source_b.ingest_source_b_raw(["AAPL"], "2026-02-15", 1, "daily", config={})
-    assert len(out) == 1
-    assert captured["time_from"] == "20260210T0000"
-    assert captured["time_to"] == "20260215T2359"
-
-
-def test_ingest_source_b_raw_incremental_skips_when_cursor_ahead(monkeypatch):
-    monkeypatch.setenv("ALPHA_VANTAGE_API_KEY", "k")
-    monkeypatch.setattr(
-        source_b,
-        "_month_windows",
-        lambda run_date, backfill_years: [(date(2026, 2, 1), date(2026, 2, 10))],
-    )
-    monkeypatch.setattr(source_b, "SOURCE_B_INCREMENTAL_BUFFER_DAYS", 0)
-    monkeypatch.setattr(source_b, "_load_month_cursor_closed", lambda *args, **kwargs: False)
-    monkeypatch.setattr(source_b, "_load_month_cursor", lambda *args, **kwargs: date(2026, 2, 11))
-
-    called = {"fetch": 0}
-
-    def _fake_fetch(symbol, api_key, time_from, time_to):  # noqa: ARG001
-        called["fetch"] += 1
-        return {"feed": []}
-
-    monkeypatch.setattr(source_b, "_fetch_news_for_range", _fake_fetch)
-    monkeypatch.setattr(source_b, "_save_month_cursor", lambda *args, **kwargs: None)
-    monkeypatch.setattr(source_b, "_load_current_month_articles", lambda *args, **kwargs: [])
-    monkeypatch.setattr(source_b, "_save_current_month_articles", lambda *args, **kwargs: None)
-    monkeypatch.setattr(source_b, "_save_raw_to_minio", lambda *args, **kwargs: None)
-    monkeypatch.setattr(source_b.time, "sleep", lambda *_args: None)
-
-    out = source_b.ingest_source_b_raw(["AAPL"], "2026-02-10", 1, "daily", config={})
-    assert out == []
-    assert called["fetch"] == 0
-
-
-def test_ingest_source_b_raw_skips_closed_month(monkeypatch):
-    monkeypatch.setenv("ALPHA_VANTAGE_API_KEY", "k")
-    monkeypatch.setattr(
-        source_b,
-        "_month_windows",
-        lambda run_date, backfill_years: [(date(2026, 1, 1), date(2026, 1, 31))],
-    )
-    monkeypatch.setattr(source_b, "_load_month_cursor_closed", lambda *args, **kwargs: True)
-    monkeypatch.setattr(source_b, "_load_month_cursor", lambda *args, **kwargs: date(2026, 1, 31))
-    monkeypatch.setattr(source_b, "_save_month_cursor", lambda *args, **kwargs: None)
-    monkeypatch.setattr(source_b, "_load_current_month_articles", lambda *args, **kwargs: [])
-    monkeypatch.setattr(source_b, "_save_current_month_articles", lambda *args, **kwargs: None)
-    monkeypatch.setattr(source_b, "_save_raw_to_minio", lambda *args, **kwargs: None)
-    monkeypatch.setattr(source_b.time, "sleep", lambda *_args: None)
-
-    called = {"fetch": 0}
-
-    def _fake_fetch(symbol, api_key, time_from, time_to):  # noqa: ARG001
-        called["fetch"] += 1
-        return {"feed": []}
-
-    monkeypatch.setattr(source_b, "_fetch_news_for_range", _fake_fetch)
-
-    out = source_b.ingest_source_b_raw(["AAPL"], "2026-02-14", 1, "daily", config={})
-    assert out == []
-    assert called["fetch"] == 0
-
-
-def test_ingest_source_b_raw_marks_cursor_closed_at_month_end(monkeypatch):
-    monkeypatch.setenv("ALPHA_VANTAGE_API_KEY", "k")
-    monkeypatch.setattr(
-        source_b,
-        "_month_windows",
-        lambda run_date, backfill_years: [(date(2026, 1, 1), date(2026, 1, 31))],
-    )
-    monkeypatch.setattr(source_b, "_load_month_cursor_closed", lambda *args, **kwargs: False)
-    monkeypatch.setattr(source_b, "_load_month_cursor", lambda *args, **kwargs: date(2026, 1, 29))
-    monkeypatch.setattr(source_b, "_load_current_month_articles", lambda *args, **kwargs: [])
-    monkeypatch.setattr(source_b, "_save_current_month_articles", lambda *args, **kwargs: None)
-    monkeypatch.setattr(source_b, "_save_raw_to_minio", lambda *args, **kwargs: None)
-    monkeypatch.setattr(source_b.time, "sleep", lambda *_args: None)
-    monkeypatch.setattr(source_b, "_fetch_news_for_range", lambda *args, **kwargs: {"feed": []})
-
-    captured = {}
-
-    def _fake_save_cursor(config, symbol, month_start, last_ingested_date, **kwargs):
-        captured["symbol"] = symbol
-        captured["month_start"] = month_start
-        captured["last_ingested_date"] = last_ingested_date
-        captured["is_closed"] = kwargs.get("is_closed")
-
-    monkeypatch.setattr(source_b, "_save_month_cursor", _fake_save_cursor)
-
-    out = source_b.ingest_source_b_raw(["AAPL"], "2026-02-14", 1, "daily", config={})
-    assert len(out) == 1
-    assert captured["symbol"] == "AAPL"
-    assert captured["month_start"] == date(2026, 1, 1)
-    assert captured["last_ingested_date"] == date(2026, 1, 31)
-    assert captured["is_closed"] is True
-
-
-def test_ingest_source_b_raw_first_backfill_month_clamped_to_backfill_start(monkeypatch):
-    monkeypatch.setenv("ALPHA_VANTAGE_API_KEY", "k")
-    monkeypatch.setattr(
-        source_b,
-        "_month_windows",
-        lambda run_date, backfill_years: [(date(2025, 2, 1), date(2025, 2, 28))],
-    )
-    monkeypatch.setattr(source_b, "_load_month_cursor_closed", lambda *args, **kwargs: False)
-    monkeypatch.setattr(source_b, "_load_month_cursor", lambda *args, **kwargs: None)
-    monkeypatch.setattr(source_b, "_save_month_cursor", lambda *args, **kwargs: None)
-    monkeypatch.setattr(source_b, "_load_current_month_articles", lambda *args, **kwargs: [])
-    monkeypatch.setattr(source_b, "_save_current_month_articles", lambda *args, **kwargs: None)
-    monkeypatch.setattr(source_b, "_save_raw_to_minio", lambda *args, **kwargs: None)
-    monkeypatch.setattr(source_b.time, "sleep", lambda *_args: None)
-
-    captured = {}
-
-    def _fake_fetch(symbol, api_key, time_from, time_to):  # noqa: ARG001
-        captured["time_from"] = time_from
-        captured["time_to"] = time_to
-        return {"feed": []}
-
-    monkeypatch.setattr(source_b, "_fetch_news_for_range", _fake_fetch)
-
-    out = source_b.ingest_source_b_raw(["AAPL"], "2026-02-14", 1, "daily", config={})
-    assert len(out) == 1
-    assert captured["time_from"] == "20250214T0000"
-    assert captured["time_to"] == "20250228T2359"
-
-
-def test_transform_source_b_features_monthly_record(monkeypatch):
-    monkeypatch.delenv("CW1_TEST_MODE", raising=False)
-    raw_payloads = [
-        {
-            "symbol": "AAPL",
-            "month_end": "2026-02-28",
-            "feed": [
-                {
-                    "title": "Strong profit",
-                    "summary": "Positive growth",
-                    "time_published": "20260215T120000",
-                }
-            ],
-        }
-    ]
-    out = source_b.transform_source_b_features(raw_payloads, ["AAPL"], "2026-02-14", "daily")
-    assert len(out) == 2
-    names = {r["factor_name"] for r in out}
-    assert {"news_sentiment_daily", "news_article_count_daily"} == names
-    sent = [r for r in out if r["factor_name"] == "news_sentiment_daily"][0]
-    cnt = [r for r in out if r["factor_name"] == "news_article_count_daily"][0]
-    assert sent["symbol"] == "AAPL"
-    assert sent["metric_frequency"] == "daily"
-    assert sent["source_report_date"] == "2026-02-15"
-    assert sent["observation_date"] == "2026-02-15"
-    assert isinstance(sent["factor_value"], float)
-    assert sent["timestamp_inferred"] == 0
-    assert cnt["factor_value"] == 1.0
-    assert cnt["timestamp_inferred"] == 0
-
-
-def test_transform_source_b_features_skips_invalid_rows(monkeypatch):
-    monkeypatch.delenv("CW1_TEST_MODE", raising=False)
-    out = source_b.transform_source_b_features(
-        [{"symbol": "", "fetch_start": "", "feed": []}],
-        ["AAPL"],
-        "2026-02-14",
-        "daily",
-    )
-    assert out == []
-
-
-def test_extract_source_b_test_mode(monkeypatch):
+def test_extract_source_b_window_test_mode(monkeypatch):
     monkeypatch.setenv("CW1_TEST_MODE", "1")
-    out = source_b.extract_source_b(["AAPL", "MSFT"], "2026-02-14", 1, "daily", config={})
-    assert len(out) == 4
-    assert all(r["source"] == "extractor_b" for r in out)
-    names = {r["factor_name"] for r in out}
-    assert {"news_sentiment_daily", "news_article_count_daily"} == names
+    result = source_b.extract_source_b_window(
+        symbol="AAPL",
+        run_date="2026-02-14",
+        month_start=date(2026, 2, 1),
+        fetch_end=date(2026, 2, 14),
+        backfill_years=1,
+        frequency="daily",
+        config={},
+    )
+    assert result["article_count"] == 0
+    assert {row["factor_name"] for row in result["records"]} == {
+        "news_sentiment_daily",
+        "news_article_count_daily",
+    }
 
 
-def test_transform_source_b_features_missing_time_fallback_marks_inferred(monkeypatch):
+def test_ingest_symbol_month_replays_closed_history_from_current_articles(monkeypatch):
     monkeypatch.delenv("CW1_TEST_MODE", raising=False)
-    raw_payloads = [
-        {
-            "symbol": "AAPL",
-            "month_start": "2026-02-01",
-            "month_end": "2026-02-28",
-            "fetch_start": "2026-02-10",
-            "fetch_end": "2026-02-14",
-            "feed": [
-                {"title": "Strong profit", "summary": "Positive growth", "time_published": ""}
-            ],
-        }
-    ]
-    out = source_b.transform_source_b_features(raw_payloads, ["AAPL"], "2026-02-14", "daily")
-    assert len(out) == 2
-    assert all(r["observation_date"] == "2026-02-10" for r in out)
-    assert all(r["timestamp_inferred"] == 1 for r in out)
+    saved_current = []
+    saved_cursor = []
 
-
-def test_transform_source_b_features_strict_time_drops_missing_time(monkeypatch):
-    monkeypatch.delenv("CW1_TEST_MODE", raising=False)
-    raw_payloads = [
-        {
-            "symbol": "AAPL",
-            "month_start": "2026-02-01",
-            "month_end": "2026-02-28",
-            "fetch_start": "2026-02-10",
-            "fetch_end": "2026-02-14",
-            "feed": [
-                {"title": "Strong profit", "summary": "Positive growth", "time_published": ""}
-            ],
-        }
-    ]
-    out = source_b.transform_source_b_features(
-        raw_payloads,
-        ["AAPL"],
-        "2026-02-14",
-        "daily",
-        config={"source_b": {"strict_time": True}},
-    )
-    assert out == []
-
-
-def test_resolve_source_b_strict_time_variants():
-    assert source_b._resolve_source_b_strict_time({"source_b": {"strict_time": "true"}}) is True
-    assert source_b._resolve_source_b_strict_time({"source_b": {"strict_time": "0"}}) is False
-    assert source_b._resolve_source_b_strict_time({"source_b": {"strict_time": 1}}) is True
-
-
-def test_ingest_source_b_raw_returns_empty_when_symbols_filtered_out(monkeypatch):
-    monkeypatch.setenv("ALPHA_VANTAGE_API_KEY", "k")
-    monkeypatch.setattr(source_b, "_filter_symbols_for_source_b", lambda symbols, config: [])
-    out = source_b.ingest_source_b_raw(["AAPL"], "2026-02-14", 1, "daily", config={})
-    assert out == []
-
-
-def test_ingest_source_b_raw_merges_with_current_month_view(monkeypatch):
-    monkeypatch.setenv("ALPHA_VANTAGE_API_KEY", "k")
-    monkeypatch.setattr(
-        source_b,
-        "_month_windows",
-        lambda run_date, backfill_years: [(date(2026, 2, 1), date(2026, 2, 14))],
-    )
-    monkeypatch.setattr(source_b, "_load_month_cursor_closed", lambda *args, **kwargs: False)
-    monkeypatch.setattr(source_b, "_load_month_cursor", lambda *args, **kwargs: date(2026, 2, 13))
-    monkeypatch.setattr(source_b.time, "sleep", lambda *_args: None)
-    monkeypatch.setattr(
-        source_b,
-        "_fetch_news_for_range",
-        lambda *args, **kwargs: {"feed": [{"url": "https://x.com/1", "title": "New"}]},
-    )
+    monkeypatch.setattr(source_b, "_resolve_av_cutoff_date", lambda config=None: date(2026, 3, 1))
     monkeypatch.setattr(
         source_b,
         "_load_current_month_articles",
-        lambda *args, **kwargs: [
-            {"url": "https://x.com/1", "title": "Old"},
-            {"url": "https://x.com/2"},
+        lambda config, symbol, month_start: [  # noqa: ARG005
+            {
+                "title": "Historical current view",
+                "summary": "Strong profit growth.",
+                "time_published": "20260212T120000",
+                "url": "https://example.com/current-aapl",
+                "data_source": "alpha_vantage",
+            }
         ],
     )
-    monkeypatch.setattr(source_b, "_save_raw_to_minio", lambda *args, **kwargs: None)
-    monkeypatch.setattr(source_b, "_save_month_cursor", lambda *args, **kwargs: None)
-
-    captured = {}
-
-    def _fake_save_current(config, symbol, month_start, articles):
-        captured["symbol"] = symbol
-        captured["month_start"] = month_start
-        captured["articles"] = articles
-
-    monkeypatch.setattr(source_b, "_save_current_month_articles", _fake_save_current)
-
-    out = source_b.ingest_source_b_raw(["AAPL"], "2026-02-14", 1, "daily", config={})
-    assert len(out) == 1
-    assert captured["symbol"] == "AAPL"
-    by_url = {row["url"]: row for row in captured["articles"]}
-    assert len(captured["articles"]) == 2
-    assert by_url["https://x.com/1"]["title"] == "New"
-
-
-def test_fetch_news_for_range_retries_on_note_then_succeeds(monkeypatch):
-    class _Resp:
-        def __init__(self, payload):
-            self._payload = payload
-
-        def raise_for_status(self):
-            return None
-
-        def json(self):
-            return self._payload
-
-    calls = {"n": 0}
-    sleeps = []
-
-    def _fake_get(url, params, timeout):  # noqa: ARG001
-        calls["n"] += 1
-        if calls["n"] == 1:
-            return _Resp({"Note": "rate limit"})
-        return _Resp({"feed": [{"title": "ok"}]})
-
-    monkeypatch.setattr(source_b.requests, "get", _fake_get)
-    monkeypatch.setattr(source_b, "ALPHA_VANTAGE_MAX_RETRIES", 1)
-    monkeypatch.setattr(source_b, "ALPHA_VANTAGE_RETRY_BACKOFF_SECONDS", 0.01)
-    monkeypatch.setattr(source_b.time, "sleep", lambda v: sleeps.append(v))
-
-    out = source_b._fetch_news_for_range(
-        "AAPL",
-        "k",
-        time_from="20260201T0000",
-        time_to="20260214T2359",
+    monkeypatch.setattr(
+        source_b,
+        "_load_latest_raw_month_articles",
+        lambda config, symbol, month_start: [],  # noqa: ARG005
     )
-    assert out["feed"][0]["title"] == "ok"
-    assert calls["n"] == 2
-    assert sleeps == [0.01]
+    monkeypatch.setattr(
+        source_b,
+        "_load_month_cursor_closed",
+        lambda config, symbol, month_start: True,  # noqa: ARG005
+    )
+    monkeypatch.setattr(
+        source_b,
+        "_fetch_provider_articles",
+        lambda *args, **kwargs: pytest.fail("provider fetch should not run for replayed history"),
+    )
+    monkeypatch.setattr(
+        source_b,
+        "_save_current_month_articles",
+        lambda config, symbol, month_start, articles: saved_current.append(
+            list(articles)
+        ),  # noqa: ARG005
+    )
+    monkeypatch.setattr(
+        source_b,
+        "_save_month_cursor",
+        lambda config, symbol, month_start, last_ingested_date, *, is_closed=False: saved_cursor.append(  # noqa: ARG005
+            {
+                "symbol": symbol,
+                "month_start": month_start,
+                "last_ingested_date": last_ingested_date,
+                "is_closed": is_closed,
+            }
+        ),
+    )
+
+    payload = source_b._ingest_symbol_month(
+        symbol="AAPL",
+        run_date="2026-04-15",
+        month_start=date(2026, 2, 1),
+        fetch_end=date(2026, 2, 28),
+        backfill_start_date=date(2021, 4, 15),
+        config={},
+    )
+
+    assert payload is not None
+    assert payload["ingestion_mode"] == "archive_replay"
+    assert len(payload["feed"]) == 1
+    assert saved_current and saved_current[0][0]["url"] == "https://example.com/current-aapl"
+    assert saved_cursor and saved_cursor[0]["is_closed"] is True
 
 
-def test_fetch_news_for_range_raises_information(monkeypatch):
-    class _Resp:
-        @staticmethod
-        def raise_for_status():
-            return None
-
-        @staticmethod
-        def json():
-            return {"Information": "maintenance"}
-
-    monkeypatch.setattr(source_b.requests, "get", lambda *args, **kwargs: _Resp())
-    monkeypatch.setattr(source_b, "ALPHA_VANTAGE_MAX_RETRIES", 0)
-
-    with pytest.raises(RuntimeError, match="maintenance"):
-        source_b._fetch_news_for_range(
-            "AAPL",
-            "k",
-            time_from="20260201T0000",
-            time_to="20260214T2359",
-        )
-
-
-def test_fetch_news_for_range_invalid_url():
-    original = source_b.ALPHA_VANTAGE_BASE_URL
-    source_b.ALPHA_VANTAGE_BASE_URL = "http://evil.local/query"
-    try:
-        with pytest.raises(RuntimeError, match="Invalid Alpha Vantage base URL"):
-            source_b._fetch_news_for_range(
-                "AAPL",
-                "k",
-                time_from="20260201T0000",
-                time_to="20260214T2359",
-            )
-    finally:
-        source_b.ALPHA_VANTAGE_BASE_URL = original
-
-
-def test_transform_source_b_features_legacy_month_end_fallback_and_empty_text(monkeypatch):
+def test_ingest_symbol_month_replays_history_from_raw_archive_when_current_missing(monkeypatch):
     monkeypatch.delenv("CW1_TEST_MODE", raising=False)
-    raw_payloads = [
+
+    monkeypatch.setattr(source_b, "_resolve_av_cutoff_date", lambda config=None: date(2026, 3, 1))
+    monkeypatch.setattr(
+        source_b,
+        "_load_current_month_articles",
+        lambda config, symbol, month_start: [],  # noqa: ARG005
+    )
+    monkeypatch.setattr(
+        source_b,
+        "_load_latest_raw_month_articles",
+        lambda config, symbol, month_start: [  # noqa: ARG005
+            {
+                "title": "Historical raw replay",
+                "summary": "Analysts stay constructive.",
+                "time_published": "20260218T080000",
+                "url": "https://example.com/raw-aapl",
+                "data_source": "alpha_vantage",
+            }
+        ],
+    )
+    monkeypatch.setattr(
+        source_b,
+        "_load_month_cursor_closed",
+        lambda config, symbol, month_start: False,  # noqa: ARG005
+    )
+    monkeypatch.setattr(
+        source_b,
+        "_fetch_provider_articles",
+        lambda *args, **kwargs: pytest.fail(
+            "provider fetch should not run when archived raw exists"
+        ),
+    )
+
+    payload = source_b._ingest_symbol_month(
+        symbol="AAPL",
+        run_date="2026-04-15",
+        month_start=date(2026, 2, 1),
+        fetch_end=date(2026, 2, 28),
+        backfill_start_date=date(2021, 4, 15),
+        config={},
+    )
+
+    assert payload is not None
+    assert payload["ingestion_mode"] == "archive_replay"
+    assert payload["feed"][0]["url"] == "https://example.com/raw-aapl"
+
+
+def test_source_b_supporting_objects_exist_accepts_archived_raw_for_closed_history(monkeypatch):
+    monkeypatch.setattr(source_b, "_resolve_av_cutoff_date", lambda config=None: date(2026, 3, 1))
+    monkeypatch.setattr(
+        source_b,
+        "_build_raw_archive_index",
+        lambda config=None: {
+            (
+                "2026",
+                "02",
+                "AAPL",
+            ): "raw/source_b/news/run_date=2026-03-05/year=2026/month=02/symbol=AAPL.jsonl"
+        },
+    )
+    monkeypatch.setattr(
+        source_b,
+        "_build_minio_client",
+        lambda cfg: pytest.fail(
+            "historical raw support check should not stat current/cursor objects"
+        ),
+    )
+
+    out = source_b._source_b_supporting_objects_exist(
         {
-            "symbol": "AAPL",
-            "month_end": "2026-02-28",
-            "feed": [{"title": "", "summary": "", "time_published": ""}],
-        }
-    ]
-    out = source_b.transform_source_b_features(raw_payloads, ["AAPL"], "2026-02-14", "daily")
-    assert len(out) == 1
-    assert out[0]["factor_name"] == "news_article_count_daily"
-    assert out[0]["observation_date"] == "2026-02-28"
-    assert out[0]["timestamp_inferred"] == 1
-
-
-def test_source_b_minio_paths_save_and_load_helpers(monkeypatch):
-    storage = {}
-
-    class _Obj:
-        def __init__(self, data):
-            self._data = data
-
-        def read(self):
-            return self._data
-
-        def close(self):
-            return None
-
-        def release_conn(self):
-            return None
-
-    class _FakeMinio:
-        def __init__(self, endpoint, access_key, secret_key, secure=False):  # noqa: ARG002
-            pass
-
-        def bucket_exists(self, bucket):
-            return bucket in storage
-
-        def make_bucket(self, bucket):
-            storage.setdefault(bucket, {})
-
-        def put_object(self, bucket, key, data, length, content_type):  # noqa: ARG002
-            payload = data.read()
-            assert len(payload) == length
-            storage.setdefault(bucket, {})[key] = payload
-
-        def get_object(self, bucket, key):
-            return _Obj(storage[bucket][key])
-
-    monkeypatch.setitem(sys.modules, "minio", type("M", (), {"Minio": _FakeMinio}))
-    cfg = {
-        "minio": {
-            "endpoint": "localhost:9000",
-            "access_key": "x",
-            "secret_key": "y",
-            "bucket": "csreport",
-            "secure": False,
-        }
-    }
-    symbol = "AAPL"
-    month_start = date(2026, 2, 1)
-
-    source_b._save_raw_to_minio(
-        cfg,
-        symbol=symbol,
-        run_date="2026-02-14",
-        month_end=month_start,
-        articles=[{"article_id": "1", "title": "t"}],
+            "minio": {
+                "endpoint": "localhost:9000",
+                "access_key": "a",
+                "secret_key": "b",
+                "bucket": "csreport",
+            }
+        },
+        symbol="AAPL",
+        run_date="2026-04-15",
+        month_start=date(2026, 2, 1),
     )
-    raw_keys = list(storage["csreport"].keys())
-    assert any(k.startswith("raw/source_b/news/run_date=2026-02-14/") for k in raw_keys)
 
-    source_b._save_current_month_articles(
-        cfg,
-        symbol=symbol,
-        month_start=month_start,
-        articles=[{"article_id": "1", "title": "new"}],
-    )
-    loaded = source_b._load_current_month_articles(cfg, symbol=symbol, month_start=month_start)
-    assert loaded[0]["article_id"] == "1"
-    assert loaded[0]["title"] == "new"
+    assert out is True
 
-    source_b._save_month_cursor(
-        cfg,
-        symbol=symbol,
-        month_start=month_start,
-        last_ingested_date=date(2026, 2, 14),
-        is_closed=True,
+
+def test_source_b_supporting_objects_exist_requires_incremental_objects_after_cutoff(monkeypatch):
+    class _Client:
+        def __init__(self):
+            self.seen = []
+
+        def stat_object(self, bucket, key):
+            self.seen.append((bucket, key))
+            raise FileNotFoundError(key)
+
+    client = _Client()
+    monkeypatch.setattr(source_b, "_resolve_av_cutoff_date", lambda config=None: date(2026, 3, 1))
+    monkeypatch.setattr(source_b, "_build_minio_client", lambda cfg: client)
+
+    out = source_b._source_b_supporting_objects_exist(
+        {
+            "minio": {
+                "endpoint": "localhost:9000",
+                "access_key": "a",
+                "secret_key": "b",
+                "bucket": "csreport",
+            }
+        },
+        symbol="AAPL",
+        run_date="2026-04-15",
+        month_start=date(2026, 3, 1),
     )
-    assert source_b._load_month_cursor(cfg, symbol=symbol, month_start=month_start) == date(
-        2026, 2, 14
+
+    assert out is False
+    assert client.seen[0][1].endswith("run_date=2026-04-15/year=2026/month=03/symbol=AAPL.jsonl")
+
+
+def test_ingest_symbol_month_uses_provider_fetch_after_cutoff(monkeypatch):
+    monkeypatch.delenv("CW1_TEST_MODE", raising=False)
+
+    monkeypatch.setattr(source_b, "_resolve_av_cutoff_date", lambda config=None: date(2026, 3, 1))
+    monkeypatch.setattr(
+        source_b,
+        "_load_current_month_articles",
+        lambda config, symbol, month_start: [  # noqa: ARG005
+            {
+                "title": "Should not replay March",
+                "summary": "Old cached article.",
+                "time_published": "20260305T080000",
+                "url": "https://example.com/current-march",
+                "data_source": "finnhub",
+            }
+        ],
     )
-    assert source_b._load_month_cursor_closed(cfg, symbol=symbol, month_start=month_start) is True
+    monkeypatch.setattr(
+        source_b,
+        "_load_latest_raw_month_articles",
+        lambda config, symbol, month_start: [  # noqa: ARG005
+            {
+                "title": "Old raw article",
+                "summary": "Old raw article.",
+                "time_published": "20260302T080000",
+                "url": "https://example.com/raw-march",
+                "data_source": "alpha_vantage",
+            }
+        ],
+    )
+    monkeypatch.setattr(
+        source_b,
+        "_load_month_cursor_closed",
+        lambda config, symbol, month_start: False,  # noqa: ARG005
+    )
+    monkeypatch.setattr(
+        source_b,
+        "_load_month_cursor",
+        lambda config, symbol, month_start: None,  # noqa: ARG005
+    )
+    monkeypatch.setattr(
+        source_b,
+        "_fetch_provider_articles",
+        lambda symbol, *, fetch_start, fetch_end, config=None: [  # noqa: ARG005
+            {
+                "title": "Fresh March provider fetch",
+                "summary": "Incremental free-tier article.",
+                "time_published": "20260310T080000",
+                "url": "https://example.com/provider-march",
+                "data_source": "finnhub",
+            }
+        ],
+    )
+
+    payload = source_b._ingest_symbol_month(
+        symbol="AAPL",
+        run_date="2026-04-15",
+        month_start=date(2026, 3, 1),
+        fetch_end=date(2026, 3, 31),
+        backfill_start_date=date(2021, 4, 15),
+        config={},
+    )
+
+    assert payload is not None
+    assert payload["ingestion_mode"] == "provider_fetch"
+    assert payload["feed"][0]["url"] == "https://example.com/provider-march"

@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 import math
 import sys
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 from typing import Optional
 
@@ -20,8 +20,13 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from modules.db import get_db_engine  # noqa: E402
 from modules.output.data_contract import ALLOWED_FREQUENCIES, ALLOWED_SOURCES  # noqa: E402
+from modules.transform.factors import (  # noqa: E402
+    _resolve_latest_paired_financial_rows,
+    _to_float_or_none,
+)
 
 DEFAULT_COVERAGE_FACTORS = {"sentiment_30d_avg", "article_count_30d"}
+OPTIONAL_NULL_FACTORS = {"open_price", "high_price", "low_price", "daily_volume"}
 
 
 def _normalize_date_column(frame: pd.DataFrame, column: str) -> pd.DataFrame:
@@ -34,37 +39,55 @@ def _normalize_date_column(frame: pd.DataFrame, column: str) -> pd.DataFrame:
 def _load_latest_run_id() -> Optional[str]:
     engine = get_db_engine()
     with engine.connect() as conn:
-        row = conn.execute(
-            text(
-                """
+        row = conn.execute(text("""
                 SELECT run_id
                 FROM systematic_equity.pipeline_runs
                 ORDER BY created_at DESC
                 LIMIT 1
-                """
-            )
-        ).first()
+                """)).first()
     return str(row[0]) if row else None
 
 
-def _load_factor_observations() -> pd.DataFrame:
+def _load_factor_observations(
+    *,
+    start_date: date | None = None,
+    end_date: date | None = None,
+) -> pd.DataFrame:
     engine = get_db_engine()
     with engine.connect() as conn:
-        df = pd.read_sql(
-            text(
-                """
-                SELECT
-                    symbol,
-                    observation_date,
-                    factor_name,
-                    factor_value,
-                    source,
-                    metric_frequency
-                FROM systematic_equity.factor_observations
-                """
-            ),
-            conn,
-        )
+        if start_date and end_date:
+            df = pd.read_sql(
+                text("""
+                    SELECT
+                        symbol,
+                        observation_date,
+                        factor_name,
+                        factor_value,
+                        source,
+                        metric_frequency
+                    FROM systematic_equity.factor_observations
+                    WHERE observation_date BETWEEN :start_date AND :end_date
+                    """),
+                conn,
+                params={
+                    "start_date": start_date.isoformat(),
+                    "end_date": end_date.isoformat(),
+                },
+            )
+        else:
+            df = pd.read_sql(
+                text("""
+                    SELECT
+                        symbol,
+                        observation_date,
+                        factor_name,
+                        factor_value,
+                        source,
+                        metric_frequency
+                    FROM systematic_equity.factor_observations
+                    """),
+                conn,
+            )
     return _normalize_date_column(df, "observation_date")
 
 
@@ -149,6 +172,7 @@ def _validate_common_quality(
         unexpected_null_rows,
     ) = _daily_return_null_quality(factors)
     daily_return_null = value_null & (factors["factor_name"] == "daily_return")
+    optional_market_null = value_null & factors["factor_name"].isin(OPTIONAL_NULL_FACTORS)
     row_keys = list(zip(factors["symbol"], factors["observation_date"]))
     explainable_daily_return_null = pd.Series(
         [k in expected_null_keys for k in row_keys], index=factors.index
@@ -159,7 +183,7 @@ def _validate_common_quality(
             symbol_blank
             | factors["observation_date"].isna()
             | factor_blank
-            | (value_null & ~null_value_allowed)
+            | (value_null & ~null_value_allowed & ~optional_market_null)
         ).sum()
     )
 
@@ -217,21 +241,47 @@ def _validate_daily_symbol_coverage(
     coverage_factors: set[str],
 ) -> dict[str, int]:
     if factors.empty or not coverage_factors:
-        return {"coverage_expected_rows": 0, "coverage_missing_rows": 0}
+        return {
+            "coverage_expected_rows": 0,
+            "coverage_missing_rows": 0,
+            "coverage_trailing_unavailable_days": 0,
+        }
 
     f = factors[
         factors["factor_name"].isin(coverage_factors) & factors["observation_date"].notna()
     ][["symbol", "observation_date", "factor_name"]].copy()
     if f.empty:
-        return {"coverage_expected_rows": 0, "coverage_missing_rows": 0}
+        return {
+            "coverage_expected_rows": 0,
+            "coverage_missing_rows": 0,
+            "coverage_trailing_unavailable_days": 0,
+        }
 
     symbols = sorted(set(f["symbol"].dropna().astype(str)))
     if not symbols:
-        return {"coverage_expected_rows": 0, "coverage_missing_rows": 0}
+        return {
+            "coverage_expected_rows": 0,
+            "coverage_missing_rows": 0,
+            "coverage_trailing_unavailable_days": 0,
+        }
 
-    full_dates = pd.date_range(start_date, end_date, freq="D").date
+    latest_observed_date = max(f["observation_date"])
+    effective_end_date = min(end_date, latest_observed_date)
+    trailing_unavailable_days = max(0, int((end_date - effective_end_date).days))
+    if effective_end_date < start_date:
+        return {
+            "coverage_expected_rows": 0,
+            "coverage_missing_rows": 0,
+            "coverage_trailing_unavailable_days": trailing_unavailable_days,
+        }
+
+    full_dates = pd.date_range(start_date, effective_end_date, freq="D").date
     if len(full_dates) == 0:
-        return {"coverage_expected_rows": 0, "coverage_missing_rows": 0}
+        return {
+            "coverage_expected_rows": 0,
+            "coverage_missing_rows": 0,
+            "coverage_trailing_unavailable_days": trailing_unavailable_days,
+        }
 
     expected_rows = len(symbols) * len(full_dates) * len(coverage_factors)
 
@@ -245,23 +295,47 @@ def _validate_daily_symbol_coverage(
         .set_index(["symbol", "observation_date", "factor_name"])
     )
     missing_rows = int(len(grid.difference(observed.index)))
-    return {"coverage_expected_rows": expected_rows, "coverage_missing_rows": missing_rows}
+    return {
+        "coverage_expected_rows": expected_rows,
+        "coverage_missing_rows": missing_rows,
+        "coverage_trailing_unavailable_days": trailing_unavailable_days,
+    }
 
 
-def _validate_daily_return(tolerance: float) -> tuple[int, float]:
+def _validate_daily_return(
+    tolerance: float,
+    *,
+    start_date: date | None = None,
+    end_date: date | None = None,
+) -> tuple[int, float]:
     engine = get_db_engine()
     with engine.connect() as conn:
-        price = pd.read_sql(
-            text(
-                """
-                SELECT symbol, observation_date, factor_name, factor_value
-                FROM systematic_equity.factor_observations
-                WHERE factor_name IN ('adjusted_close_price', 'daily_return')
-                ORDER BY symbol, observation_date
-                """
-            ),
-            conn,
-        )
+        if start_date and end_date:
+            query_start = start_date - timedelta(days=7)
+            price = pd.read_sql(
+                text("""
+                    SELECT symbol, observation_date, factor_name, factor_value
+                    FROM systematic_equity.factor_observations
+                    WHERE factor_name IN ('adjusted_close_price', 'daily_return')
+                      AND observation_date BETWEEN :query_start AND :end_date
+                    ORDER BY symbol, observation_date
+                    """),
+                conn,
+                params={
+                    "query_start": query_start.isoformat(),
+                    "end_date": end_date.isoformat(),
+                },
+            )
+        else:
+            price = pd.read_sql(
+                text("""
+                    SELECT symbol, observation_date, factor_name, factor_value
+                    FROM systematic_equity.factor_observations
+                    WHERE factor_name IN ('adjusted_close_price', 'daily_return')
+                    ORDER BY symbol, observation_date
+                    """),
+                conn,
+            )
 
     if price.empty:
         return 0, 0.0
@@ -288,6 +362,10 @@ def _validate_daily_return(tolerance: float) -> tuple[int, float]:
         & piv["daily_return"].notna()
         & piv["observation_date"].notna()
     ].copy()
+    if start_date and end_date:
+        valid = valid[
+            (valid["observation_date"] >= start_date) & (valid["observation_date"] <= end_date)
+        ].copy()
     if valid.empty:
         return 0, 0.0
 
@@ -306,71 +384,144 @@ def _validate_daily_return(tolerance: float) -> tuple[int, float]:
     return int(len(valid)), max_abs_err
 
 
-def _validate_debt_to_equity(tolerance: float) -> tuple[int, float]:
+def _validate_debt_to_equity(
+    tolerance: float,
+    *,
+    start_date: date | None = None,
+    end_date: date | None = None,
+) -> tuple[int, float]:
     engine = get_db_engine()
     with engine.connect() as conn:
-        atomics = pd.read_sql(
-            text(
-                """
-                SELECT symbol, report_date, metric_name, metric_value
-                FROM systematic_equity.financial_observations
-                WHERE metric_name IN ('total_debt', 'total_shareholder_equity')
-                ORDER BY symbol, report_date
-                """
-            ),
-            conn,
-        )
-        dte = pd.read_sql(
-            text(
-                """
-                SELECT symbol, observation_date, factor_value
-                FROM systematic_equity.factor_observations
-                WHERE factor_name = 'debt_to_equity'
-                ORDER BY symbol, observation_date
-                """
-            ),
-            conn,
-        )
+        if end_date:
+            atomics = pd.read_sql(
+                text("""
+                    SELECT
+                        symbol,
+                        report_date AS observation_date,
+                        metric_name,
+                        metric_value,
+                        source,
+                        COALESCE(publish_date, as_of, report_date) AS publish_date
+                    FROM systematic_equity.financial_observations
+                    WHERE metric_name IN ('total_debt', 'total_shareholder_equity')
+                      AND report_date <= :end_date
+                    ORDER BY symbol, report_date, metric_name
+                    """),
+                conn,
+                params={"end_date": end_date.isoformat()},
+            )
+        else:
+            atomics = pd.read_sql(
+                text("""
+                    SELECT
+                        symbol,
+                        report_date AS observation_date,
+                        metric_name,
+                        metric_value,
+                        source,
+                        COALESCE(publish_date, as_of, report_date) AS publish_date
+                    FROM systematic_equity.financial_observations
+                    WHERE metric_name IN ('total_debt', 'total_shareholder_equity')
+                    ORDER BY symbol, report_date, metric_name
+                    """),
+                conn,
+            )
+        if start_date and end_date:
+            dte = pd.read_sql(
+                text("""
+                    SELECT symbol, observation_date, factor_value
+                    FROM systematic_equity.factor_observations
+                    WHERE factor_name = 'debt_to_equity'
+                      AND observation_date BETWEEN :start_date AND :end_date
+                    ORDER BY symbol, observation_date
+                    """),
+                conn,
+                params={
+                    "start_date": start_date.isoformat(),
+                    "end_date": end_date.isoformat(),
+                },
+            )
+        else:
+            dte = pd.read_sql(
+                text("""
+                    SELECT symbol, observation_date, factor_value
+                    FROM systematic_equity.factor_observations
+                    WHERE factor_name = 'debt_to_equity'
+                    ORDER BY symbol, observation_date
+                    """),
+                conn,
+            )
 
     if atomics.empty or dte.empty:
         return 0, 0.0
 
-    atomics = _normalize_date_column(atomics, "report_date")
+    atomics = _normalize_date_column(atomics, "observation_date")
+    atomics = _normalize_date_column(atomics, "publish_date")
     dte = _normalize_date_column(dte, "observation_date")
 
     atomics["metric_value"] = pd.to_numeric(atomics["metric_value"], errors="coerce")
     dte["factor_value"] = pd.to_numeric(dte["factor_value"], errors="coerce")
 
     debt = atomics[atomics["metric_name"] == "total_debt"][
-        ["symbol", "report_date", "metric_value"]
-    ].rename(columns={"metric_value": "total_debt"})
+        ["symbol", "observation_date", "metric_value", "publish_date", "source"]
+    ].rename(columns={"metric_value": "debt"})
     equity = atomics[atomics["metric_name"] == "total_shareholder_equity"][
-        ["symbol", "report_date", "metric_value"]
+        ["symbol", "observation_date", "metric_value", "publish_date", "source"]
     ].rename(columns={"metric_value": "equity"})
 
     errs = []
+    worst_rows = []
     checked = 0
     for symbol, group in dte.groupby("symbol"):
-        debt_s = debt[debt["symbol"] == symbol].sort_values("report_date")
-        equity_s = equity[equity["symbol"] == symbol].sort_values("report_date")
+        debt_s = debt[debt["symbol"] == symbol].sort_values(["observation_date", "publish_date"])
+        equity_s = equity[equity["symbol"] == symbol].sort_values(
+            ["observation_date", "publish_date"]
+        )
         if debt_s.empty or equity_s.empty:
             continue
         for row in group.itertuples(index=False):
-            q_end = row.observation_date
-            if q_end is None:
+            cutoff = row.observation_date
+            if cutoff is None:
                 continue
-            debt_latest = debt_s[debt_s["report_date"] <= q_end].tail(1)
-            equity_latest = equity_s[equity_s["report_date"] <= q_end].tail(1)
-            if debt_latest.empty or equity_latest.empty:
+            debt_row, equity_row, pair_meta = _resolve_latest_paired_financial_rows(
+                debt_s,
+                equity_s,
+                cutoff=cutoff,
+                factor="debt_to_equity",
+                symbol=symbol,
+                left_metric="total_debt",
+                right_metric="total_shareholder_equity",
+            )
+            if debt_row is None or equity_row is None:
                 continue
-            ev = float(equity_latest["equity"].iloc[0])
-            if not math.isfinite(ev) or ev == 0:
+            debt_value = _to_float_or_none(debt_row.get("debt"))
+            equity_value = _to_float_or_none(equity_row.get("equity"))
+            observed = _to_float_or_none(row.factor_value)
+            if debt_value is None or equity_value is None or observed is None or equity_value <= 0:
                 continue
-            expected = float(debt_latest["total_debt"].iloc[0]) / ev
-            observed = float(row.factor_value)
-            if not math.isfinite(expected) or not math.isfinite(observed):
+            expected = float(debt_value / equity_value)
+            if not math.isfinite(expected):
                 continue
-            errs.append(abs(observed - expected))
+            abs_err = abs(observed - expected)
+            errs.append(abs_err)
+            worst_rows.append(
+                {
+                    "symbol": symbol,
+                    "observation_date": cutoff.isoformat(),
+                    "observed": observed,
+                    "recalc": expected,
+                    "abs_err": abs_err,
+                    "pair_mode": None if pair_meta is None else pair_meta.get("pair_mode"),
+                    "report_date": None
+                    if pair_meta is None or pair_meta.get("effective_report_date") is None
+                    else pair_meta["effective_report_date"].isoformat(),
+                    "publish_date": None
+                    if pair_meta is None or pair_meta.get("effective_publish_date") is None
+                    else pair_meta["effective_publish_date"].isoformat(),
+                    "debt_source": debt_row.get("source"),
+                    "equity_source": equity_row.get("source"),
+                }
+            )
             checked += 1
 
     if not errs:
@@ -378,8 +529,24 @@ def _validate_debt_to_equity(tolerance: float) -> tuple[int, float]:
 
     max_abs_err = float(max(errs))
     if max_abs_err > tolerance:
+        worst = pd.DataFrame(worst_rows).sort_values("abs_err", ascending=False).head(5)[
+            [
+                "symbol",
+                "observation_date",
+                "observed",
+                "recalc",
+                "abs_err",
+                "pair_mode",
+                "report_date",
+                "publish_date",
+                "debt_source",
+                "equity_source",
+            ]
+        ]
         raise AssertionError(
-            f"debt_to_equity check failed. max_abs_err={max_abs_err:.10f} > tolerance={tolerance}"
+            "debt_to_equity check failed. max_abs_err="
+            f"{max_abs_err:.10f} > tolerance={tolerance}. "
+            f"worst_rows=\n{worst.to_string(index=False)}"
         )
     return checked, max_abs_err
 
@@ -436,14 +603,24 @@ def main() -> int:
 
     latest_run_id = _load_latest_run_id()
     print(f"latest_run_id={latest_run_id}")
+    if start_date and end_date:
+        print(f"validation_scope={start_date.isoformat()}..{end_date.isoformat()}")
+    else:
+        print("validation_scope=all_history")
 
-    n_ret, err_ret = _validate_daily_return(args.tolerance)
+    validation_kwargs = (
+        {"start_date": start_date, "end_date": end_date}
+        if start_date and end_date
+        else {}
+    )
+
+    n_ret, err_ret = _validate_daily_return(args.tolerance, **validation_kwargs)
     print(f"daily_return_checked_rows={n_ret} max_abs_err={err_ret:.10f}")
 
-    n_dte, err_dte = _validate_debt_to_equity(args.tolerance)
+    n_dte, err_dte = _validate_debt_to_equity(args.tolerance, **validation_kwargs)
     print(f"debt_to_equity_checked_rows={n_dte} max_abs_err={err_dte:.10f}")
 
-    factors = _load_factor_observations()
+    factors = _load_factor_observations(**validation_kwargs)
     hard_fail_counts, warning_counts = _validate_common_quality(
         factors, daily_return_sanity_threshold=args.daily_return_sanity_threshold
     )
@@ -487,7 +664,9 @@ def main() -> int:
             f"coverage_date_range={start_date.isoformat()}..{end_date.isoformat()} "
             f"coverage_factors={','.join(sorted(coverage_factors))} "
             f"coverage_expected_rows={coverage['coverage_expected_rows']} "
-            f"coverage_missing_rows={coverage['coverage_missing_rows']}"
+            f"coverage_missing_rows={coverage['coverage_missing_rows']} "
+            "coverage_trailing_unavailable_days="
+            f"{coverage.get('coverage_trailing_unavailable_days', 0)}"
         )
         if coverage["coverage_missing_rows"] > 0:
             raise AssertionError(f"coverage check failed: {coverage}")

@@ -8,7 +8,11 @@ ALLOWED_FREQUENCIES = {"daily", "weekly", "monthly", "quarterly", "annual", "unk
 ALLOWED_SOURCES = {
     "alpha_vantage",
     "yfinance",
-    "extractor_b",
+    "av+finnhub",
+    "edgar_xbrl",
+    "edgar_xbrl_derived",
+    "financial_publish_calendar",
     "factor_transform",
+    "factor_transform_market",
     "cache_replay",
 }

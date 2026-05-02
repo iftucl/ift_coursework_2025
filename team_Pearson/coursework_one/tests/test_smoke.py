@@ -63,8 +63,8 @@ def test_summarize_provider_usage_counts_only_total_debt_rows():
 
     rows = [
         {"symbol": "AAPL", "factor_name": "adjusted_close_price", "source": "alpha_vantage"},
-        {"symbol": "AAPL", "factor_name": "total_debt", "source": "alpha_vantage"},
-        {"symbol": "MSFT", "factor_name": "total_debt", "source": "yfinance"},
+        {"symbol": "AAPL", "metric_name": "total_debt", "source": "alpha_vantage"},
+        {"symbol": "MSFT", "metric_name": "total_debt", "source": "yfinance"},
     ]
     out = Main.summarize_provider_usage(rows)
     assert out == {"alpha_vantage": 1, "yfinance": 1}
@@ -74,11 +74,11 @@ def test_split_atomic_financial_records_routes_financial_atomic_rows():
     import Main
 
     rows = [
-        {"symbol": "AAPL", "factor_name": "book_value", "source": "alpha_vantage"},
+        {"symbol": "AAPL", "metric_name": "book_value", "source": "alpha_vantage"},
         {"symbol": "AAPL", "factor_name": "adjusted_close_price", "source": "alpha_vantage"},
     ]
     financial, remaining = Main.split_atomic_financial_records(rows)
     assert len(financial) == 1
-    assert financial[0]["factor_name"] == "book_value"
+    assert financial[0]["metric_name"] == "book_value"
     assert len(remaining) == 1
     assert remaining[0]["factor_name"] == "adjusted_close_price"

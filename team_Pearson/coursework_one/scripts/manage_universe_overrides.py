@@ -18,9 +18,7 @@ def _normalize_symbol(value: str) -> str:
 def _ensure_table() -> None:
     engine = get_db_engine()
     with engine.begin() as conn:
-        conn.execute(
-            text(
-                """
+        conn.execute(text("""
                 CREATE TABLE IF NOT EXISTS systematic_equity.company_universe_overrides (
                     symbol VARCHAR(50) PRIMARY KEY,
                     action VARCHAR(20) NOT NULL
@@ -29,17 +27,11 @@ def _ensure_table() -> None:
                     reason TEXT,
                     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
                 )
-                """
-            )
-        )
-        conn.execute(
-            text(
-                """
+                """))
+        conn.execute(text("""
                 CREATE INDEX IF NOT EXISTS idx_company_universe_overrides_action_active
                 ON systematic_equity.company_universe_overrides (action, is_active)
-                """
-            )
-        )
+                """))
 
 
 def _upsert(symbol: str, action: str, is_active: bool, reason: str) -> None:
@@ -47,8 +39,7 @@ def _upsert(symbol: str, action: str, is_active: bool, reason: str) -> None:
     engine = get_db_engine()
     with engine.begin() as conn:
         conn.execute(
-            text(
-                """
+            text("""
                 INSERT INTO systematic_equity.company_universe_overrides
                     (symbol, action, is_active, reason, updated_at)
                 VALUES
@@ -58,8 +49,7 @@ def _upsert(symbol: str, action: str, is_active: bool, reason: str) -> None:
                     is_active = EXCLUDED.is_active,
                     reason = EXCLUDED.reason,
                     updated_at = EXCLUDED.updated_at
-                """
-            ),
+                """),
             {
                 "symbol": symbol,
                 "action": action,
@@ -75,12 +65,10 @@ def _remove(symbol: str) -> None:
     engine = get_db_engine()
     with engine.begin() as conn:
         conn.execute(
-            text(
-                """
+            text("""
                 DELETE FROM systematic_equity.company_universe_overrides
                 WHERE symbol = :symbol
-                """
-            ),
+                """),
             {"symbol": symbol},
         )
 
@@ -90,26 +78,18 @@ def _list_rows(active_only: bool) -> None:
     engine = get_db_engine()
     with engine.connect() as conn:
         if active_only:
-            rows = conn.execute(
-                text(
-                    """
+            rows = conn.execute(text("""
                     SELECT symbol, action, is_active, reason, updated_at
                     FROM systematic_equity.company_universe_overrides
                     WHERE is_active = TRUE
                     ORDER BY symbol
-                    """
-                )
-            ).fetchall()
+                    """)).fetchall()
         else:
-            rows = conn.execute(
-                text(
-                    """
+            rows = conn.execute(text("""
                     SELECT symbol, action, is_active, reason, updated_at
                     FROM systematic_equity.company_universe_overrides
                     ORDER BY symbol
-                    """
-                )
-            ).fetchall()
+                    """)).fetchall()
 
     if not rows:
         print("No overrides configured.")

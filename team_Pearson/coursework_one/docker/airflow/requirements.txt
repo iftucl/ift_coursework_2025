@@ -1,0 +1,15 @@
+PyYAML
+psycopg2-binary
+yfinance
+minio
+pymongo
+requests
+pysentiment2
+langid
+finnhub-python
+matplotlib
+kafka-python
+Sphinx
+myst-parser
+pytest
+pytest-cov

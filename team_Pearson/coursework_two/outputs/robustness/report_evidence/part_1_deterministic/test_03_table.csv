@@ -1,0 +1,4 @@
+﻿scenario_key,risk_adjusted.sharpe_ratio,risk.annualized_volatility,portfolio.avg_holdings,risk.max_drawdown,portfolio.avg_monthly_recorded_turnover
+concentration_broader,0.512574,15.89853,34.881356,19.542191,15.169959
+concentration_mainline,0.514835,16.039932,33.355932,19.572882,15.459095
+concentration_tighter,0.528311,16.044408,33.101695,19.572882,15.531611

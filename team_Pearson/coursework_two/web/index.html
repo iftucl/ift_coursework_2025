@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quant Research Dashboard</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="./styles.css?v=20260501j" />
+  </head>
+  <body>
+    <header class="system-nav">
+      <div class="system-nav-brand">
+        <span class="system-nav-logo" aria-hidden="true">◭</span>
+        <strong>Quant Analysis System</strong>
+      </div>
+      <nav class="system-nav-menu">
+        <button type="button" class="is-active" data-section="home">Home</button>
+        <button type="button" data-section="research_setup">Research Setup</button>
+        <button type="button" data-section="analytics">Analytics</button>
+        <button type="button" data-section="portfolio">Portfolio</button>
+        <button type="button" data-section="delivery">Delivery</button>
+        <button type="button" data-section="help">Help</button>
+      </nav>
+      <div class="system-nav-actions" id="system-nav-actions">
+        <span class="nav-pill">Live</span>
+      </div>
+    </header>
+
+    <div class="app-shell">
+      <aside class="sidebar">
+        <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle sidebar">Hide</button>
+        <div class="brand-block">
+          <p class="sidebar-kicker">Quant Platform</p>
+          <h1>Research Workbench</h1>
+          <p class="brand-copy">
+            Scenario design, backtest operations, analytics, portfolio review,
+            and delivery packaging in one workspace.
+          </p>
+        </div>
+
+        <section class="sidebar-panel">
+          <p class="sidebar-label">Live Snapshot</p>
+          <div class="snapshot-grid">
+            <div>
+              <span>Regime</span>
+              <strong id="snapshot-regime">Stress</strong>
+            </div>
+            <div>
+              <span>VIX</span>
+              <strong id="snapshot-vix">28.4</strong>
+            </div>
+            <div>
+            <span>Turnover</span>
+            <strong id="snapshot-turnover">18.2%</strong>
+          </div>
+          <div>
+            <span id="snapshot-status-label">Excess YTD</span>
+            <strong id="snapshot-excess">+7.1%</strong>
+          </div>
+          </div>
+          <div id="snapshot-unsaved-list" class="snapshot-unsaved-list"></div>
+        </section>
+      </aside>
+
+      <main class="main-panel">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow" id="page-kicker">Home</p>
+            <h2 id="page-title">Welcome</h2>
+          </div>
+          <div class="topbar-meta" id="topbar-meta">
+            <div class="meta-chip">
+              <span>Data Updated</span>
+              <strong>2026-04-06 08:30</strong>
+            </div>
+            <div class="meta-chip">
+              <span>DAG Status</span>
+              <strong class="status-good">Healthy</strong>
+            </div>
+          </div>
+        </header>
+
+        <section class="page-tabs-wrap">
+          <div class="page-tabs" id="nav"></div>
+        </section>
+
+        <section id="page-content" class="page-content"></section>
+      </main>
+    </div>
+
+    <script>
+      window.addEventListener("error", function (event) {
+        document.body.dataset.bootError = event.message || "Unknown script error";
+      });
+    </script>
+    <script defer src="./main.js?v=20260501j"></script>
+  </body>
+</html>
+
+
+
+

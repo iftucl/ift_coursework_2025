@@ -1,0 +1,408 @@
+{
+  "generatedAt": "2026-04-30T23:57:22.903Z",
+  "results": [
+    {
+      "pageId": "performance_dashboard",
+      "needle": "Close",
+      "before": {
+        "title": "Performance Dashboard",
+        "overlays": []
+      },
+      "res": {
+        "ok": false,
+        "visible": [
+          "Open run viewer",
+          "Open point drilldown",
+          "Export charts",
+          "Baseline▾",
+          "BT-2026-0406-01",
+          "BT-2026-0405-01",
+          "BT-2026-0403-01",
+          "Latest point▾",
+          "Holdings + factors▾",
+          "Open Trade Blotter",
+          "↑",
+          "Save",
+          "Preview",
+          "Run",
+          "Compare",
+          "Generate",
+          "+"
+        ]
+      },
+      "after": {
+        "title": "Performance Dashboard",
+        "overlays": []
+      },
+      "errorDelta": 0
+    },
+    {
+      "pageId": "performance_dashboard",
+      "needle": "Baseline",
+      "before": {
+        "title": "Performance Dashboard",
+        "overlays": []
+      },
+      "res": {
+        "ok": true,
+        "text": "Baseline▾",
+        "action": "",
+        "controlKey": "compare_runs"
+      },
+      "after": {
+        "title": "Performance Dashboard",
+        "overlays": [
+          "BaselineBT-2026-0406-01BT-2026-0405-01BT-2026-0403-01"
+        ]
+      },
+      "errorDelta": 0
+    },
+    {
+      "pageId": "performance_dashboard",
+      "needle": "Latest point",
+      "before": {
+        "title": "Performance Dashboard",
+        "overlays": [
+          "BaselineBT-2026-0406-01BT-2026-0405-01BT-2026-0403-01"
+        ]
+      },
+      "res": {
+        "ok": true,
+        "text": "Latest point▾",
+        "action": "",
+        "controlKey": "nav_focus_period"
+      },
+      "after": {
+        "title": "Performance Dashboard",
+        "overlays": [
+          "Latest pointPeak drawdown"
+        ]
+      },
+      "errorDelta": 0
+    },
+    {
+      "pageId": "performance_dashboard",
+      "needle": "Holdings + factors",
+      "before": {
+        "title": "Performance Dashboard",
+        "overlays": [
+          "Latest pointPeak drawdown"
+        ]
+      },
+      "res": {
+        "ok": true,
+        "text": "Holdings + factors▾",
+        "action": "",
+        "controlKey": "drilldown_view"
+      },
+      "after": {
+        "title": "Performance Dashboard",
+        "overlays": [
+          "Holdings + factorsHoldings onlyFactors only"
+        ]
+      },
+      "errorDelta": 0
+    },
+    {
+      "pageId": "performance_dashboard",
+      "needle": "Selected Run Summary",
+      "before": {
+        "title": "Performance Dashboard",
+        "overlays": [
+          "Holdings + factorsHoldings onlyFactors only"
+        ]
+      },
+      "res": {
+        "ok": false,
+        "visible": [
+          "Open run viewer",
+          "Open point drilldown",
+          "Export charts",
+          "Baseline▾",
+          "BT-2026-0406-01",
+          "BT-2026-0405-01",
+          "BT-2026-0403-01",
+          "Latest point▾",
+          "Holdings + factors▾",
+          "Open Trade Blotter",
+          "↑",
+          "Save",
+          "Preview",
+          "Run",
+          "Compare",
+          "Generate",
+          "+"
+        ]
+      },
+      "after": {
+        "title": "Performance Dashboard",
+        "overlays": [
+          "Holdings + factorsHoldings onlyFactors only"
+        ]
+      },
+      "errorDelta": 0
+    },
+    {
+      "pageId": "performance_dashboard",
+      "needle": "Benchmark Lens",
+      "before": {
+        "title": "Performance Dashboard",
+        "overlays": [
+          "Holdings + factorsHoldings onlyFactors only"
+        ]
+      },
+      "res": {
+        "ok": false,
+        "visible": [
+          "Open run viewer",
+          "Open point drilldown",
+          "Export charts",
+          "Baseline▾",
+          "BT-2026-0406-01",
+          "BT-2026-0405-01",
+          "BT-2026-0403-01",
+          "Latest point▾",
+          "Holdings + factors▾",
+          "Open Trade Blotter",
+          "↑",
+          "Save",
+          "Preview",
+          "Run",
+          "Compare",
+          "Generate",
+          "+"
+        ]
+      },
+      "after": {
+        "title": "Performance Dashboard",
+        "overlays": [
+          "Holdings + factorsHoldings onlyFactors only"
+        ]
+      },
+      "errorDelta": 0
+    },
+    {
+      "pageId": "holdings_trades",
+      "needle": "Close",
+      "before": {
+        "title": "Trade Blotter & Execution",
+        "overlays": [
+          "Holdings + factorsHoldings onlyFactors only"
+        ]
+      },
+      "res": {
+        "ok": false,
+        "visible": [
+          "Refresh preview",
+          "Open in Runner",
+          "Export holdings",
+          "Open Research Setup",
+          "Open Scenario Builder",
+          "All trades▾",
+          "All sectors▾",
+          "Driver share▾",
+          "↑",
+          "Save",
+          "Preview",
+          "Run",
+          "Compare",
+          "Generate",
+          "+"
+        ]
+      },
+      "after": {
+        "title": "Trade Blotter & Execution",
+        "overlays": [
+          "Holdings + factorsHoldings onlyFactors only"
+        ]
+      },
+      "errorDelta": 0
+    },
+    {
+      "pageId": "holdings_trades",
+      "needle": "All trades",
+      "before": {
+        "title": "Trade Blotter & Execution",
+        "overlays": [
+          "Holdings + factorsHoldings onlyFactors only"
+        ]
+      },
+      "res": {
+        "ok": true,
+        "text": "All trades▾",
+        "action": "",
+        "controlKey": "trade_filter"
+      },
+      "after": {
+        "title": "Trade Blotter & Execution",
+        "overlays": [
+          "All tradesBuys onlySells onlyLargest changes"
+        ]
+      },
+      "errorDelta": 0
+    },
+    {
+      "pageId": "holdings_trades",
+      "needle": "All sectors",
+      "before": {
+        "title": "Trade Blotter & Execution",
+        "overlays": [
+          "All tradesBuys onlySells onlyLargest changes"
+        ]
+      },
+      "res": {
+        "ok": true,
+        "text": "All sectors▾",
+        "action": "",
+        "controlKey": "sector_focus"
+      },
+      "after": {
+        "title": "Trade Blotter & Execution",
+        "overlays": [
+          "All sectorsConsumer StaplesEnergyHealth CareInformation Technology"
+        ]
+      },
+      "errorDelta": 0
+    },
+    {
+      "pageId": "holdings_trades",
+      "needle": "Driver share",
+      "before": {
+        "title": "Trade Blotter & Execution",
+        "overlays": [
+          "All sectorsConsumer StaplesEnergyHealth CareInformation Technology"
+        ]
+      },
+      "res": {
+        "ok": true,
+        "text": "Driver share▾",
+        "action": "",
+        "controlKey": "attribution_view"
+      },
+      "after": {
+        "title": "Trade Blotter & Execution",
+        "overlays": [
+          "Driver shareOverlay vs rankingConstraints only"
+        ]
+      },
+      "errorDelta": 0
+    },
+    {
+      "pageId": "holdings_trades",
+      "needle": "Source Attribution",
+      "before": {
+        "title": "Trade Blotter & Execution",
+        "overlays": [
+          "Driver shareOverlay vs rankingConstraints only"
+        ]
+      },
+      "res": {
+        "ok": false,
+        "visible": [
+          "Refresh preview",
+          "Open in Runner",
+          "Export holdings",
+          "Open Research Setup",
+          "Open Scenario Builder",
+          "All trades▾",
+          "All sectors▾",
+          "Driver share▾",
+          "↑",
+          "Save",
+          "Preview",
+          "Run",
+          "Compare",
+          "Generate",
+          "+"
+        ]
+      },
+      "after": {
+        "title": "Trade Blotter & Execution",
+        "overlays": [
+          "Driver shareOverlay vs rankingConstraints only"
+        ]
+      },
+      "errorDelta": 0
+    },
+    {
+      "pageId": "holdings_trades",
+      "needle": "Trade Blotter",
+      "before": {
+        "title": "Trade Blotter & Execution",
+        "overlays": [
+          "Driver shareOverlay vs rankingConstraints only"
+        ]
+      },
+      "res": {
+        "ok": false,
+        "visible": [
+          "Refresh preview",
+          "Open in Runner",
+          "Export holdings",
+          "Open Research Setup",
+          "Open Scenario Builder",
+          "All trades▾",
+          "All sectors▾",
+          "Driver share▾",
+          "↑",
+          "Save",
+          "Preview",
+          "Run",
+          "Compare",
+          "Generate",
+          "+"
+        ]
+      },
+      "after": {
+        "title": "Trade Blotter & Execution",
+        "overlays": [
+          "Driver shareOverlay vs rankingConstraints only"
+        ]
+      },
+      "errorDelta": 0
+    },
+    {
+      "pageId": "holdings_trades",
+      "needle": "Holdings Slice",
+      "before": {
+        "title": "Trade Blotter & Execution",
+        "overlays": [
+          "Driver shareOverlay vs rankingConstraints only"
+        ]
+      },
+      "res": {
+        "ok": false,
+        "visible": [
+          "Refresh preview",
+          "Open in Runner",
+          "Export holdings",
+          "Open Research Setup",
+          "Open Scenario Builder",
+          "All trades▾",
+          "All sectors▾",
+          "Driver share▾",
+          "↑",
+          "Save",
+          "Preview",
+          "Run",
+          "Compare",
+          "Generate",
+          "+"
+        ]
+      },
+      "after": {
+        "title": "Trade Blotter & Execution",
+        "overlays": [
+          "Driver shareOverlay vs rankingConstraints only"
+        ]
+      },
+      "errorDelta": 0
+    }
+  ],
+  "logs": {
+    "consoleErrors": [
+      "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    ],
+    "pageErrors": []
+  }
+}

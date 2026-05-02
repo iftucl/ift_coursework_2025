@@ -1,0 +1,6 @@
+﻿scenario_key,risk_adjusted.sharpe_ratio,static_baseline.excess_return_annualized,return.annualized_return
+factor_equal_weight,0.504782,3.025885106786608,10.641606
+factor_quality_down_5pct,0.569044,4.082518685028759,11.698239
+factor_quality_up_5pct,0.472459,2.427642087694127,10.043363
+factor_value_down_5pct,0.483305,2.561426155858704,10.177147
+factor_value_up_5pct,0.635619,5.328619189299455,12.944342

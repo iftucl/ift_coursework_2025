@@ -30,7 +30,7 @@ def test_extract_source_a_test_mode(monkeypatch):
         frequency="daily",
     )
     assert len(out) == 2
-    assert all(r["source"] == "alpha_vantage" for r in out)
+    assert all(r["source"] == "yfinance" for r in out)
 
 
 def test_extract_total_debt_found():
@@ -105,7 +105,7 @@ def test_extract_fundamentals_from_yfinance_ticker():
     assert out["enterprise_revenue"] is None
 
 
-def test_extract_fundamentals_unified_order_av_then_yf_fallback(monkeypatch):
+def test_extract_fundamentals_unified_order_yf_then_av_fallback(monkeypatch):
     monkeypatch.setenv("ALPHA_VANTAGE_API_KEY", "k")
 
     def _av_overview(symbol, api_key):  # noqa: ARG001
@@ -410,9 +410,9 @@ def test_build_records_from_history_shape():
         run_date="2026-02-14",
         frequency="daily",
     )
-    assert len(out) == 6
+    assert len(out) == 14
     names = {r["factor_name"] for r in out}
-    assert {"adjusted_close_price", "daily_return", "dividend_per_share"} == names
+    assert {"adjusted_close_price", "open_price", "high_price", "low_price", "daily_return", "dividend_per_share", "daily_volume"} == names
     dr = [r for r in out if r["factor_name"] == "daily_return"]
     assert len(dr) == 2
     assert dr[0]["value"] is None
@@ -437,7 +437,7 @@ def test_build_records_from_history_uses_prior_boundary_row_without_emitting_it(
         emit_start_date="2025-03-01",
     )
 
-    assert len(out) == 3
+    assert len(out) == 7
     assert {r["observation_date"] for r in out} == {"2025-03-03"}
     daily_return = [r for r in out if r["factor_name"] == "daily_return"][0]
     assert abs(daily_return["value"] - math.log(100.0 / 99.0)) < 1e-12
@@ -459,7 +459,7 @@ def test_build_fundamental_records_shape():
         },
     )
     assert len(out) == 6
-    names = {r["factor_name"] for r in out}
+    names = {r["metric_name"] for r in out}
     assert {
         "total_debt",
         "total_shareholder_equity",
@@ -468,8 +468,9 @@ def test_build_fundamental_records_shape():
         "enterprise_ebitda",
         "enterprise_revenue",
     } == names
-    assert all(r["source_report_date"] is None for r in out)
-    assert all(r["observation_date"] is None for r in out)
+    assert all(r["report_date"] is None for r in out)
+    assert all(r["as_of"] == "2026-02-14" for r in out)
+    assert all(r["publish_date"] is None for r in out)
 
 
 def test_build_fundamental_records_expands_quarters_within_backfill_window():
@@ -479,6 +480,7 @@ def test_build_fundamental_records_expands_quarters_within_backfill_window():
         frequency="daily",
         source_label="alpha_vantage",
         backfill_years=1,
+        config={"edgar": {"pit_fallback_days": 30}},
         fundamentals={
             "quarterly_fundamentals": [
                 {
@@ -512,6 +514,224 @@ def test_build_fundamental_records_expands_quarters_within_backfill_window():
     report_dates = sorted({r["report_date"] for r in out if r["report_date"] is not None})
     assert report_dates == ["2025-03-31", "2025-06-30", "2025-09-30", "2025-12-31"]
     assert len(out) == 16  # 4 quarters * 4 non-enterprise metrics; incomplete pairs skipped
+    assert all("observation_date" not in r for r in out)
+    publish_dates = sorted({r["publish_date"] for r in out if r["publish_date"] is not None})
+    assert publish_dates == ["2025-04-30", "2025-07-30", "2025-10-30", "2026-01-30"]
+
+
+def test_build_fundamental_records_prefers_metric_level_publish_dates():
+    out = source_a._build_fundamental_records(
+        symbol="AAPL",
+        run_date="2026-02-14",
+        frequency="daily",
+        source_label="cache_replay",
+        backfill_years=1,
+        config={"edgar": {"pit_fallback_days": 45}},
+        fundamentals={
+            "quarterly_fundamentals": [
+                {
+                    "report_date": "2025-12-31",
+                    "total_debt": 9.0,
+                    "total_shareholder_equity": 10.0,
+                    "book_value": 11.0,
+                    "shares_outstanding": 12.0,
+                    "publish_date": "2026-02-14",
+                    "publish_date_by_metric": {
+                        "total_debt": "2026-02-12",
+                        "total_shareholder_equity": "2026-02-10",
+                        "book_value": "2026-02-10",
+                        "shares_outstanding": "2026-02-10",
+                    },
+                }
+            ]
+        },
+    )
+    by_metric = {row["metric_name"]: row["publish_date"] for row in out}
+    assert by_metric["total_debt"] == "2026-02-12"
+    assert by_metric["total_shareholder_equity"] == "2026-02-10"
+    assert by_metric["book_value"] == "2026-02-10"
+    assert by_metric["shares_outstanding"] == "2026-02-10"
+
+
+def test_build_fundamental_records_prefers_metric_level_value_sources():
+    out = source_a._build_fundamental_records(
+        symbol="AAPL",
+        run_date="2026-02-14",
+        frequency="daily",
+        source_label="cache_replay",
+        backfill_years=1,
+        config={"edgar": {"pit_fallback_days": 45}},
+        fundamentals={
+            "quarterly_fundamentals": [
+                {
+                    "report_date": "2025-12-31",
+                    "total_debt": 9.0,
+                    "total_shareholder_equity": 10.0,
+                    "book_value": 11.0,
+                    "shares_outstanding": 12.0,
+                    "value_source_by_metric": {
+                        "total_debt": "edgar_xbrl",
+                        "total_shareholder_equity": "alpha_vantage",
+                        "book_value": "derived_from_core_metrics",
+                        "shares_outstanding": "yfinance",
+                    },
+                }
+            ]
+        },
+    )
+    by_metric = {row["metric_name"]: row["source"] for row in out}
+    assert by_metric["total_debt"] == "edgar_xbrl"
+    assert by_metric["total_shareholder_equity"] == "alpha_vantage"
+    assert by_metric["book_value"] == "derived_from_core_metrics"
+    assert by_metric["shares_outstanding"] == "yfinance"
+
+
+def test_enrich_source_a_raw_with_edgar_publish_dates_updates_quarter_rows(monkeypatch):
+    raw_payload = {
+        "symbol": "AAPL",
+        "run_date": "2026-02-14",
+        "history": [],
+        "fundamentals": {
+            "report_date": "2025-12-31",
+            "quarterly_fundamentals": [
+                {
+                    "report_date": "2025-12-31",
+                    "total_debt": 9.0,
+                    "total_shareholder_equity": 10.0,
+                    "book_value": 11.0,
+                    "shares_outstanding": 12.0,
+                    "publish_date": "2026-02-14",
+                    "value_source_by_metric": {
+                        "total_debt": "yfinance",
+                        "total_shareholder_equity": "alpha_vantage",
+                        "book_value": "derived_from_core_metrics",
+                        "shares_outstanding": "yfinance",
+                    },
+                    "provider_values_by_metric": {
+                        "total_debt": {
+                            "yfinance": {"value": 9.0, "report_date": "2025-12-31"}
+                        },
+                        "total_shareholder_equity": {
+                            "alpha_vantage": {"value": 10.0, "report_date": "2025-12-31"}
+                        },
+                    },
+                }
+            ],
+        },
+        "source_used": "yfinance",
+    }
+    saved = {}
+
+    monkeypatch.setattr(source_a, "_load_raw_from_minio", lambda *args, **kwargs: raw_payload)
+
+    def _capture_save(config, symbol, run_date, payload):
+        _ = config
+        saved["symbol"] = symbol
+        saved["run_date"] = run_date
+        saved["payload"] = payload
+
+    monkeypatch.setattr(source_a, "_save_raw_to_minio", _capture_save)
+
+    stats = source_a.enrich_source_a_raw_with_edgar_publish_dates(
+        {"minio": {}},
+        "2026-02-14",
+        [
+            {
+                "symbol": "AAPL",
+                "report_date": "2025-12-31",
+                "metric_name": "stockholders_equity",
+                "publish_date": "2026-02-10",
+                "metric_value": 10.0,
+                "source": "edgar_xbrl",
+            },
+            {
+                "symbol": "AAPL",
+                "report_date": "2025-12-31",
+                "metric_name": "shares_outstanding",
+                "publish_date": "2026-02-11",
+                "metric_value": 12.0,
+                "source": "edgar_xbrl",
+            },
+            {
+                "symbol": "AAPL",
+                "report_date": "2025-12-31",
+                "metric_name": "total_debt",
+                "publish_date": "2026-02-12",
+                "metric_value": 99.0,
+                "source": "edgar_xbrl",
+            },
+        ],
+    )
+
+    assert stats["raw_payloads_updated"] == 1
+    assert saved["symbol"] == "AAPL"
+    quarter = saved["payload"]["fundamentals"]["quarterly_fundamentals"][0]
+    assert quarter["publish_date_by_metric"]["total_debt"] == "2026-02-12"
+    assert quarter["publish_date_by_metric"]["total_shareholder_equity"] == "2026-02-10"
+    assert quarter["publish_date_by_metric"]["shares_outstanding"] == "2026-02-11"
+    assert quarter["publish_date_by_metric"]["book_value"] == "2026-02-11"
+    assert quarter["publish_date"] == "2026-02-12"
+    assert quarter["total_debt"] == 99.0
+    assert quarter["publish_date_source_by_metric"]["total_debt"] == "edgar_xbrl"
+    assert quarter["publish_date_source_by_metric"]["book_value"] == "derived_from_core_metrics"
+    assert quarter["value_source_by_metric"]["total_debt"] == "edgar_xbrl"
+    assert quarter["value_source_by_metric"]["book_value"] == "derived_from_core_metrics"
+    assert quarter["provider_values_by_metric"]["total_debt"]["yfinance"]["value"] == 9.0
+    assert quarter["provider_values_by_metric"]["total_debt"]["edgar_xbrl"]["value"] == 99.0
+    assert saved["payload"]["fundamentals"]["publish_date_by_metric"]["book_value"] == "2026-02-11"
+    assert saved["payload"]["fundamentals"]["publish_date_source_by_metric"]["book_value"] == (
+        "derived_from_core_metrics"
+    )
+
+
+def test_enrich_source_a_raw_with_edgar_publish_dates_fills_missing_values(monkeypatch):
+    raw_payload = {
+        "symbol": "AAPL",
+        "run_date": "2026-02-14",
+        "history": [],
+        "fundamentals": {
+            "report_date": "2025-12-31",
+            "quarterly_fundamentals": [
+                {
+                    "report_date": "2025-12-31",
+                    "total_debt": None,
+                    "publish_date": "2026-02-14",
+                }
+            ],
+        },
+        "source_used": "yfinance",
+    }
+    saved = {}
+
+    monkeypatch.setattr(source_a, "_load_raw_from_minio", lambda *args, **kwargs: raw_payload)
+    monkeypatch.setattr(
+        source_a,
+        "_save_raw_to_minio",
+        lambda config, symbol, run_date, payload: saved.update(
+            {"config": config, "symbol": symbol, "run_date": run_date, "payload": payload}
+        ),
+    )
+
+    source_a.enrich_source_a_raw_with_edgar_publish_dates(
+        {"minio": {}},
+        "2026-02-14",
+        [
+            {
+                "symbol": "AAPL",
+                "report_date": "2025-12-31",
+                "metric_name": "total_debt",
+                "publish_date": "2026-02-12",
+                "metric_value": 9.0,
+                "source": "edgar_xbrl",
+            },
+        ],
+    )
+
+    quarter = saved["payload"]["fundamentals"]["quarterly_fundamentals"][0]
+    assert quarter["total_debt"] == 9.0
+    assert quarter["value_source_by_metric"]["total_debt"] == "edgar_xbrl"
+    assert quarter["publish_date_source_by_metric"]["total_debt"] == "edgar_xbrl"
+    assert quarter["provider_values_by_metric"]["total_debt"]["edgar_xbrl"]["value"] == 9.0
 
 
 def test_extract_source_a_handles_symbol_failure(monkeypatch):
@@ -550,7 +770,7 @@ def test_save_raw_to_minio_skips_when_config_incomplete():
 
 
 def test_save_raw_to_minio_happy_path(monkeypatch):
-    events = {"put": None}
+    events = {"puts": []}
 
     class _FakeMinio:
         def __init__(self, **kwargs):
@@ -563,7 +783,9 @@ def test_save_raw_to_minio_happy_path(monkeypatch):
             raise AssertionError("should not create bucket when exists")
 
         def put_object(self, bucket, object_name, data, length, content_type):
-            events["put"] = (bucket, object_name, length, content_type, json.loads(data.read()))
+            events["puts"].append(
+                (bucket, object_name, length, content_type, json.loads(data.read()))
+            )
 
     monkeypatch.setitem(__import__("sys").modules, "minio", type("M", (), {"Minio": _FakeMinio}))
     cfg = {
@@ -576,12 +798,24 @@ def test_save_raw_to_minio_happy_path(monkeypatch):
         }
     }
     source_a._save_raw_to_minio(cfg, "AAPL", "2026-02-14", {"k": "v"})
-    assert events["put"][0] == "csreport"
-    assert "raw/source_a/pricing_fundamentals/" in events["put"][1]
+    assert len(events["puts"]) == 2
+    object_names = {event[1] for event in events["puts"]}
+    assert "raw/source_a/market/run_date=2026-02-14/year=2026/symbol=AAPL.json" in object_names
+    assert (
+        "raw/source_a/financial/run_date=2026-02-14/year=2026/symbol=AAPL.json"
+        in object_names
+    )
+    market_payload = next(event[4] for event in events["puts"] if "/market/" in event[1])
+    financial_payload = next(event[4] for event in events["puts"] if "/financial/" in event[1])
+    assert market_payload["normalized_schema_version"] == "v5"
+    assert market_payload["schema_validation_status"] == "valid"
+    assert market_payload["history"] == []
+    assert financial_payload["raw_layer"] == "financial"
+    assert financial_payload["fundamentals"] == {}
 
 
 def test_save_raw_to_minio_serializes_timestamp(monkeypatch):
-    events = {"payload": None}
+    events = {"payloads": []}
 
     class _FakeMinio:
         def __init__(self, **kwargs):
@@ -595,7 +829,7 @@ def test_save_raw_to_minio_serializes_timestamp(monkeypatch):
 
         def put_object(self, bucket, object_name, data, length, content_type):
             _ = (bucket, object_name, length, content_type)
-            events["payload"] = json.loads(data.read())
+            events["payloads"].append((object_name, json.loads(data.read())))
 
     monkeypatch.setitem(__import__("sys").modules, "minio", type("M", (), {"Minio": _FakeMinio}))
     cfg = {
@@ -609,7 +843,9 @@ def test_save_raw_to_minio_serializes_timestamp(monkeypatch):
     }
     payload = {"history": [{"Date": pd.Timestamp("2026-02-14"), "Close": 101.0}]}
     source_a._save_raw_to_minio(cfg, "AAPL", "2026-02-14", payload)
-    assert events["payload"]["history"][0]["Date"].startswith("2026-02-14")
+    market_payload = next(payload for name, payload in events["payloads"] if "/market/" in name)
+    assert market_payload["history"][0]["observation_date"] == "2026-02-14"
+    assert market_payload["provider_payload_version"] == "unknown"
 
 
 def test_download_price_history_with_fake_yfinance(monkeypatch):
@@ -717,7 +953,7 @@ def test_resolve_alpha_key_with_source_conf_when_env_placeholder(monkeypatch):
 
 
 def test_select_source_order_default_and_with_fallback_disabled():
-    assert source_a._select_source_order({}) == ["alpha_vantage", "yfinance"]
+    assert source_a._select_source_order({}) == ["yfinance", "alpha_vantage"]
     out = source_a._select_source_order(
         {"source_a": {"primary_source": "alpha_vantage", "enable_yfinance_fallback": False}}
     )
@@ -758,6 +994,22 @@ def test_history_from_payload_uses_observation_date():
     assert "Close" in history.columns
 
 
+def test_history_from_payload_normalizes_date_alias_and_numeric_noise():
+    payload = {
+        "symbol": "AAPL",
+        "run_date": "2026-02-14",
+        "history": [
+            {"Date": "20260213", "Close": "100.0", "Dividends": "", "Volume": "nan"},
+            {"observation_date": "2026-02-14", "Close": 101.0, "Dividends": 0.1, "Volume": 1000},
+        ],
+        "source_used": "yfinance",
+    }
+    history = source_a._history_from_payload(payload)
+    assert list(history.index.strftime("%Y-%m-%d")) == ["2026-02-13", "2026-02-14"]
+    assert pd.isna(history.iloc[0]["Dividends"])
+    assert pd.isna(history.iloc[0]["Volume"])
+
+
 def test_validate_cache_payload_detects_mismatches():
     payload = {
         "symbol": "MSFT",
@@ -782,12 +1034,56 @@ def test_validate_cache_payload_no_issue_for_consistent_payload():
     assert issues == []
 
 
+def test_normalize_source_a_payload_adds_schema_and_provider_version():
+    payload = source_a._normalize_source_a_payload(
+        {
+            "symbol": "AAPL",
+            "run_date": "2026-02-14",
+            "history": [{"Date": "2026-02-13", "Close": "100.0"}],
+            "source_used": "alpha_vantage",
+        },
+        symbol="AAPL",
+        run_date="2026-02-14",
+    )
+    assert payload["normalized_schema_version"] == "v5"
+    assert payload["provider_payload_version"] == "time_series_daily_adjusted_v1"
+    assert payload["history"][0]["observation_date"] == "2026-02-13"
+
+
 def test_load_raw_from_minio_returns_none_when_config_incomplete():
     out = source_a._load_raw_from_minio({}, "AAPL", "2026-02-14")
     assert out is None
 
 
-def test_download_with_provider_uses_alpha_vantage_first(monkeypatch):
+def test_download_with_provider_uses_yfinance_first_by_default(monkeypatch):
+    monkeypatch.setenv("ALPHA_VANTAGE_API_KEY", "x")
+
+    class _Ticker:
+        symbol = "AAPL"
+
+    def _yf_ok(symbol, years_back, max_retries=3):
+        _ = (symbol, years_back, max_retries)
+        idx = pd.to_datetime(["2026-02-13", "2026-02-14"])
+        history = pd.DataFrame({"Close": [100.0, 101.0], "Dividends": [0.0, 0.1]}, index=idx)
+        return _Ticker(), history
+
+    def _alpha_should_not_run(*args, **kwargs):
+        raise AssertionError("alpha_vantage should not run when yfinance succeeds first")
+
+    monkeypatch.setattr(source_a, "_download_price_history", _yf_ok)
+    monkeypatch.setattr(source_a, "_download_price_history_alpha_vantage", _alpha_should_not_run)
+
+    source, ticker, history = source_a._download_with_provider(
+        "AAPL",
+        1,
+        {"source_a": {"primary_source": "yfinance", "enable_yfinance_fallback": True}},
+    )
+    assert source == "yfinance"
+    assert ticker.symbol == "AAPL"
+    assert len(history) == 2
+
+
+def test_download_with_provider_uses_alpha_vantage_first_when_explicitly_configured(monkeypatch):
     monkeypatch.setenv("ALPHA_VANTAGE_API_KEY", "x")
 
     def _alpha_ok(symbol, years_back, api_key, timeout_seconds=30):
@@ -899,3 +1195,36 @@ def test_extract_source_a_uses_cache_payload_branch(monkeypatch):
     )
     assert len(out) > 0
     assert all(r["source"] == "cache_replay" for r in out)
+
+
+def test_is_symbol_unavailable_error_detects_missing_history():
+    exc = RuntimeError(
+        "all providers failed for AGN; details=['yfinance: source_a history download failed "
+        "for AGN: No history returned for symbol=AGN']"
+    )
+    assert source_a._is_symbol_unavailable_error(exc) is True
+
+
+def test_extract_source_a_skips_unavailable_symbol_without_failure(monkeypatch):
+    monkeypatch.delenv("CW1_TEST_MODE", raising=False)
+    monkeypatch.setattr(source_a, "filter_symbols", lambda **kwargs: ["AGN"])
+    monkeypatch.setattr(source_a, "_load_raw_from_minio", lambda *args, **kwargs: None)
+
+    def _boom(*args, **kwargs):
+        raise RuntimeError(
+            "all providers failed for AGN; details=['yfinance: source_a history download "
+            "failed for AGN: No history returned for symbol=AGN']"
+        )
+
+    monkeypatch.setattr(source_a, "_download_with_provider", _boom)
+    failed = []
+    out = source_a.extract_source_a(
+        symbols=["AGN"],
+        run_date="2026-04-14",
+        backfill_years=1,
+        frequency="daily",
+        config={"source_a": {"use_cache": False}},
+        failed_symbols=failed,
+    )
+    assert out == []
+    assert failed == []

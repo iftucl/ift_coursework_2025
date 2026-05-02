@@ -73,7 +73,8 @@ def normalize_records(records: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     list[dict[str, Any]]
         Records with standardized keys and types:
         ``symbol``, ``observation_date``, ``factor_name``, ``factor_value``,
-        ``source``, ``metric_frequency``, ``source_report_date``, ``run_id``.
+        ``source``, ``metric_frequency``, ``source_report_date``,
+        ``publish_date``, ``run_id``.
     """
     normalized: List[Dict[str, Any]] = []
 
@@ -95,6 +96,9 @@ def normalize_records(records: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         metric_frequency = str(freq).strip().lower() if freq is not None else "unknown"
 
         source_report_date = _to_iso_date(rec.get("source_report_date"))
+        publish_date = _to_iso_date(
+            rec.get("publish_date") or rec.get("available_date") or observation_date
+        )
 
         # Invalid observation_date rows are dropped at contract boundary.
         if observation_date is None:
@@ -109,6 +113,7 @@ def normalize_records(records: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
                 "source": source,
                 "metric_frequency": metric_frequency,
                 "source_report_date": source_report_date,
+                "publish_date": publish_date,
                 "run_id": rec.get("run_id"),
             }
         )
@@ -131,6 +136,9 @@ def normalize_financial_records(records: List[Dict[str, Any]]) -> List[Dict[str,
         # Never infer it from observation/as-of date.
         report_date = _to_iso_date(rec.get("report_date") or rec.get("source_report_date"))
         as_of = _to_iso_date(rec.get("as_of") or rec.get("observation_date"))
+        publish_date = _to_iso_date(
+            rec.get("publish_date") or rec.get("available_date") or rec.get("as_of") or as_of
+        )
         metric_value = _to_float_or_none(
             rec.get("metric_value") if "metric_value" in rec else rec.get("value")
         )
@@ -154,7 +162,14 @@ def normalize_financial_records(records: List[Dict[str, Any]]) -> List[Dict[str,
             .strip()
             .lower()
         )
-        source = rec.get("source", "unknown")
+        source = str(rec.get("source") or "unknown").strip() or "unknown"
+        value_source = str(rec.get("value_source") or source).strip() or source
+        publish_date_source = str(rec.get("publish_date_source") or "").strip()
+        if not publish_date_source:
+            if rec.get("publish_date") or rec.get("available_date"):
+                publish_date_source = "provider_date"
+            elif publish_date is not None:
+                publish_date_source = "fallback_45d"
 
         if report_date is None:
             continue
@@ -168,7 +183,10 @@ def normalize_financial_records(records: List[Dict[str, Any]]) -> List[Dict[str,
                 "currency": currency,
                 "period_type": period_type,
                 "source": source,
+                "value_source": value_source,
                 "as_of": as_of,
+                "publish_date": publish_date,
+                "publish_date_source": publish_date_source or None,
                 "metric_definition": metric_definition,
                 "run_id": rec.get("run_id"),
             }

@@ -1,0 +1,274 @@
+[
+  {
+    "test_key": "1",
+    "scenario_key": "cost_10bps",
+    "description": "Transaction cost sensitivity at 10 bps.",
+    "config_path": "C:\\Users\\grace\\OneDrive\\文档\\IFTE0003 Big Data\\_inspected_zip\\ift_coursework_2025_Team_Pearson-backup-20260418-qnative-v2-current-workspace\\team_Pearson\\coursework_two\\outputs\\robustness\\sensitivity\\configs\\1_cost_10bps.yaml",
+    "requires_snapshot_refresh": false,
+    "portfolio_name": null
+  },
+  {
+    "test_key": "1",
+    "scenario_key": "cost_15bps_mainline",
+    "description": "Mainline transaction cost at 15 bps.",
+    "config_path": "C:\\Users\\grace\\OneDrive\\文档\\IFTE0003 Big Data\\_inspected_zip\\ift_coursework_2025_Team_Pearson-backup-20260418-qnative-v2-current-workspace\\team_Pearson\\coursework_two\\outputs\\robustness\\sensitivity\\configs\\1_cost_15bps_mainline.yaml",
+    "requires_snapshot_refresh": false,
+    "portfolio_name": null
+  },
+  {
+    "test_key": "1",
+    "scenario_key": "cost_25bps",
+    "description": "Transaction cost sensitivity at 25 bps.",
+    "config_path": "C:\\Users\\grace\\OneDrive\\文档\\IFTE0003 Big Data\\_inspected_zip\\ift_coursework_2025_Team_Pearson-backup-20260418-qnative-v2-current-workspace\\team_Pearson\\coursework_two\\outputs\\robustness\\sensitivity\\configs\\1_cost_25bps.yaml",
+    "requires_snapshot_refresh": false,
+    "portfolio_name": null
+  },
+  {
+    "test_key": "1",
+    "scenario_key": "cost_40bps",
+    "description": "Transaction cost sensitivity at 40 bps.",
+    "config_path": "C:\\Users\\grace\\OneDrive\\文档\\IFTE0003 Big Data\\_inspected_zip\\ift_coursework_2025_Team_Pearson-backup-20260418-qnative-v2-current-workspace\\team_Pearson\\coursework_two\\outputs\\robustness\\sensitivity\\configs\\1_cost_40bps.yaml",
+    "requires_snapshot_refresh": false,
+    "portfolio_name": null
+  },
+  {
+    "test_key": "2",
+    "scenario_key": "window_minus_6m",
+    "description": "Backtest window shifted six months earlier.",
+    "config_path": "C:\\Users\\grace\\OneDrive\\文档\\IFTE0003 Big Data\\_inspected_zip\\ift_coursework_2025_Team_Pearson-backup-20260418-qnative-v2-current-workspace\\team_Pearson\\coursework_two\\outputs\\robustness\\sensitivity\\configs\\2_window_minus_6m.yaml",
+    "requires_snapshot_refresh": false,
+    "portfolio_name": null
+  },
+  {
+    "test_key": "2",
+    "scenario_key": "window_minus_3m",
+    "description": "Backtest window shifted three months earlier.",
+    "config_path": "C:\\Users\\grace\\OneDrive\\文档\\IFTE0003 Big Data\\_inspected_zip\\ift_coursework_2025_Team_Pearson-backup-20260418-qnative-v2-current-workspace\\team_Pearson\\coursework_two\\outputs\\robustness\\sensitivity\\configs\\2_window_minus_3m.yaml",
+    "requires_snapshot_refresh": false,
+    "portfolio_name": null
+  },
+  {
+    "test_key": "2",
+    "scenario_key": "window_mainline",
+    "description": "Mainline backtest window.",
+    "config_path": "C:\\Users\\grace\\OneDrive\\文档\\IFTE0003 Big Data\\_inspected_zip\\ift_coursework_2025_Team_Pearson-backup-20260418-qnative-v2-current-workspace\\team_Pearson\\coursework_two\\outputs\\robustness\\sensitivity\\configs\\2_window_mainline.yaml",
+    "requires_snapshot_refresh": false,
+    "portfolio_name": null
+  },
+  {
+    "test_key": "2",
+    "scenario_key": "window_plus_3m",
+    "description": "Backtest window shifted three months later.",
+    "config_path": "C:\\Users\\grace\\OneDrive\\文档\\IFTE0003 Big Data\\_inspected_zip\\ift_coursework_2025_Team_Pearson-backup-20260418-qnative-v2-current-workspace\\team_Pearson\\coursework_two\\outputs\\robustness\\sensitivity\\configs\\2_window_plus_3m.yaml",
+    "requires_snapshot_refresh": false,
+    "portfolio_name": null
+  },
+  {
+    "test_key": "2",
+    "scenario_key": "window_plus_6m",
+    "description": "Backtest window shifted six months later.",
+    "config_path": "C:\\Users\\grace\\OneDrive\\文档\\IFTE0003 Big Data\\_inspected_zip\\ift_coursework_2025_Team_Pearson-backup-20260418-qnative-v2-current-workspace\\team_Pearson\\coursework_two\\outputs\\robustness\\sensitivity\\configs\\2_window_plus_6m.yaml",
+    "requires_snapshot_refresh": false,
+    "portfolio_name": null
+  },
+  {
+    "test_key": "3",
+    "scenario_key": "concentration_tighter",
+    "description": "More concentrated hybrid selection.",
+    "config_path": "C:\\Users\\grace\\OneDrive\\文档\\IFTE0003 Big Data\\_inspected_zip\\ift_coursework_2025_Team_Pearson-backup-20260418-qnative-v2-current-workspace\\team_Pearson\\coursework_two\\outputs\\robustness\\sensitivity\\configs\\3_concentration_tighter.yaml",
+    "requires_snapshot_refresh": true,
+    "portfolio_name": "cw2_formal_20260_concentration_tighter"
+  },
+  {
+    "test_key": "3",
+    "scenario_key": "concentration_mainline",
+    "description": "Mainline hybrid concentration.",
+    "config_path": "C:\\Users\\grace\\OneDrive\\文档\\IFTE0003 Big Data\\_inspected_zip\\ift_coursework_2025_Team_Pearson-backup-20260418-qnative-v2-current-workspace\\team_Pearson\\coursework_two\\outputs\\robustness\\sensitivity\\configs\\3_concentration_mainline.yaml",
+    "requires_snapshot_refresh": true,
+    "portfolio_name": "cw2_formal_20260_concentration_mainline"
+  },
+  {
+    "test_key": "3",
+    "scenario_key": "concentration_broader",
+    "description": "More diversified hybrid selection.",
+    "config_path": "C:\\Users\\grace\\OneDrive\\文档\\IFTE0003 Big Data\\_inspected_zip\\ift_coursework_2025_Team_Pearson-backup-20260418-qnative-v2-current-workspace\\team_Pearson\\coursework_two\\outputs\\robustness\\sensitivity\\configs\\3_concentration_broader.yaml",
+    "requires_snapshot_refresh": true,
+    "portfolio_name": "cw2_formal_20260_concentration_broader"
+  },
+  {
+    "test_key": "4",
+    "scenario_key": "factor_equal_weight",
+    "description": "Equal-weight normal regime control.",
+    "config_path": "C:\\Users\\grace\\OneDrive\\文档\\IFTE0003 Big Data\\_inspected_zip\\ift_coursework_2025_Team_Pearson-backup-20260418-qnative-v2-current-workspace\\team_Pearson\\coursework_two\\outputs\\robustness\\sensitivity\\configs\\4_factor_equal_weight.yaml",
+    "requires_snapshot_refresh": true,
+    "portfolio_name": "cw2_formal_20260_factor_equal_weight"
+  },
+  {
+    "test_key": "4",
+    "scenario_key": "factor_quality_up_5pct",
+    "description": "Key tuned Test 4 check: normal-regime quality weight shifted up by 5 percentage points.",
+    "config_path": "C:\\Users\\grace\\OneDrive\\文档\\IFTE0003 Big Data\\_inspected_zip\\ift_coursework_2025_Team_Pearson-backup-20260418-qnative-v2-current-workspace\\team_Pearson\\coursework_two\\outputs\\robustness\\sensitivity\\configs\\4_factor_quality_up_5pct.yaml",
+    "requires_snapshot_refresh": true,
+    "portfolio_name": "cw2_formal_20260_factor_quality_up_5pct"
+  },
+  {
+    "test_key": "4",
+    "scenario_key": "factor_quality_down_5pct",
+    "description": "Key tuned Test 4 check: normal-regime quality weight shifted down by 5 percentage points.",
+    "config_path": "C:\\Users\\grace\\OneDrive\\文档\\IFTE0003 Big Data\\_inspected_zip\\ift_coursework_2025_Team_Pearson-backup-20260418-qnative-v2-current-workspace\\team_Pearson\\coursework_two\\outputs\\robustness\\sensitivity\\configs\\4_factor_quality_down_5pct.yaml",
+    "requires_snapshot_refresh": true,
+    "portfolio_name": "cw2_formal_20260_factor_quality_down_5pct"
+  },
+  {
+    "test_key": "4",
+    "scenario_key": "factor_value_up_5pct",
+    "description": "Key tuned Test 4 check: normal-regime value weight shifted up by 5 percentage points.",
+    "config_path": "C:\\Users\\grace\\OneDrive\\文档\\IFTE0003 Big Data\\_inspected_zip\\ift_coursework_2025_Team_Pearson-backup-20260418-qnative-v2-current-workspace\\team_Pearson\\coursework_two\\outputs\\robustness\\sensitivity\\configs\\4_factor_value_up_5pct.yaml",
+    "requires_snapshot_refresh": true,
+    "portfolio_name": "cw2_formal_20260_factor_value_up_5pct"
+  },
+  {
+    "test_key": "4",
+    "scenario_key": "factor_value_down_5pct",
+    "description": "Key tuned Test 4 check: normal-regime value weight shifted down by 5 percentage points.",
+    "config_path": "C:\\Users\\grace\\OneDrive\\文档\\IFTE0003 Big Data\\_inspected_zip\\ift_coursework_2025_Team_Pearson-backup-20260418-qnative-v2-current-workspace\\team_Pearson\\coursework_two\\outputs\\robustness\\sensitivity\\configs\\4_factor_value_down_5pct.yaml",
+    "requires_snapshot_refresh": true,
+    "portfolio_name": "cw2_formal_20260_factor_value_down_5pct"
+  },
+  {
+    "test_key": "5",
+    "scenario_key": "regime_more_sensitive",
+    "description": "Lower stress and exit thresholds for regime switching.",
+    "config_path": "C:\\Users\\grace\\OneDrive\\文档\\IFTE0003 Big Data\\_inspected_zip\\ift_coursework_2025_Team_Pearson-backup-20260418-qnative-v2-current-workspace\\team_Pearson\\coursework_two\\outputs\\robustness\\sensitivity\\configs\\5_regime_more_sensitive.yaml",
+    "requires_snapshot_refresh": true,
+    "portfolio_name": "cw2_formal_20260_regime_more_sensitive"
+  },
+  {
+    "test_key": "5",
+    "scenario_key": "regime_mainline",
+    "description": "Mainline regime thresholds.",
+    "config_path": "C:\\Users\\grace\\OneDrive\\文档\\IFTE0003 Big Data\\_inspected_zip\\ift_coursework_2025_Team_Pearson-backup-20260418-qnative-v2-current-workspace\\team_Pearson\\coursework_two\\outputs\\robustness\\sensitivity\\configs\\5_regime_mainline.yaml",
+    "requires_snapshot_refresh": true,
+    "portfolio_name": "cw2_formal_20260_regime_mainline"
+  },
+  {
+    "test_key": "5",
+    "scenario_key": "regime_less_sensitive",
+    "description": "Higher stress and exit thresholds for regime switching.",
+    "config_path": "C:\\Users\\grace\\OneDrive\\文档\\IFTE0003 Big Data\\_inspected_zip\\ift_coursework_2025_Team_Pearson-backup-20260418-qnative-v2-current-workspace\\team_Pearson\\coursework_two\\outputs\\robustness\\sensitivity\\configs\\5_regime_less_sensitive.yaml",
+    "requires_snapshot_refresh": true,
+    "portfolio_name": "cw2_formal_20260_regime_less_sensitive"
+  },
+  {
+    "test_key": "5",
+    "scenario_key": "regime_disabled",
+    "description": "No regime switching; stress weights forced to normal.",
+    "config_path": "C:\\Users\\grace\\OneDrive\\文档\\IFTE0003 Big Data\\_inspected_zip\\ift_coursework_2025_Team_Pearson-backup-20260418-qnative-v2-current-workspace\\team_Pearson\\coursework_two\\outputs\\robustness\\sensitivity\\configs\\5_regime_disabled.yaml",
+    "requires_snapshot_refresh": true,
+    "portfolio_name": "cw2_formal_20260_regime_disabled"
+  },
+  {
+    "test_key": "6",
+    "scenario_key": "brake_off",
+    "description": "Drawdown brake disabled.",
+    "config_path": "C:\\Users\\grace\\OneDrive\\文档\\IFTE0003 Big Data\\_inspected_zip\\ift_coursework_2025_Team_Pearson-backup-20260418-qnative-v2-current-workspace\\team_Pearson\\coursework_two\\outputs\\robustness\\sensitivity\\configs\\6_brake_off.yaml",
+    "requires_snapshot_refresh": false,
+    "portfolio_name": null
+  },
+  {
+    "test_key": "6",
+    "scenario_key": "brake_mild",
+    "description": "Mild drawdown brake.",
+    "config_path": "C:\\Users\\grace\\OneDrive\\文档\\IFTE0003 Big Data\\_inspected_zip\\ift_coursework_2025_Team_Pearson-backup-20260418-qnative-v2-current-workspace\\team_Pearson\\coursework_two\\outputs\\robustness\\sensitivity\\configs\\6_brake_mild.yaml",
+    "requires_snapshot_refresh": false,
+    "portfolio_name": null
+  },
+  {
+    "test_key": "6",
+    "scenario_key": "brake_mainline",
+    "description": "Mainline drawdown brake.",
+    "config_path": "C:\\Users\\grace\\OneDrive\\文档\\IFTE0003 Big Data\\_inspected_zip\\ift_coursework_2025_Team_Pearson-backup-20260418-qnative-v2-current-workspace\\team_Pearson\\coursework_two\\outputs\\robustness\\sensitivity\\configs\\6_brake_mainline.yaml",
+    "requires_snapshot_refresh": false,
+    "portfolio_name": null
+  },
+  {
+    "test_key": "6",
+    "scenario_key": "brake_staircase",
+    "description": "Staircase drawdown brake with hysteresis.",
+    "config_path": "C:\\Users\\grace\\OneDrive\\文档\\IFTE0003 Big Data\\_inspected_zip\\ift_coursework_2025_Team_Pearson-backup-20260418-qnative-v2-current-workspace\\team_Pearson\\coursework_two\\outputs\\robustness\\sensitivity\\configs\\6_brake_staircase.yaml",
+    "requires_snapshot_refresh": false,
+    "portfolio_name": null
+  },
+  {
+    "test_key": "6",
+    "scenario_key": "brake_aggressive",
+    "description": "Aggressive drawdown brake.",
+    "config_path": "C:\\Users\\grace\\OneDrive\\文档\\IFTE0003 Big Data\\_inspected_zip\\ift_coursework_2025_Team_Pearson-backup-20260418-qnative-v2-current-workspace\\team_Pearson\\coursework_two\\outputs\\robustness\\sensitivity\\configs\\6_brake_aggressive.yaml",
+    "requires_snapshot_refresh": false,
+    "portfolio_name": null
+  },
+  {
+    "test_key": "7",
+    "scenario_key": "band_none",
+    "description": "No incumbent banding.",
+    "config_path": "C:\\Users\\grace\\OneDrive\\文档\\IFTE0003 Big Data\\_inspected_zip\\ift_coursework_2025_Team_Pearson-backup-20260418-qnative-v2-current-workspace\\team_Pearson\\coursework_two\\outputs\\robustness\\sensitivity\\configs\\7_band_none.yaml",
+    "requires_snapshot_refresh": true,
+    "portfolio_name": "cw2_formal_20260420_fund_ra3_s30_t50_band_none"
+  },
+  {
+    "test_key": "7",
+    "scenario_key": "band_narrow",
+    "description": "Narrow incumbent exit band.",
+    "config_path": "C:\\Users\\grace\\OneDrive\\文档\\IFTE0003 Big Data\\_inspected_zip\\ift_coursework_2025_Team_Pearson-backup-20260418-qnative-v2-current-workspace\\team_Pearson\\coursework_two\\outputs\\robustness\\sensitivity\\configs\\7_band_narrow.yaml",
+    "requires_snapshot_refresh": true,
+    "portfolio_name": "cw2_formal_20260420_fund_ra3_s30_t50_band_narrow"
+  },
+  {
+    "test_key": "7",
+    "scenario_key": "band_medium",
+    "description": "Medium incumbent exit band.",
+    "config_path": "C:\\Users\\grace\\OneDrive\\文档\\IFTE0003 Big Data\\_inspected_zip\\ift_coursework_2025_Team_Pearson-backup-20260418-qnative-v2-current-workspace\\team_Pearson\\coursework_two\\outputs\\robustness\\sensitivity\\configs\\7_band_medium.yaml",
+    "requires_snapshot_refresh": true,
+    "portfolio_name": "cw2_formal_20260420_fund_ra3_s30_t50_band_medium"
+  },
+  {
+    "test_key": "7",
+    "scenario_key": "band_wide",
+    "description": "Wide incumbent exit band.",
+    "config_path": "C:\\Users\\grace\\OneDrive\\文档\\IFTE0003 Big Data\\_inspected_zip\\ift_coursework_2025_Team_Pearson-backup-20260418-qnative-v2-current-workspace\\team_Pearson\\coursework_two\\outputs\\robustness\\sensitivity\\configs\\7_band_wide.yaml",
+    "requires_snapshot_refresh": true,
+    "portfolio_name": "cw2_formal_20260420_fund_ra3_s30_t50_band_wide"
+  },
+  {
+    "test_key": "8",
+    "scenario_key": "trade_constraint_none",
+    "description": "No no-trade band and no per-name trade cap.",
+    "config_path": "C:\\Users\\grace\\OneDrive\\文档\\IFTE0003 Big Data\\_inspected_zip\\ift_coursework_2025_Team_Pearson-backup-20260418-qnative-v2-current-workspace\\team_Pearson\\coursework_two\\outputs\\robustness\\sensitivity\\configs\\8_trade_constraint_none.yaml",
+    "requires_snapshot_refresh": true,
+    "portfolio_name": "cw2_formal_20260_trade_constraint_none"
+  },
+  {
+    "test_key": "8",
+    "scenario_key": "trade_constraint_weak",
+    "description": "Weak no-trade band and per-name trade cap.",
+    "config_path": "C:\\Users\\grace\\OneDrive\\文档\\IFTE0003 Big Data\\_inspected_zip\\ift_coursework_2025_Team_Pearson-backup-20260418-qnative-v2-current-workspace\\team_Pearson\\coursework_two\\outputs\\robustness\\sensitivity\\configs\\8_trade_constraint_weak.yaml",
+    "requires_snapshot_refresh": true,
+    "portfolio_name": "cw2_formal_20260_trade_constraint_weak"
+  },
+  {
+    "test_key": "8",
+    "scenario_key": "trade_constraint_medium",
+    "description": "Medium no-trade band and per-name trade cap.",
+    "config_path": "C:\\Users\\grace\\OneDrive\\文档\\IFTE0003 Big Data\\_inspected_zip\\ift_coursework_2025_Team_Pearson-backup-20260418-qnative-v2-current-workspace\\team_Pearson\\coursework_two\\outputs\\robustness\\sensitivity\\configs\\8_trade_constraint_medium.yaml",
+    "requires_snapshot_refresh": true,
+    "portfolio_name": "cw2_formal_20260_trade_constraint_medium"
+  },
+  {
+    "test_key": "8",
+    "scenario_key": "trade_constraint_strong",
+    "description": "Strong no-trade band and per-name trade cap.",
+    "config_path": "C:\\Users\\grace\\OneDrive\\文档\\IFTE0003 Big Data\\_inspected_zip\\ift_coursework_2025_Team_Pearson-backup-20260418-qnative-v2-current-workspace\\team_Pearson\\coursework_two\\outputs\\robustness\\sensitivity\\configs\\8_trade_constraint_strong.yaml",
+    "requires_snapshot_refresh": true,
+    "portfolio_name": "cw2_formal_20260_trade_constraint_strong"
+  }
+]

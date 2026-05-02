@@ -1,0 +1,37 @@
+﻿category,item_key,label,status,detail
+deterministic,test_1,Deterministic Test 1,completed,scenario_count=4
+deterministic,test_2,Deterministic Test 2,completed,scenario_count=5
+deterministic,test_3,Deterministic Test 3,completed,scenario_count=3
+deterministic,test_4,Deterministic Test 4,completed,scenario_count=5
+deterministic,test_5,Deterministic Test 5,completed,scenario_count=4
+deterministic,test_6,Deterministic Test 6,completed,scenario_count=5
+deterministic,test_7,Deterministic Test 7,completed,scenario_count=4
+deterministic,test_8,Deterministic Test 8,completed,scenario_count=4
+ablation,B::no_regime_switch,Ablation B no_regime_switch,completed,"ann_return=8.996943, sharpe=0.424044"
+ablation,B::no_risk_overlay,Ablation B no_risk_overlay,completed,"ann_return=16.48679, sharpe=0.762075"
+ablation,B::no_drawdown_brake,Ablation B no_drawdown_brake,completed,"ann_return=11.939623, sharpe=0.582195"
+ablation,B::no_intraday_trigger,Ablation B no_intraday_trigger,completed,"ann_return=11.939623, sharpe=0.582195"
+ablation,B::no_liquidity_clipping,Ablation B no_liquidity_clipping,completed,"ann_return=11.939623, sharpe=0.582195"
+ablation,B::no_sector_constraint,Ablation B no_sector_constraint,completed,"ann_return=10.846314, sharpe=0.51445"
+subperiod,reopening_2021::SPY,2021 Reopening vs SPY,completed,n_periods=7
+subperiod,reopening_2021::static_baseline,2021 Reopening vs static_baseline,completed,n_periods=7
+subperiod,reopening_2021::universe_ew,2021 Reopening vs universe_ew,completed,n_periods=7
+subperiod,bear_2022::SPY,2022 Bear vs SPY,completed,n_periods=12
+subperiod,bear_2022::static_baseline,2022 Bear vs static_baseline,completed,n_periods=12
+subperiod,bear_2022::universe_ew,2022 Bear vs universe_ew,completed,n_periods=12
+subperiod,recovery_2023::SPY,2023 Recovery vs SPY,completed,n_periods=12
+subperiod,recovery_2023::static_baseline,2023 Recovery vs static_baseline,completed,n_periods=12
+subperiod,recovery_2023::universe_ew,2023 Recovery vs universe_ew,completed,n_periods=12
+subperiod,bull_2024::SPY,2024 Bull vs SPY,completed,n_periods=12
+subperiod,bull_2024::static_baseline,2024 Bull vs static_baseline,completed,n_periods=12
+subperiod,bull_2024::universe_ew,2024 Bull vs universe_ew,completed,n_periods=12
+subperiod,recent_2025_2026::SPY,2025-2026 Recent vs SPY,completed,n_periods=16
+subperiod,recent_2025_2026::static_baseline,2025-2026 Recent vs static_baseline,completed,n_periods=16
+subperiod,recent_2025_2026::universe_ew,2025-2026 Recent vs universe_ew,completed,n_periods=16
+stochastic,bootstrap::stationary_block_e6m,bootstrap stationary_block_e6m,core,"p50_ann_return=0.1251000701960073, p50_sharpe=0.7880017361747255, positive_return_prob=0.9895"
+stochastic,local_weight_perturbation::loose_alpha_100,local_weight_perturbation loose_alpha_100,auxiliary,"p50_ann_return=0.1414176452873845, p50_sharpe=0.8681536170474293, positive_return_prob=1.0"
+stochastic,local_weight_perturbation::medium_alpha_250,local_weight_perturbation medium_alpha_250,auxiliary,"p50_ann_return=0.1418435675736475, p50_sharpe=0.8812415319964824, positive_return_prob=1.0"
+stochastic,local_weight_perturbation::tight_alpha_500,local_weight_perturbation tight_alpha_500,auxiliary,"p50_ann_return=0.1421593447271532, p50_sharpe=0.8834037233744171, positive_return_prob=1.0"
+stochastic,monte_carlo::garch_base,monte_carlo garch_base,core,"p50_ann_return=0.1244243384083223, p50_sharpe=0.7876954491784518, positive_return_prob=0.9375"
+stochastic,monte_carlo::garch_stress_1_5xvol,monte_carlo garch_stress_1_5xvol,core,"p50_ann_return=0.0775771932809598, p50_sharpe=0.2500833757163337, positive_return_prob=0.6885"
+stochastic,monte_carlo::garch_stress_2xvol,monte_carlo garch_stress_2xvol,stress_only,"p50_ann_return=-0.3103907044456782, p50_sharpe=-0.3136656446694054, positive_return_prob=0.2505"

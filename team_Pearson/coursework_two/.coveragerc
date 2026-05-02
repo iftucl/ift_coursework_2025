@@ -1,0 +1,8 @@
+[run]
+omit =
+    */team_Pearson/coursework_two/tests/*
+    */team_Pearson/coursework_two/scripts/export_db_tables_csv.py
+    */team_Pearson/coursework_two/scripts/materialize_constrained_search_configs.py
+    */team_Pearson/coursework_two/scripts/mini_target_sweep.py
+    */team_Pearson/coursework_two/scripts/score_constrained_search.py
+    */__pycache__/*

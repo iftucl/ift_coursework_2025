@@ -1,0 +1,913 @@
+{
+  "all_month_ends": false,
+  "base_config": "team_Pearson/coursework_two/config/experiments/formal/cw2_formal_20260420_fund_ra3_s25_t50.yaml",
+  "candidate_count": 4,
+  "candidates": [
+    {
+      "annualized_return": 11.247105,
+      "annualized_volatility": 15.63394,
+      "avg_gross_turnover": 0.273002,
+      "avg_holdings": 34.11864406779661,
+      "avg_monthly_turnover": 15.345015,
+      "avg_transaction_cost_bps": 4.09503,
+      "avg_turnover": 0.15345013559322035,
+      "benchmark_total_return": 67.755749,
+      "beta": 0.952429,
+      "candidate_id": "fund_ra2.5_s25_t50",
+      "config_path": "team_Pearson/coursework_two/config/experiments/micro_alpha/cw2_microalpha_20260420_fund_ra2.5_s25_t50.yaml",
+      "covariance_method": "fundamental_factor",
+      "diagnostic_rows": 4127,
+      "information_ratio": 0.040065,
+      "max_drawdown": 17.51321,
+      "max_sector_weight": 0.25,
+      "portfolio_name": "cw2_microalpha_20260420_fund_ra2.5_s25_t50",
+      "rank": null,
+      "risk_aversion": 2.5,
+      "run_id": "b2114b9b-2503-4e59-961f-aa64546999a7",
+      "run_name": "cw2_microalpha_20260420_20260429T021834Z_01_fund_ra2.5_s25_t50",
+      "sharpe_ratio": 0.54715,
+      "target_results": [
+        {
+          "as_of_date": "2021-04-30",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 0,
+          "portfolio_targets": 0,
+          "previous_target_as_of_date": null,
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2021-06-30",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 100,
+          "portfolio_targets": 25,
+          "previous_target_as_of_date": null,
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2021-09-30",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 140,
+          "portfolio_targets": 34,
+          "previous_target_as_of_date": "2021-06-30",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2021-12-31",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 152,
+          "portfolio_targets": 32,
+          "previous_target_as_of_date": "2021-09-30",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2022-03-31",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 183,
+          "portfolio_targets": 25,
+          "previous_target_as_of_date": "2021-12-31",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2022-06-30",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 181,
+          "portfolio_targets": 37,
+          "previous_target_as_of_date": "2022-03-31",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2022-09-30",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 189,
+          "portfolio_targets": 41,
+          "previous_target_as_of_date": "2022-06-30",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2022-12-30",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 191,
+          "portfolio_targets": 27,
+          "previous_target_as_of_date": "2022-09-30",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2023-03-31",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 190,
+          "portfolio_targets": 25,
+          "previous_target_as_of_date": "2022-12-30",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2023-06-30",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 194,
+          "portfolio_targets": 40,
+          "previous_target_as_of_date": "2023-03-31",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2023-09-29",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 191,
+          "portfolio_targets": 30,
+          "previous_target_as_of_date": "2023-06-30",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2023-12-29",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 200,
+          "portfolio_targets": 31,
+          "previous_target_as_of_date": "2023-09-29",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2024-03-28",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 191,
+          "portfolio_targets": 35,
+          "previous_target_as_of_date": "2023-12-29",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2024-06-28",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 195,
+          "portfolio_targets": 35,
+          "previous_target_as_of_date": "2024-03-28",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2024-09-30",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 197,
+          "portfolio_targets": 37,
+          "previous_target_as_of_date": "2024-06-28",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2024-12-31",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 195,
+          "portfolio_targets": 39,
+          "previous_target_as_of_date": "2024-09-30",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2025-03-31",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 277,
+          "portfolio_targets": 47,
+          "previous_target_as_of_date": "2024-12-31",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2025-06-30",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 290,
+          "portfolio_targets": 50,
+          "previous_target_as_of_date": "2025-03-31",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2025-09-30",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 289,
+          "portfolio_targets": 37,
+          "previous_target_as_of_date": "2025-06-30",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2025-12-31",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 293,
+          "portfolio_targets": 44,
+          "previous_target_as_of_date": "2025-09-30",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2026-03-31",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 289,
+          "portfolio_targets": 50,
+          "previous_target_as_of_date": "2025-12-31",
+          "status": "refreshed"
+        }
+      ],
+      "target_rows": 721,
+      "target_snapshot_count": 21,
+      "total_return": 68.883101,
+      "tracking_error": 7.166157,
+      "turnover_cap": 0.5
+    },
+    {
+      "annualized_return": 11.388235,
+      "annualized_volatility": 15.721209,
+      "avg_gross_turnover": 0.2741686271186441,
+      "avg_holdings": 33.71186440677966,
+      "avg_monthly_turnover": 15.403347,
+      "avg_transaction_cost_bps": 4.112529,
+      "avg_turnover": 0.15403349152542373,
+      "benchmark_total_return": 67.755749,
+      "beta": 0.958047,
+      "candidate_id": "fund_ra2.5_s30_t50",
+      "config_path": "team_Pearson/coursework_two/config/experiments/micro_alpha/cw2_microalpha_20260420_fund_ra2.5_s30_t50.yaml",
+      "covariance_method": "fundamental_factor",
+      "diagnostic_rows": 4127,
+      "information_ratio": 0.059603,
+      "max_drawdown": 17.440207,
+      "max_sector_weight": 0.3,
+      "portfolio_name": "cw2_microalpha_20260420_fund_ra2.5_s30_t50",
+      "rank": null,
+      "risk_aversion": 2.5,
+      "run_id": "4f8a1960-da9b-48ba-87fb-6512fa795e03",
+      "run_name": "cw2_microalpha_20260420_20260429T021834Z_02_fund_ra2.5_s30_t50",
+      "sharpe_ratio": 0.553124,
+      "target_results": [
+        {
+          "as_of_date": "2021-04-30",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 0,
+          "portfolio_targets": 0,
+          "previous_target_as_of_date": null,
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2021-06-30",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 100,
+          "portfolio_targets": 25,
+          "previous_target_as_of_date": null,
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2021-09-30",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 140,
+          "portfolio_targets": 34,
+          "previous_target_as_of_date": "2021-06-30",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2021-12-31",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 152,
+          "portfolio_targets": 32,
+          "previous_target_as_of_date": "2021-09-30",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2022-03-31",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 183,
+          "portfolio_targets": 25,
+          "previous_target_as_of_date": "2021-12-31",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2022-06-30",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 181,
+          "portfolio_targets": 37,
+          "previous_target_as_of_date": "2022-03-31",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2022-09-30",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 189,
+          "portfolio_targets": 40,
+          "previous_target_as_of_date": "2022-06-30",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2022-12-30",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 191,
+          "portfolio_targets": 25,
+          "previous_target_as_of_date": "2022-09-30",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2023-03-31",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 190,
+          "portfolio_targets": 25,
+          "previous_target_as_of_date": "2022-12-30",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2023-06-30",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 194,
+          "portfolio_targets": 40,
+          "previous_target_as_of_date": "2023-03-31",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2023-09-29",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 191,
+          "portfolio_targets": 30,
+          "previous_target_as_of_date": "2023-06-30",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2023-12-29",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 200,
+          "portfolio_targets": 30,
+          "previous_target_as_of_date": "2023-09-29",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2024-03-28",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 191,
+          "portfolio_targets": 35,
+          "previous_target_as_of_date": "2023-12-29",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2024-06-28",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 195,
+          "portfolio_targets": 35,
+          "previous_target_as_of_date": "2024-03-28",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2024-09-30",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 197,
+          "portfolio_targets": 36,
+          "previous_target_as_of_date": "2024-06-28",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2024-12-31",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 195,
+          "portfolio_targets": 39,
+          "previous_target_as_of_date": "2024-09-30",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2025-03-31",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 277,
+          "portfolio_targets": 47,
+          "previous_target_as_of_date": "2024-12-31",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2025-06-30",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 290,
+          "portfolio_targets": 49,
+          "previous_target_as_of_date": "2025-03-31",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2025-09-30",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 289,
+          "portfolio_targets": 36,
+          "previous_target_as_of_date": "2025-06-30",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2025-12-31",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 293,
+          "portfolio_targets": 43,
+          "previous_target_as_of_date": "2025-09-30",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2026-03-31",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 289,
+          "portfolio_targets": 46,
+          "previous_target_as_of_date": "2025-12-31",
+          "status": "refreshed"
+        }
+      ],
+      "target_rows": 709,
+      "target_snapshot_count": 21,
+      "total_return": 69.93911,
+      "tracking_error": 7.189776,
+      "turnover_cap": 0.5
+    },
+    {
+      "annualized_return": 11.781409,
+      "annualized_volatility": 15.740224,
+      "avg_gross_turnover": 0.27225593220338984,
+      "avg_holdings": 34.67796610169491,
+      "avg_monthly_turnover": 15.307713,
+      "avg_transaction_cost_bps": 4.083839,
+      "avg_turnover": 0.15307711864406778,
+      "benchmark_total_return": 67.755749,
+      "beta": 0.95004,
+      "candidate_id": "fund_ra3_s25_t50",
+      "config_path": "team_Pearson/coursework_two/config/experiments/micro_alpha/cw2_microalpha_20260420_fund_ra3_s25_t50.yaml",
+      "covariance_method": "fundamental_factor",
+      "diagnostic_rows": 4127,
+      "information_ratio": 0.105371,
+      "max_drawdown": 17.254137,
+      "max_sector_weight": 0.25,
+      "portfolio_name": "cw2_microalpha_20260420_fund_ra3_s25_t50",
+      "rank": null,
+      "risk_aversion": 3.0,
+      "run_id": "f788334b-c18c-4013-ac02-f874cc4c9fae",
+      "run_name": "cw2_microalpha_20260420_20260429T021834Z_03_fund_ra3_s25_t50",
+      "sharpe_ratio": 0.575151,
+      "target_results": [
+        {
+          "as_of_date": "2021-04-30",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 0,
+          "portfolio_targets": 0,
+          "previous_target_as_of_date": null,
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2021-06-30",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 100,
+          "portfolio_targets": 25,
+          "previous_target_as_of_date": null,
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2021-09-30",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 140,
+          "portfolio_targets": 35,
+          "previous_target_as_of_date": "2021-06-30",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2021-12-31",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 152,
+          "portfolio_targets": 32,
+          "previous_target_as_of_date": "2021-09-30",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2022-03-31",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 183,
+          "portfolio_targets": 29,
+          "previous_target_as_of_date": "2021-12-31",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2022-06-30",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 181,
+          "portfolio_targets": 38,
+          "previous_target_as_of_date": "2022-03-31",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2022-09-30",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 189,
+          "portfolio_targets": 40,
+          "previous_target_as_of_date": "2022-06-30",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2022-12-30",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 191,
+          "portfolio_targets": 25,
+          "previous_target_as_of_date": "2022-09-30",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2023-03-31",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 190,
+          "portfolio_targets": 25,
+          "previous_target_as_of_date": "2022-12-30",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2023-06-30",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 194,
+          "portfolio_targets": 36,
+          "previous_target_as_of_date": "2023-03-31",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2023-09-29",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 191,
+          "portfolio_targets": 31,
+          "previous_target_as_of_date": "2023-06-30",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2023-12-29",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 200,
+          "portfolio_targets": 30,
+          "previous_target_as_of_date": "2023-09-29",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2024-03-28",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 191,
+          "portfolio_targets": 35,
+          "previous_target_as_of_date": "2023-12-29",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2024-06-28",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 195,
+          "portfolio_targets": 35,
+          "previous_target_as_of_date": "2024-03-28",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2024-09-30",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 197,
+          "portfolio_targets": 37,
+          "previous_target_as_of_date": "2024-06-28",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2024-12-31",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 195,
+          "portfolio_targets": 39,
+          "previous_target_as_of_date": "2024-09-30",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2025-03-31",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 277,
+          "portfolio_targets": 47,
+          "previous_target_as_of_date": "2024-12-31",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2025-06-30",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 290,
+          "portfolio_targets": 50,
+          "previous_target_as_of_date": "2025-03-31",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2025-09-30",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 289,
+          "portfolio_targets": 44,
+          "previous_target_as_of_date": "2025-06-30",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2025-12-31",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 293,
+          "portfolio_targets": 49,
+          "previous_target_as_of_date": "2025-09-30",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2026-03-31",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 289,
+          "portfolio_targets": 52,
+          "previous_target_as_of_date": "2025-12-31",
+          "status": "refreshed"
+        }
+      ],
+      "target_rows": 734,
+      "target_snapshot_count": 21,
+      "total_return": 72.908798,
+      "tracking_error": 7.463779,
+      "turnover_cap": 0.5
+    },
+    {
+      "annualized_return": 11.939622,
+      "annualized_volatility": 15.816019,
+      "avg_gross_turnover": 0.27315793220338985,
+      "avg_holdings": 34.47457627118644,
+      "avg_monthly_turnover": 15.352812,
+      "avg_transaction_cost_bps": 4.097369,
+      "avg_turnover": 0.15352815254237287,
+      "benchmark_total_return": 67.755749,
+      "beta": 0.955289,
+      "candidate_id": "fund_ra3_s30_t50",
+      "config_path": "team_Pearson/coursework_two/config/experiments/micro_alpha/cw2_microalpha_20260420_fund_ra3_s30_t50.yaml",
+      "covariance_method": "fundamental_factor",
+      "diagnostic_rows": 4127,
+      "information_ratio": 0.125923,
+      "max_drawdown": 17.130802,
+      "max_sector_weight": 0.3,
+      "portfolio_name": "cw2_microalpha_20260420_fund_ra3_s30_t50",
+      "rank": null,
+      "risk_aversion": 3.0,
+      "run_id": "c7777a65-a520-4c68-a9a3-f71d141f0db2",
+      "run_name": "cw2_microalpha_20260420_20260429T021834Z_04_fund_ra3_s30_t50",
+      "sharpe_ratio": 0.582195,
+      "target_results": [
+        {
+          "as_of_date": "2021-04-30",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 0,
+          "portfolio_targets": 0,
+          "previous_target_as_of_date": null,
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2021-06-30",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 100,
+          "portfolio_targets": 25,
+          "previous_target_as_of_date": null,
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2021-09-30",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 140,
+          "portfolio_targets": 35,
+          "previous_target_as_of_date": "2021-06-30",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2021-12-31",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 152,
+          "portfolio_targets": 32,
+          "previous_target_as_of_date": "2021-09-30",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2022-03-31",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 183,
+          "portfolio_targets": 29,
+          "previous_target_as_of_date": "2021-12-31",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2022-06-30",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 181,
+          "portfolio_targets": 37,
+          "previous_target_as_of_date": "2022-03-31",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2022-09-30",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 189,
+          "portfolio_targets": 39,
+          "previous_target_as_of_date": "2022-06-30",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2022-12-30",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 191,
+          "portfolio_targets": 25,
+          "previous_target_as_of_date": "2022-09-30",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2023-03-31",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 190,
+          "portfolio_targets": 25,
+          "previous_target_as_of_date": "2022-12-30",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2023-06-30",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 194,
+          "portfolio_targets": 36,
+          "previous_target_as_of_date": "2023-03-31",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2023-09-29",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 191,
+          "portfolio_targets": 31,
+          "previous_target_as_of_date": "2023-06-30",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2023-12-29",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 200,
+          "portfolio_targets": 30,
+          "previous_target_as_of_date": "2023-09-29",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2024-03-28",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 191,
+          "portfolio_targets": 35,
+          "previous_target_as_of_date": "2023-12-29",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2024-06-28",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 195,
+          "portfolio_targets": 35,
+          "previous_target_as_of_date": "2024-03-28",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2024-09-30",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 197,
+          "portfolio_targets": 36,
+          "previous_target_as_of_date": "2024-06-28",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2024-12-31",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 195,
+          "portfolio_targets": 39,
+          "previous_target_as_of_date": "2024-09-30",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2025-03-31",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 277,
+          "portfolio_targets": 47,
+          "previous_target_as_of_date": "2024-12-31",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2025-06-30",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 290,
+          "portfolio_targets": 49,
+          "previous_target_as_of_date": "2025-03-31",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2025-09-30",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 289,
+          "portfolio_targets": 44,
+          "previous_target_as_of_date": "2025-06-30",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2025-12-31",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 293,
+          "portfolio_targets": 49,
+          "previous_target_as_of_date": "2025-09-30",
+          "status": "refreshed"
+        },
+        {
+          "as_of_date": "2026-03-31",
+          "covariance_fallback_used": false,
+          "covariance_method": "fundamental_factor",
+          "portfolio_diagnostics": 289,
+          "portfolio_targets": 52,
+          "previous_target_as_of_date": "2025-12-31",
+          "status": "refreshed"
+        }
+      ],
+      "target_rows": 730,
+      "target_snapshot_count": 21,
+      "total_return": 74.115402,
+      "tracking_error": 7.473937,
+      "turnover_cap": 0.5
+    }
+  ],
+  "end_date": "2026-04-20",
+  "snapshot_dates": [
+    "2021-04-30",
+    "2021-06-30",
+    "2021-09-30",
+    "2021-12-31",
+    "2022-03-31",
+    "2022-06-30",
+    "2022-09-30",
+    "2022-12-30",
+    "2023-03-31",
+    "2023-06-30",
+    "2023-09-29",
+    "2023-12-29",
+    "2024-03-28",
+    "2024-06-28",
+    "2024-09-30",
+    "2024-12-31",
+    "2025-03-31",
+    "2025-06-30",
+    "2025-09-30",
+    "2025-12-31",
+    "2026-03-31"
+  ],
+  "start_date": "2021-04-20",
+  "sweep_stamp": "20260429T021834Z"
+}

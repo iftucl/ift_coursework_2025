@@ -11,12 +11,14 @@ from sqlalchemy import text
 
 from modules.db import get_db_engine
 from modules.output import load_curated
+from modules.transform.pit_semantics import financial_publish_value_expr
 
 logger = logging.getLogger(__name__)
 
 FINANCIAL_SOFT_STALE_DAYS = 270
 FINANCIAL_HARD_EXPIRE_DAYS = 365
 MARKET_TRADING_DAYS_PER_YEAR = 252
+DIVIDEND_STABILITY_HISTORY_YEARS = 5
 
 MARKET_ATOMIC_FACTORS = {
     "adjusted_close_price",
@@ -29,6 +31,15 @@ _QUALITY_EVENT_COUNTS: Dict[str, Any] = {
     "expired_count": 0,
     "stale_by_factor": {},
     "expired_by_factor": {},
+}
+
+_PAIR_INTEGRITY_EVENT_COUNTS: Dict[str, Any] = {
+    "relaxed_total": 0,
+    "downgraded_total": 0,
+    "relaxed_by_factor_mode": {},
+    "downgraded_by_factor_reason": {},
+    "seen_relaxed_keys": set(),
+    "seen_downgraded_keys": set(),
 }
 
 
@@ -81,6 +92,32 @@ def _flush_quality_event_summary() -> None:
     )
 
 
+def _reset_pair_integrity_event_counts() -> None:
+    """Reset in-memory pair-integrity logging counters for one factor-build run."""
+    _PAIR_INTEGRITY_EVENT_COUNTS["relaxed_total"] = 0
+    _PAIR_INTEGRITY_EVENT_COUNTS["downgraded_total"] = 0
+    _PAIR_INTEGRITY_EVENT_COUNTS["relaxed_by_factor_mode"] = {}
+    _PAIR_INTEGRITY_EVENT_COUNTS["downgraded_by_factor_reason"] = {}
+    _PAIR_INTEGRITY_EVENT_COUNTS["seen_relaxed_keys"] = set()
+    _PAIR_INTEGRITY_EVENT_COUNTS["seen_downgraded_keys"] = set()
+
+
+def _flush_pair_integrity_event_summary() -> None:
+    """Log aggregated summary for pair-integrity relaxations/downgrades."""
+    relaxed_total = int(_PAIR_INTEGRITY_EVENT_COUNTS["relaxed_total"])
+    downgraded_total = int(_PAIR_INTEGRITY_EVENT_COUNTS["downgraded_total"])
+    if relaxed_total == 0 and downgraded_total == 0:
+        return
+    logger.info(
+        "pair_integrity_event_summary relaxed_total=%s downgraded_total=%s "
+        "relaxed_by_factor_mode=%s downgraded_by_factor_reason=%s",
+        relaxed_total,
+        downgraded_total,
+        _PAIR_INTEGRITY_EVENT_COUNTS["relaxed_by_factor_mode"],
+        _PAIR_INTEGRITY_EVENT_COUNTS["downgraded_by_factor_reason"],
+    )
+
+
 ALTERNATIVE_ATOMIC_FACTORS = {
     "news_sentiment_daily",
     "news_article_count_daily",
@@ -93,6 +130,8 @@ FINANCIAL_ATOMIC_FACTORS = {
     "shares_outstanding",
     "enterprise_ebitda",
     "enterprise_revenue",
+    "eps_basic",
+    "net_income",
 }
 
 
@@ -186,6 +225,12 @@ def _month_ends(start: date, end: date) -> List[date]:
     return out
 
 
+def _feature_support_window_start(start: date) -> date:
+    """Return the earliest history date needed by the final-factor builder."""
+    history_buffer_days = max(370, 365 * DIVIDEND_STABILITY_HISTORY_YEARS)
+    return start - timedelta(days=history_buffer_days)
+
+
 def _latest_financial_with_staleness_logging(
     frame,
     *,
@@ -196,10 +241,18 @@ def _latest_financial_with_staleness_logging(
     soft_stale_days: int = FINANCIAL_SOFT_STALE_DAYS,
     hard_expire_days: int = FINANCIAL_HARD_EXPIRE_DAYS,
 ):
-    """Return latest financial row on/before cutoff with soft/hard staleness handling."""
-    subset = frame[frame["observation_date"] <= cutoff]
+    """Return latest financial row available by cutoff with soft/hard staleness handling."""
+    subset = frame[frame["observation_date"] <= cutoff].copy()
+    if "publish_date" in subset.columns:
+        subset["_publish_date"] = subset["publish_date"].apply(_parse_iso_date)
+        subset = subset[subset["_publish_date"].notna() & (subset["_publish_date"] <= cutoff)]
     if subset.empty:
         return None
+
+    if "publish_date" in subset.columns:
+        subset = subset.sort_values(["observation_date", "_publish_date"])
+    else:
+        subset = subset.sort_values(["observation_date"])
 
     row = subset.iloc[-1]
     last_date = row["observation_date"]
@@ -237,6 +290,19 @@ def _latest_financial_with_staleness_logging(
             )
 
     return row
+
+
+def _select_factor_frame(df, factor_name: str, value_name: str):
+    """Return factor slice while preserving PIT columns when present."""
+    keep = ["symbol", "observation_date", "factor_value"]
+    for optional_name in ("publish_date", "source_report_date", "source"):
+        if optional_name in df.columns:
+            keep.append(optional_name)
+    return (
+        df[df["factor_name"] == factor_name][keep]
+        .rename(columns={"factor_value": value_name})
+        .copy()
+    )
 
 
 def _to_float_or_none(value: Any) -> Optional[float]:
@@ -306,6 +372,327 @@ def _find_price_row_with_trading_day_lookback(frame, cutoff: date, max_prior_tra
     return None, None, None
 
 
+def _normalize_source_name(value: Any) -> Optional[str]:
+    raw = str(value or "").strip()
+    return raw if raw else None
+
+
+def _log_pair_integrity_downgrade(
+    *,
+    factor: str,
+    symbol: str,
+    left_metric: str,
+    right_metric: str,
+    cutoff: date,
+    reason: str,
+) -> None:
+    summary_key = f"{factor}:{reason}"
+    by_reason = dict(_PAIR_INTEGRITY_EVENT_COUNTS["downgraded_by_factor_reason"])
+    by_reason[summary_key] = int(by_reason.get(summary_key, 0)) + 1
+    _PAIR_INTEGRITY_EVENT_COUNTS["downgraded_by_factor_reason"] = by_reason
+    _PAIR_INTEGRITY_EVENT_COUNTS["downgraded_total"] = (
+        int(_PAIR_INTEGRITY_EVENT_COUNTS["downgraded_total"]) + 1
+    )
+
+    dedupe_key = (factor, symbol, left_metric, right_metric, reason)
+    seen = _PAIR_INTEGRITY_EVENT_COUNTS["seen_downgraded_keys"]
+    if dedupe_key in seen:
+        return
+    seen.add(dedupe_key)
+    logger.info(
+        "pair_integrity_downgraded=True factor=%s symbol=%s left_metric=%s "
+        "right_metric=%s cutoff=%s reason=%s",
+        factor,
+        symbol,
+        left_metric,
+        right_metric,
+        cutoff.isoformat(),
+        reason,
+    )
+
+
+def _log_pair_integrity_relaxed(
+    *,
+    factor: str,
+    symbol: str,
+    left_metric: str,
+    right_metric: str,
+    cutoff: date,
+    pair_mode: str,
+    left_source: Optional[str],
+    right_source: Optional[str],
+) -> None:
+    left_source_norm = left_source or "unknown"
+    right_source_norm = right_source or "unknown"
+    summary_key = f"{factor}:{pair_mode}"
+    by_mode = dict(_PAIR_INTEGRITY_EVENT_COUNTS["relaxed_by_factor_mode"])
+    by_mode[summary_key] = int(by_mode.get(summary_key, 0)) + 1
+    _PAIR_INTEGRITY_EVENT_COUNTS["relaxed_by_factor_mode"] = by_mode
+    _PAIR_INTEGRITY_EVENT_COUNTS["relaxed_total"] = (
+        int(_PAIR_INTEGRITY_EVENT_COUNTS["relaxed_total"]) + 1
+    )
+
+    dedupe_key = (
+        factor,
+        symbol,
+        left_metric,
+        right_metric,
+        pair_mode,
+        left_source_norm,
+        right_source_norm,
+    )
+    seen = _PAIR_INTEGRITY_EVENT_COUNTS["seen_relaxed_keys"]
+    if dedupe_key in seen:
+        return
+    seen.add(dedupe_key)
+    logger.info(
+        "pair_integrity_relaxed=True factor=%s symbol=%s left_metric=%s "
+        "right_metric=%s cutoff=%s pair_mode=%s left_source=%s right_source=%s",
+        factor,
+        symbol,
+        left_metric,
+        right_metric,
+        cutoff.isoformat(),
+        pair_mode,
+        left_source_norm,
+        right_source_norm,
+    )
+
+
+def _eligible_financial_subset_for_pairing(
+    frame,
+    *,
+    cutoff: date,
+    factor: str,
+    symbol: str,
+    metric: str,
+    soft_stale_days: int = FINANCIAL_SOFT_STALE_DAYS,
+    hard_expire_days: int = FINANCIAL_HARD_EXPIRE_DAYS,
+):
+    """Return candidate financial rows eligible for same-source ratio pairing."""
+    subset = frame[frame["observation_date"] <= cutoff].copy()
+    if subset.empty:
+        return subset
+
+    subset["observation_date"] = subset["observation_date"].apply(_parse_iso_date)
+    subset = subset[subset["observation_date"].notna()].copy()
+    if subset.empty:
+        return subset
+
+    if "publish_date" in subset.columns:
+        subset["_publish_date"] = subset["publish_date"].apply(_parse_iso_date)
+        subset = subset[
+            subset["_publish_date"].notna() & (subset["_publish_date"] <= cutoff)
+        ].copy()
+    else:
+        subset["_publish_date"] = subset["observation_date"]
+    if subset.empty:
+        return subset
+
+    subset["_source"] = (
+        subset["source"].apply(_normalize_source_name) if "source" in subset.columns else None
+    )
+
+    last_date = subset.sort_values(["observation_date", "_publish_date"]).iloc[-1][
+        "observation_date"
+    ]
+    age_days = int((cutoff - last_date).days)
+
+    if age_days > hard_expire_days:
+        _record_quality_event("expired", factor)
+        if _quality_verbose_events_enabled():
+            logger.warning(
+                "flag_data_expired=True factor=%s symbol=%s metric=%s cutoff=%s last_date=%s "
+                "age_days=%s max_stale_days=%s",
+                factor,
+                symbol,
+                metric,
+                cutoff.isoformat(),
+                last_date.isoformat(),
+                age_days,
+                hard_expire_days,
+            )
+        return subset.iloc[0:0].copy()
+
+    if age_days > soft_stale_days:
+        _record_quality_event("stale", factor)
+        if _quality_verbose_events_enabled():
+            logger.warning(
+                "flag_financial_stale=True factor=%s symbol=%s metric=%s cutoff=%s last_date=%s "
+                "age_days=%s soft_stale_days=%s",
+                factor,
+                symbol,
+                metric,
+                cutoff.isoformat(),
+                last_date.isoformat(),
+                age_days,
+                soft_stale_days,
+            )
+
+    return subset.sort_values(["observation_date", "_publish_date"]).copy()
+
+
+def _resolve_latest_paired_financial_rows(
+    left_frame,
+    right_frame,
+    *,
+    cutoff: date,
+    factor: str,
+    symbol: str,
+    left_metric: str,
+    right_metric: str,
+):
+    """Resolve a paired financial snapshot with same-source preference.
+
+    Order:
+    1. same source + same report date + same publish date
+    2. same source + same report date
+    3. mixed source + same report date
+    4. mixed source + latest PIT-valid rows
+    """
+    left = _eligible_financial_subset_for_pairing(
+        left_frame,
+        cutoff=cutoff,
+        factor=factor,
+        symbol=symbol,
+        metric=left_metric,
+    )
+    right = _eligible_financial_subset_for_pairing(
+        right_frame,
+        cutoff=cutoff,
+        factor=factor,
+        symbol=symbol,
+        metric=right_metric,
+    )
+    if left.empty or right.empty:
+        return None, None, None
+
+    left["_left_idx"] = left.index
+    right["_right_idx"] = right.index
+
+    left_same = left[left["_source"].notna()].copy()
+    right_same = right[right["_source"].notna()].copy()
+
+    if not left_same.empty and not right_same.empty:
+        exact = left_same.merge(
+            right_same,
+            on=["_source", "observation_date", "_publish_date"],
+            suffixes=("_left", "_right"),
+            how="inner",
+        )
+        if not exact.empty:
+            match = exact.sort_values(["observation_date", "_publish_date"]).iloc[-1]
+            left_row = left.loc[match["_left_idx"]]
+            right_row = right.loc[match["_right_idx"]]
+            return (
+                left_row,
+                right_row,
+                {
+                    "pair_mode": "same_source_same_report_same_publish",
+                    "source": match["_source"],
+                    "report_date": match["observation_date"],
+                    "publish_date": match["_publish_date"],
+                    "effective_report_date": match["observation_date"],
+                    "effective_publish_date": match["_publish_date"],
+                },
+            )
+
+        same_report = left_same.merge(
+            right_same,
+            on=["_source", "observation_date"],
+            suffixes=("_left", "_right"),
+            how="inner",
+        )
+        if not same_report.empty:
+            same_report["_pair_publish_date"] = same_report.apply(
+                lambda row: max(row["_publish_date_left"], row["_publish_date_right"]),
+                axis=1,
+            )
+            match = same_report.sort_values(["observation_date", "_pair_publish_date"]).iloc[-1]
+            left_row = left.loc[match["_left_idx"]]
+            right_row = right.loc[match["_right_idx"]]
+            return (
+                left_row,
+                right_row,
+                {
+                    "pair_mode": "same_source_same_report",
+                    "source": match["_source"],
+                    "report_date": match["observation_date"],
+                    "publish_date": match["_pair_publish_date"],
+                    "effective_report_date": match["observation_date"],
+                    "effective_publish_date": match["_pair_publish_date"],
+                },
+            )
+
+    mixed_same_report = left.merge(
+        right,
+        on=["observation_date"],
+        suffixes=("_left", "_right"),
+        how="inner",
+    )
+    if not mixed_same_report.empty:
+        mixed_same_report["_pair_publish_date"] = mixed_same_report.apply(
+            lambda row: max(row["_publish_date_left"], row["_publish_date_right"]),
+            axis=1,
+        )
+        match = mixed_same_report.sort_values(["observation_date", "_pair_publish_date"]).iloc[-1]
+        left_row = left.loc[match["_left_idx"]]
+        right_row = right.loc[match["_right_idx"]]
+        _log_pair_integrity_relaxed(
+            factor=factor,
+            symbol=symbol,
+            left_metric=left_metric,
+            right_metric=right_metric,
+            cutoff=cutoff,
+            pair_mode="mixed_source_same_report",
+            left_source=_normalize_source_name(left_row.get("source")),
+            right_source=_normalize_source_name(right_row.get("source")),
+        )
+        return (
+            left_row,
+            right_row,
+            {
+                "pair_mode": "mixed_source_same_report",
+                "source": None,
+                "left_source": _normalize_source_name(left_row.get("source")),
+                "right_source": _normalize_source_name(right_row.get("source")),
+                "report_date": match["observation_date"],
+                "publish_date": match["_pair_publish_date"],
+                "effective_report_date": match["observation_date"],
+                "effective_publish_date": match["_pair_publish_date"],
+            },
+        )
+
+    left_row = left.sort_values(["observation_date", "_publish_date"]).iloc[-1]
+    right_row = right.sort_values(["observation_date", "_publish_date"]).iloc[-1]
+    effective_report_date = max(left_row["observation_date"], right_row["observation_date"])
+    effective_publish_date = max(left_row["_publish_date"], right_row["_publish_date"])
+    _log_pair_integrity_relaxed(
+        factor=factor,
+        symbol=symbol,
+        left_metric=left_metric,
+        right_metric=right_metric,
+        cutoff=cutoff,
+        pair_mode="mixed_source_latest",
+        left_source=_normalize_source_name(left_row.get("source")),
+        right_source=_normalize_source_name(right_row.get("source")),
+    )
+    return (
+        left_row,
+        right_row,
+        {
+            "pair_mode": "mixed_source_latest",
+            "source": None,
+            "left_source": _normalize_source_name(left_row.get("source")),
+            "right_source": _normalize_source_name(right_row.get("source")),
+            "report_date": effective_report_date,
+            "publish_date": effective_publish_date,
+            "effective_report_date": effective_report_date,
+            "effective_publish_date": effective_publish_date,
+        },
+    )
+
+
 def _compute_dividend_yield_daily_asof(
     df, end_date: date, start_date: date
 ) -> List[Dict[str, Any]]:
@@ -373,6 +760,7 @@ def _compute_dividend_yield_daily_asof(
                     "source": "factor_transform",
                     "metric_frequency": "daily",
                     "source_report_date": px_date.isoformat(),
+                    "publish_date": obs_date.isoformat(),
                 }
             )
     return records
@@ -389,12 +777,8 @@ def _compute_pb_ratio_daily_asof(df, end_date: date, start_date: date) -> List[D
     price = df[df["factor_name"] == "adjusted_close_price"][
         ["symbol", "observation_date", "factor_value"]
     ].rename(columns={"factor_value": "price"})
-    shares = df[df["factor_name"] == "shares_outstanding"][
-        ["symbol", "observation_date", "factor_value"]
-    ].rename(columns={"factor_value": "shares"})
-    equity = df[df["factor_name"] == "total_shareholder_equity"][
-        ["symbol", "observation_date", "factor_value"]
-    ].rename(columns={"factor_value": "equity"})
+    shares = _select_factor_frame(df, "shares_outstanding", "shares")
+    equity = _select_factor_frame(df, "total_shareholder_equity", "equity")
     if price.empty or shares.empty or equity.empty:
         return []
     price["price"] = pd.to_numeric(price["price"], errors="coerce")
@@ -414,19 +798,14 @@ def _compute_pb_ratio_daily_asof(df, end_date: date, start_date: date) -> List[D
             p_row, p, trading_days_old = _find_price_row_with_trading_day_lookback(
                 ps, obs_date, max_prior_trading_days=3
             )
-            s_row = _latest_financial_with_staleness_logging(
+            s_row, e_row, _pair_meta = _resolve_latest_paired_financial_rows(
                 ss,
-                cutoff=obs_date,
-                factor="pb_ratio",
-                symbol=symbol,
-                metric="shares_outstanding",
-            )
-            e_row = _latest_financial_with_staleness_logging(
                 es,
                 cutoff=obs_date,
                 factor="pb_ratio",
                 symbol=symbol,
-                metric="total_shareholder_equity",
+                left_metric="shares_outstanding",
+                right_metric="total_shareholder_equity",
             )
             if p_row is None or s_row is None or e_row is None:
                 continue
@@ -453,6 +832,7 @@ def _compute_pb_ratio_daily_asof(df, end_date: date, start_date: date) -> List[D
                     "source": "factor_transform",
                     "metric_frequency": "daily",
                     "source_report_date": p_row["observation_date"].isoformat(),
+                    "publish_date": obs_date.isoformat(),
                 }
             )
     if not raw_records:
@@ -518,12 +898,8 @@ def _compute_debt_to_equity_daily_asof(
 ) -> List[Dict[str, Any]]:
     import pandas as pd
 
-    debt = df[df["factor_name"] == "total_debt"][
-        ["symbol", "observation_date", "factor_value"]
-    ].rename(columns={"factor_value": "debt"})
-    equity = df[df["factor_name"] == "total_shareholder_equity"][
-        ["symbol", "observation_date", "factor_value"]
-    ].rename(columns={"factor_value": "equity"})
+    debt = _select_factor_frame(df, "total_debt", "debt")
+    equity = _select_factor_frame(df, "total_shareholder_equity", "equity")
     if debt.empty or equity.empty:
         return []
     debt["debt"] = pd.to_numeric(debt["debt"], errors="coerce")
@@ -539,19 +915,14 @@ def _compute_debt_to_equity_daily_asof(
             continue
         for obs_ts in pd.date_range(start=start_date, end=end_date, freq="D"):
             obs_date = obs_ts.date()
-            d_row = _latest_financial_with_staleness_logging(
+            d_row, e_row, pair_meta = _resolve_latest_paired_financial_rows(
                 ds,
-                cutoff=obs_date,
-                factor="debt_to_equity",
-                symbol=symbol,
-                metric="total_debt",
-            )
-            e_row = _latest_financial_with_staleness_logging(
                 es,
                 cutoff=obs_date,
                 factor="debt_to_equity",
                 symbol=symbol,
-                metric="total_shareholder_equity",
+                left_metric="total_debt",
+                right_metric="total_shareholder_equity",
             )
             if d_row is None or e_row is None:
                 continue
@@ -567,9 +938,8 @@ def _compute_debt_to_equity_daily_asof(
                     "factor_value": float(debt_v / equity_v),
                     "source": "factor_transform",
                     "metric_frequency": "daily",
-                    "source_report_date": max(
-                        d_row["observation_date"], e_row["observation_date"]
-                    ).isoformat(),
+                    "source_report_date": pair_meta["effective_report_date"].isoformat(),
+                    "publish_date": obs_date.isoformat(),
                 }
             )
     return records
@@ -578,12 +948,8 @@ def _compute_debt_to_equity_daily_asof(
 def _compute_ebitda_margin(df, end_date: date, start_date: date) -> List[Dict[str, Any]]:
     import pandas as pd
 
-    ebitda = df[df["factor_name"] == "enterprise_ebitda"][
-        ["symbol", "observation_date", "factor_value"]
-    ].rename(columns={"factor_value": "ebitda"})
-    revenue = df[df["factor_name"] == "enterprise_revenue"][
-        ["symbol", "observation_date", "factor_value"]
-    ].rename(columns={"factor_value": "revenue"})
+    ebitda = _select_factor_frame(df, "enterprise_ebitda", "ebitda")
+    revenue = _select_factor_frame(df, "enterprise_revenue", "revenue")
     if ebitda.empty or revenue.empty:
         return []
     ebitda["ebitda"] = pd.to_numeric(ebitda["ebitda"], errors="coerce")
@@ -599,19 +965,14 @@ def _compute_ebitda_margin(df, end_date: date, start_date: date) -> List[Dict[st
             continue
         for obs_ts in pd.date_range(start=start_date, end=end_date, freq="D"):
             obs_date = obs_ts.date()
-            e_row = _latest_financial_with_staleness_logging(
+            e_row, r_row, pair_meta = _resolve_latest_paired_financial_rows(
                 es,
-                cutoff=obs_date,
-                factor="ebitda_margin",
-                symbol=symbol,
-                metric="enterprise_ebitda",
-            )
-            r_row = _latest_financial_with_staleness_logging(
                 rs,
                 cutoff=obs_date,
                 factor="ebitda_margin",
                 symbol=symbol,
-                metric="enterprise_revenue",
+                left_metric="enterprise_ebitda",
+                right_metric="enterprise_revenue",
             )
             if e_row is None or r_row is None:
                 continue
@@ -627,9 +988,276 @@ def _compute_ebitda_margin(df, end_date: date, start_date: date) -> List[Dict[st
                     "factor_value": float(ebitda_v / rev_v),
                     "source": "factor_transform",
                     "metric_frequency": "daily",
+                    "source_report_date": pair_meta["effective_report_date"].isoformat(),
+                    "publish_date": obs_date.isoformat(),
+                }
+            )
+    return records
+
+
+def _resolve_eps_value_asof(
+    symbol: str,
+    cutoff: date,
+    eps_frame,
+    net_income_frame,
+    shares_frame,
+    *,
+    factor_name: str,
+) -> tuple[Optional[float], Optional[date]]:
+    """Resolve EPS as of cutoff, preferring reported EPS and falling back to NI / shares."""
+    eps_source_date: Optional[date] = None
+    if not eps_frame.empty:
+        eps_row = _latest_financial_with_staleness_logging(
+            eps_frame,
+            cutoff=cutoff,
+            factor=factor_name,
+            symbol=symbol,
+            metric="eps_basic",
+        )
+        if eps_row is not None:
+            eps_value = _to_float_or_none(eps_row["eps"])
+            if eps_value is not None:
+                eps_source_date = eps_row["observation_date"]
+                return eps_value, eps_source_date
+
+    ni_row = None
+    sh_row = None
+    pair_meta = None
+    if not net_income_frame.empty and not shares_frame.empty:
+        ni_row, sh_row, pair_meta = _resolve_latest_paired_financial_rows(
+            net_income_frame,
+            shares_frame,
+            cutoff=cutoff,
+            factor=factor_name,
+            symbol=symbol,
+            left_metric="net_income",
+            right_metric="shares_outstanding",
+        )
+    if ni_row is None or sh_row is None:
+        return None, None
+
+    net_income = _to_float_or_none(ni_row["net_income"])
+    shares = _to_float_or_none(sh_row["shares"])
+    if net_income is None or shares is None or shares <= 0:
+        return None, None
+
+    eps_source_date = (
+        pair_meta["effective_report_date"]
+        if pair_meta is not None
+        else max(ni_row["observation_date"], sh_row["observation_date"])
+    )
+    return net_income / shares, eps_source_date
+
+
+def _compute_ep_ratio_daily_asof(df, end_date: date, start_date: date) -> List[Dict[str, Any]]:
+    import pandas as pd
+
+    price = (
+        df[df["factor_name"] == "adjusted_close_price"][
+            ["symbol", "observation_date", "factor_value"]
+        ]
+        .rename(columns={"factor_value": "price"})
+        .copy()
+    )
+    eps = _select_factor_frame(df, "eps_basic", "eps")
+    net_income = _select_factor_frame(df, "net_income", "net_income")
+    shares = _select_factor_frame(df, "shares_outstanding", "shares")
+    if price.empty:
+        return []
+
+    price["price"] = pd.to_numeric(price["price"], errors="coerce")
+    if not eps.empty:
+        eps["eps"] = pd.to_numeric(eps["eps"], errors="coerce")
+    if not net_income.empty:
+        net_income["net_income"] = pd.to_numeric(net_income["net_income"], errors="coerce")
+    if not shares.empty:
+        shares["shares"] = pd.to_numeric(shares["shares"], errors="coerce")
+
+    records: List[Dict[str, Any]] = []
+    symbols = set(price["symbol"].dropna().unique())
+    symbols.update(eps["symbol"].dropna().unique() if not eps.empty else [])
+    symbols.update(net_income["symbol"].dropna().unique() if not net_income.empty else [])
+    symbols.update(shares["symbol"].dropna().unique() if not shares.empty else [])
+
+    for symbol in sorted(symbols):
+        ps = price[price["symbol"] == symbol].sort_values("observation_date").copy()
+        eps_s = eps[eps["symbol"] == symbol].sort_values("observation_date").copy()
+        ni_s = net_income[net_income["symbol"] == symbol].sort_values("observation_date").copy()
+        sh_s = shares[shares["symbol"] == symbol].sort_values("observation_date").copy()
+        if ps.empty:
+            continue
+
+        for obs_ts in pd.date_range(start=start_date, end=end_date, freq="D"):
+            obs_date = obs_ts.date()
+            p_row, px, trading_days_old = _find_price_row_with_trading_day_lookback(
+                ps, obs_date, max_prior_trading_days=3
+            )
+            if p_row is None or px is None:
+                continue
+
+            eps_value, eps_source_date = _resolve_eps_value_asof(
+                symbol, obs_date, eps_s, ni_s, sh_s, factor_name="ep_ratio"
+            )
+            if eps_value is None:
+                continue
+
+            ep_ratio = _to_float_or_none(eps_value / px if px > 0 else None)
+            if ep_ratio is None:
+                continue
+
+            if trading_days_old is not None and trading_days_old > 1:
+                logger.warning(
+                    "flag_stale_price=True factor=ep_ratio symbol=%s observation_date=%s "
+                    "price_date=%s trading_days_old=%s",
+                    symbol,
+                    obs_date.isoformat(),
+                    p_row["observation_date"].isoformat(),
+                    trading_days_old,
+                )
+
+            records.append(
+                {
+                    "symbol": symbol,
+                    "observation_date": obs_date.isoformat(),
+                    "factor_name": "ep_ratio",
+                    "factor_value": float(ep_ratio),
+                    "source": "factor_transform",
+                    "metric_frequency": "daily",
                     "source_report_date": max(
-                        e_row["observation_date"], r_row["observation_date"]
+                        p_row["observation_date"], eps_source_date or p_row["observation_date"]
                     ).isoformat(),
+                    "publish_date": obs_date.isoformat(),
+                }
+            )
+    return records
+
+
+def _compute_payout_ratio_daily_asof(df, end_date: date, start_date: date) -> List[Dict[str, Any]]:
+    import pandas as pd
+
+    dividend = (
+        df[df["factor_name"] == "dividend_per_share"][
+            ["symbol", "observation_date", "factor_value"]
+        ]
+        .rename(columns={"factor_value": "dps"})
+        .copy()
+    )
+    eps = _select_factor_frame(df, "eps_basic", "eps")
+    net_income = _select_factor_frame(df, "net_income", "net_income")
+    shares = _select_factor_frame(df, "shares_outstanding", "shares")
+    if dividend.empty and eps.empty and net_income.empty:
+        return []
+
+    dividend["dps"] = pd.to_numeric(dividend["dps"], errors="coerce")
+    if not eps.empty:
+        eps["eps"] = pd.to_numeric(eps["eps"], errors="coerce")
+    if not net_income.empty:
+        net_income["net_income"] = pd.to_numeric(net_income["net_income"], errors="coerce")
+    if not shares.empty:
+        shares["shares"] = pd.to_numeric(shares["shares"], errors="coerce")
+
+    records: List[Dict[str, Any]] = []
+    symbols = set(dividend["symbol"].dropna().unique())
+    symbols.update(eps["symbol"].dropna().unique() if not eps.empty else [])
+    symbols.update(net_income["symbol"].dropna().unique() if not net_income.empty else [])
+    symbols.update(shares["symbol"].dropna().unique() if not shares.empty else [])
+
+    for symbol in sorted(symbols):
+        ds = dividend[dividend["symbol"] == symbol].sort_values("observation_date").copy()
+        eps_s = eps[eps["symbol"] == symbol].sort_values("observation_date").copy()
+        ni_s = net_income[net_income["symbol"] == symbol].sort_values("observation_date").copy()
+        sh_s = shares[shares["symbol"] == symbol].sort_values("observation_date").copy()
+
+        for obs_ts in pd.date_range(start=start_date, end=end_date, freq="D"):
+            obs_date = obs_ts.date()
+            eps_value, eps_source_date = _resolve_eps_value_asof(
+                symbol, obs_date, eps_s, ni_s, sh_s, factor_name="payout_ratio"
+            )
+            if eps_value is None or eps_value == 0:
+                continue
+
+            if ds.empty:
+                dps_ttm = 0.0
+                latest_dps_date = None
+            else:
+                dps_slice = ds[ds["observation_date"] <= obs_date]
+                latest_dps_date = (
+                    dps_slice.iloc[-1]["observation_date"] if not dps_slice.empty else None
+                )
+                ttm_start = obs_date - timedelta(days=365)
+                dps_ttm = float(
+                    dps_slice[dps_slice["observation_date"] > ttm_start]["dps"].fillna(0.0).sum()
+                )
+
+            payout_ratio = _to_float_or_none(dps_ttm / eps_value)
+            if payout_ratio is None:
+                continue
+
+            source_date = eps_source_date or obs_date
+            if latest_dps_date is not None:
+                source_date = max(source_date, latest_dps_date)
+            records.append(
+                {
+                    "symbol": symbol,
+                    "observation_date": obs_date.isoformat(),
+                    "factor_name": "payout_ratio",
+                    "factor_value": float(payout_ratio),
+                    "source": "factor_transform",
+                    "metric_frequency": "daily",
+                    "source_report_date": source_date.isoformat(),
+                    "publish_date": obs_date.isoformat(),
+                }
+            )
+    return records
+
+
+def _compute_dividend_stability_daily_asof(
+    df, end_date: date, start_date: date
+) -> List[Dict[str, Any]]:
+    import pandas as pd
+
+    from modules.transform.market_factors import _compute_dividend_stability
+
+    dividend = (
+        df[df["factor_name"] == "dividend_per_share"][
+            ["symbol", "observation_date", "factor_value"]
+        ]
+        .rename(columns={"factor_value": "dps"})
+        .copy()
+    )
+    if dividend.empty:
+        return []
+
+    dividend["dps"] = pd.to_numeric(dividend["dps"], errors="coerce")
+    dividend["observation_ts"] = pd.to_datetime(dividend["observation_date"], errors="coerce")
+    dividend = dividend.dropna(subset=["observation_ts"])
+
+    records: List[Dict[str, Any]] = []
+    for symbol in sorted(dividend["symbol"].dropna().unique()):
+        ds = dividend[dividend["symbol"] == symbol].sort_values("observation_ts").copy()
+        if ds.empty:
+            continue
+
+        dps_series = ds.set_index("observation_ts")["dps"].astype(float)
+        for obs_ts in pd.date_range(start=start_date, end=end_date, freq="D"):
+            obs_date = obs_ts.date()
+            stability = _compute_dividend_stability(dps_series, obs_date)
+            if stability is None:
+                continue
+            latest_rows = ds[ds["observation_date"] <= obs_date]
+            if latest_rows.empty:
+                continue
+            source_date = latest_rows.iloc[-1]["observation_date"]
+            records.append(
+                {
+                    "symbol": symbol,
+                    "observation_date": obs_date.isoformat(),
+                    "factor_name": "dividend_stability",
+                    "factor_value": float(stability),
+                    "source": "factor_transform",
+                    "metric_frequency": "daily",
+                    "source_report_date": source_date.isoformat(),
+                    "publish_date": obs_date.isoformat(),
                 }
             )
     return records
@@ -655,9 +1283,9 @@ def _compute_technical_factors_daily(df, end_date: date, start_date: date) -> Li
         ps = price[price["symbol"] == symbol].sort_values("observation_date").copy()
         if ps.empty:
             continue
-        ps = ps[
-            (ps["observation_date"] >= start_date) & (ps["observation_date"] <= end_date)
-        ].copy()
+        # Keep any pre-window support history already loaded by the caller so
+        # front-edge rolling values do not depend on the current run window.
+        ps = ps[ps["observation_date"] <= end_date].copy()
         if ps.empty:
             continue
         ps = ps.dropna(subset=["price"])
@@ -670,6 +1298,8 @@ def _compute_technical_factors_daily(df, end_date: date, start_date: date) -> Li
         volatility = close_series.pct_change().rolling(window=20).std()
 
         for obs_date, value in momentum.dropna().items():
+            if obs_date < start_date:
+                continue
             v = _to_float_or_none(value)
             if v is None:
                 continue
@@ -682,9 +1312,12 @@ def _compute_technical_factors_daily(df, end_date: date, start_date: date) -> Li
                     "source": "factor_transform",
                     "metric_frequency": "daily",
                     "source_report_date": obs_date.isoformat(),
+                    "publish_date": obs_date.isoformat(),
                 }
             )
         for obs_date, value in volatility.dropna().items():
+            if obs_date < start_date:
+                continue
             v = _to_float_or_none(value)
             if v is None:
                 continue
@@ -697,13 +1330,16 @@ def _compute_technical_factors_daily(df, end_date: date, start_date: date) -> Li
                     "source": "factor_transform",
                     "metric_frequency": "daily",
                     "source_report_date": obs_date.isoformat(),
+                    "publish_date": obs_date.isoformat(),
                 }
             )
     return records
 
 
-def _compute_sentiment_30d_avg(df, end_date: date, start_date: date) -> List[Dict[str, Any]]:
-    """Compute daily ``sentiment_30d_avg`` and ``article_count_30d`` factors."""
+def _compute_sentiment_rolling_factors(
+    df, end_date: date, start_date: date
+) -> List[Dict[str, Any]]:
+    """Compute rolling sentiment and article-count factors from daily news atomics."""
     import pandas as pd
 
     sentiment_atomic = df[df["factor_name"] == "news_sentiment_daily"][
@@ -716,6 +1352,7 @@ def _compute_sentiment_30d_avg(df, end_date: date, start_date: date) -> List[Dic
         return []
 
     records: List[Dict[str, Any]] = []
+    history_start = start_date - timedelta(days=29)
     symbols = set(sentiment_atomic["symbol"].dropna().unique())
     symbols.update(count_atomic["symbol"].dropna().unique())
     for symbol in sorted(symbols):
@@ -754,7 +1391,9 @@ def _compute_sentiment_30d_avg(df, end_date: date, start_date: date) -> List[Dic
             daily_count = pd.DataFrame(columns=["symbol", "observation_ts", "article_count"])
 
         # Step 2: fill missing calendar days with 0.0 sentiment.
-        full_dates = pd.date_range(start=start_date, end=end_date, freq="D")
+        # Build the rolling frame with enough pre-window history to keep
+        # 7D/30D values stable at the front edge of the requested window.
+        full_dates = pd.date_range(start=history_start, end=end_date, freq="D")
         daily = daily_sentiment.set_index("observation_ts").reindex(full_dates)
         daily.index.name = "observation_ts"
         daily["symbol"] = symbol
@@ -767,17 +1406,38 @@ def _compute_sentiment_30d_avg(df, end_date: date, start_date: date) -> List[Dic
 
         daily = daily.reset_index()
         daily["observation_date"] = daily["observation_ts"].dt.date
-        # Step 3: true 30-day rolling stats.
+        # Step 3: true rolling stats.
+        daily["sentiment_7d"] = daily.rolling("7D", on="observation_ts", min_periods=1)[
+            "sentiment"
+        ].mean()
         daily["sentiment_30d"] = daily.rolling("30D", on="observation_ts", min_periods=1)[
             "sentiment"
         ].mean()
+        daily["article_count_7d"] = daily.rolling("7D", on="observation_ts", min_periods=1)[
+            "article_count"
+        ].sum()
         daily["article_count_30d"] = daily.rolling("30D", on="observation_ts", min_periods=1)[
             "article_count"
         ].sum()
 
         for row in daily.itertuples(index=False):
             obs_date = row.observation_date
+            if obs_date < start_date:
+                continue
+            v7 = max(-1.0, min(1.0, float(row.sentiment_7d)))
             v = max(-1.0, min(1.0, float(row.sentiment_30d)))
+            records.append(
+                {
+                    "symbol": symbol,
+                    "observation_date": obs_date.isoformat(),
+                    "factor_name": "sentiment_7d_avg",
+                    "factor_value": float(v7),
+                    "source": "factor_transform",
+                    "metric_frequency": "daily",
+                    "source_report_date": obs_date.isoformat(),
+                    "publish_date": obs_date.isoformat(),
+                }
+            )
             records.append(
                 {
                     "symbol": symbol,
@@ -787,6 +1447,19 @@ def _compute_sentiment_30d_avg(df, end_date: date, start_date: date) -> List[Dic
                     "source": "factor_transform",
                     "metric_frequency": "daily",
                     "source_report_date": obs_date.isoformat(),
+                    "publish_date": obs_date.isoformat(),
+                }
+            )
+            records.append(
+                {
+                    "symbol": symbol,
+                    "observation_date": obs_date.isoformat(),
+                    "factor_name": "article_count_7d",
+                    "factor_value": float(row.article_count_7d),
+                    "source": "factor_transform",
+                    "metric_frequency": "daily",
+                    "source_report_date": obs_date.isoformat(),
+                    "publish_date": obs_date.isoformat(),
                 }
             )
             records.append(
@@ -798,8 +1471,59 @@ def _compute_sentiment_30d_avg(df, end_date: date, start_date: date) -> List[Dic
                     "source": "factor_transform",
                     "metric_frequency": "daily",
                     "source_report_date": obs_date.isoformat(),
+                    "publish_date": obs_date.isoformat(),
                 }
             )
+            records.append(
+                {
+                    "symbol": symbol,
+                    "observation_date": obs_date.isoformat(),
+                    "factor_name": "sentiment_surprise",
+                    "factor_value": float(v7 - v),
+                    "source": "factor_transform",
+                    "metric_frequency": "daily",
+                    "source_report_date": obs_date.isoformat(),
+                    "publish_date": obs_date.isoformat(),
+                }
+            )
+    return records
+
+
+def _compute_earnings_publication_flags(
+    df, end_date: date, start_date: date
+) -> List[Dict[str, Any]]:
+    """Materialize PIT-clean earnings publication event flags from financial rows."""
+    import pandas as pd
+
+    earnings_metrics = {"net_income", "revenue", "eps_basic", "operating_income"}
+    subset = df[df["factor_name"].isin(earnings_metrics)].copy()
+    if subset.empty or "publish_date" not in subset.columns:
+        return []
+
+    subset["publish_date"] = pd.to_datetime(subset["publish_date"], errors="coerce").dt.date
+    subset = subset[subset["publish_date"].notna()]
+    subset = subset[(subset["publish_date"] >= start_date) & (subset["publish_date"] <= end_date)]
+    if subset.empty:
+        return []
+
+    published = (
+        subset[["symbol", "publish_date"]].drop_duplicates().sort_values(["symbol", "publish_date"])
+    )
+    records: List[Dict[str, Any]] = []
+    for row in published.itertuples(index=False):
+        pub_date = row.publish_date
+        records.append(
+            {
+                "symbol": row.symbol,
+                "observation_date": pub_date.isoformat(),
+                "factor_name": "earnings_publication_flag",
+                "factor_value": 1.0,
+                "source": "financial_publish_calendar",
+                "metric_frequency": "daily",
+                "source_report_date": pub_date.isoformat(),
+                "publish_date": pub_date.isoformat(),
+            }
+        )
     return records
 
 
@@ -813,6 +1537,7 @@ def compute_final_factor_records(
     import pandas as pd
 
     _reset_quality_event_counts()
+    _reset_pair_integrity_event_counts()
     records = list(atomic_records)
     if not records:
         return []
@@ -821,6 +1546,19 @@ def compute_final_factor_records(
     if df.empty:
         return []
     df["observation_date"] = pd.to_datetime(df["observation_date"], errors="coerce").dt.date
+    if "publish_date" in df.columns:
+        publish = pd.to_datetime(df["publish_date"], errors="coerce")
+        fallback = pd.to_datetime(
+            df.get("source_report_date", df["observation_date"]),
+            errors="coerce",
+        )
+        publish = publish.where(publish.notna(), fallback)
+        publish = publish.where(
+            publish.notna(), pd.to_datetime(df["observation_date"], errors="coerce")
+        )
+        df["publish_date"] = [ts.date() if pd.notna(ts) else None for ts in publish]
+    else:
+        df["publish_date"] = df["observation_date"]
     df = df.dropna(subset=["observation_date", "symbol", "factor_name"])
     if df.empty:
         return []
@@ -828,7 +1566,7 @@ def compute_final_factor_records(
     end_date = datetime.strptime(run_date, "%Y-%m-%d").date()
     lookback_days = max(0, int(round(365.25 * max(int(backfill_years), 0))))
     start_date = end_date - timedelta(days=lookback_days)
-    data_start_date = start_date - timedelta(days=370)
+    data_start_date = _feature_support_window_start(start_date)
     df = df[
         (df["observation_date"] >= data_start_date) & (df["observation_date"] <= end_date)
     ].copy()
@@ -841,8 +1579,13 @@ def compute_final_factor_records(
     out.extend(_compute_pb_ratio_daily_asof(df, end_date, start_date))
     out.extend(_compute_debt_to_equity_daily_asof(df, end_date, start_date))
     out.extend(_compute_ebitda_margin(df, end_date, start_date))
-    out.extend(_compute_sentiment_30d_avg(df, end_date, start_date))
+    out.extend(_compute_ep_ratio_daily_asof(df, end_date, start_date))
+    out.extend(_compute_payout_ratio_daily_asof(df, end_date, start_date))
+    out.extend(_compute_dividend_stability_daily_asof(df, end_date, start_date))
+    out.extend(_compute_sentiment_rolling_factors(df, end_date, start_date))
+    out.extend(_compute_earnings_publication_flags(df, end_date, start_date))
     _flush_quality_event_summary()
+    _flush_pair_integrity_event_summary()
     return _sample_records_by_frequency(out, output_frequency=output_frequency)
 
 
@@ -851,11 +1594,15 @@ def _load_atomic_records_from_postgres(
     backfill_years: int,
     symbols: Optional[List[str]] = None,
 ) -> List[Dict[str, Any]]:
-    """Load atomic market/financial/news factors needed for final-factor build."""
+    """Load atomic market/financial/news factors needed for final-factor build.
+
+    Financial rows remain keyed by fiscal ``report_date`` but carry ``publish_date``
+    so downstream daily-as-of factor construction can enforce PIT availability.
+    """
     end_date = datetime.strptime(run_date, "%Y-%m-%d").date()
     lookback_days = max(0, int(round(365.25 * max(int(backfill_years), 0))))
     start_date = end_date - timedelta(days=lookback_days)
-    query_start_date = start_date - timedelta(days=370)
+    query_start_date = _feature_support_window_start(start_date)
     params: Dict[str, Any] = {
         "start_date": query_start_date.isoformat(),
         "end_date": run_date,
@@ -866,32 +1613,29 @@ def _load_atomic_records_from_postgres(
         params["symbols"] = [str(s).strip().upper() for s in symbols if str(s).strip()]
         has_symbols = bool(params["symbols"])
 
-    market_sql = text(
-        """
+    market_sql = text("""
         SELECT symbol, observation_date, factor_name, factor_value, source,
-               metric_frequency, source_report_date
+               metric_frequency, source_report_date,
+               COALESCE(publish_date, source_report_date, observation_date) AS publish_date
         FROM systematic_equity.factor_observations
         WHERE observation_date BETWEEN :start_date AND :end_date
           AND factor_name = ANY(:factor_names)
         ORDER BY symbol, observation_date, factor_name
-        """
-    )
-    market_sql_with_symbols = text(
-        """
+        """)
+    market_sql_with_symbols = text("""
         SELECT symbol, observation_date, factor_name, factor_value, source,
-               metric_frequency, source_report_date
+               metric_frequency, source_report_date,
+               COALESCE(publish_date, source_report_date, observation_date) AS publish_date
         FROM systematic_equity.factor_observations
         WHERE observation_date BETWEEN :start_date AND :end_date
           AND factor_name = ANY(:factor_names)
           AND symbol = ANY(:symbols)
         ORDER BY symbol, observation_date, factor_name
-        """
-    )
+        """)
     market_params = dict(params)
     market_params["factor_names"] = sorted(MARKET_ATOMIC_FACTORS.union(ALTERNATIVE_ATOMIC_FACTORS))
 
-    financial_sql = text(
-        """
+    financial_sql = text("""
         SELECT
             symbol,
             report_date AS observation_date,
@@ -899,15 +1643,14 @@ def _load_atomic_records_from_postgres(
             metric_value AS factor_value,
             source,
             period_type AS metric_frequency,
-            as_of AS source_report_date
+            report_date AS source_report_date,
+            {publish_expr} AS publish_date
         FROM systematic_equity.financial_observations
         WHERE report_date BETWEEN :start_date AND :end_date
           AND metric_name = ANY(:metric_names)
         ORDER BY symbol, report_date, metric_name
-        """
-    )
-    financial_sql_with_symbols = text(
-        """
+        """.format(publish_expr=financial_publish_value_expr()))
+    financial_sql_with_symbols = text("""
         SELECT
             symbol,
             report_date AS observation_date,
@@ -915,38 +1658,36 @@ def _load_atomic_records_from_postgres(
             metric_value AS factor_value,
             source,
             period_type AS metric_frequency,
-            as_of AS source_report_date
+            report_date AS source_report_date,
+            {publish_expr} AS publish_date
         FROM systematic_equity.financial_observations
         WHERE report_date BETWEEN :start_date AND :end_date
           AND metric_name = ANY(:metric_names)
           AND symbol = ANY(:symbols)
         ORDER BY symbol, report_date, metric_name
-        """
-    )
+        """.format(publish_expr=financial_publish_value_expr()))
     financial_params = dict(params)
     financial_params["metric_names"] = sorted(FINANCIAL_ATOMIC_FACTORS)
 
-    fallback_financial_sql = text(
-        """
+    fallback_financial_sql = text("""
         SELECT symbol, observation_date, factor_name, factor_value, source,
-               metric_frequency, source_report_date
+               metric_frequency, source_report_date,
+               COALESCE(publish_date, source_report_date, observation_date) AS publish_date
         FROM systematic_equity.factor_observations
         WHERE observation_date BETWEEN :start_date AND :end_date
           AND factor_name = ANY(:factor_names)
         ORDER BY symbol, observation_date, factor_name
-        """
-    )
-    fallback_financial_sql_with_symbols = text(
-        """
+        """)
+    fallback_financial_sql_with_symbols = text("""
         SELECT symbol, observation_date, factor_name, factor_value, source,
-               metric_frequency, source_report_date
+               metric_frequency, source_report_date,
+               COALESCE(publish_date, source_report_date, observation_date) AS publish_date
         FROM systematic_equity.factor_observations
         WHERE observation_date BETWEEN :start_date AND :end_date
           AND factor_name = ANY(:factor_names)
           AND symbol = ANY(:symbols)
         ORDER BY symbol, observation_date, factor_name
-        """
-    )
+        """)
     fallback_financial_params = dict(params)
     fallback_financial_params["factor_names"] = sorted(FINANCIAL_ATOMIC_FACTORS)
 

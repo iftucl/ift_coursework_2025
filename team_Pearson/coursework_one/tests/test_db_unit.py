@@ -244,6 +244,43 @@ def test_universe_overrides_exclude_existing_and_include_new_symbol(monkeypatch)
     assert out == ["MSFT", "NVDA"]
 
 
+def test_universe_applies_lifecycle_filter_when_available(monkeypatch):
+    monkeypatch.delenv("CW1_TEST_MODE", raising=False)
+    captured = {"params": None}
+
+    class _Conn:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def execute(self, sql, params=None):
+            sql_str = str(sql)
+
+            class _R:
+                def __init__(self, rows):
+                    self._rows = rows
+
+                def fetchall(self_non):
+                    return self_non._rows
+
+            if "information_schema.columns" in sql_str:
+                return _R([("listing_date",), ("delisted_date",), ("country",)])
+            if "company_universe_overrides" in sql_str:
+                return _R([])
+            captured["params"] = params
+            return _R([("AAPL",)])
+
+    class _Engine2:
+        def connect(self):
+            return _Conn()
+
+    monkeypatch.setattr(universe, "get_db_engine", lambda: _Engine2())
+    out = universe.get_company_universe(5, as_of_date="2026-04-15")
+    assert out == ["AAPL"]
+    assert captured["params"]["as_of_date"].isoformat() == "2026-04-15"
+
 def test_universe_overrides_inactive_rows_do_not_apply(monkeypatch):
     monkeypatch.delenv("CW1_TEST_MODE", raising=False)
 

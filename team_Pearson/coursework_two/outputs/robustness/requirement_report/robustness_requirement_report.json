@@ -1,0 +1,11 @@
+{
+  "run_id": "6905e84b-9e16-4106-8c0f-cd9ecce56728",
+  "deterministic_rows": 34,
+  "deterministic_completed_tests": 8,
+  "ablation_rows": 6,
+  "subperiod_rows": 15,
+  "stochastic_rows": 7,
+  "scorecard_rows": 0,
+  "status_matrix_rows": 36,
+  "acceptance_matrix_rows": 20
+}

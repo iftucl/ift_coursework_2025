@@ -1,0 +1,21 @@
+﻿requirement_group,item_key,label,status,detail
+Part 1 Deterministic,test_1,Deterministic Test 1,completed,scenario_count=4
+Part 1 Deterministic,test_2,Deterministic Test 2,completed,scenario_count=5
+Part 1 Deterministic,test_3,Deterministic Test 3,completed,scenario_count=3
+Part 1 Deterministic,test_4,Deterministic Test 4,completed,scenario_count=5
+Part 1 Deterministic,test_5,Deterministic Test 5,completed,scenario_count=4
+Part 1 Deterministic,test_6,Deterministic Test 6,completed,scenario_count=5
+Part 1 Deterministic,test_7,Deterministic Test 7,completed,scenario_count=4
+Part 1 Deterministic,test_8,Deterministic Test 8,completed,scenario_count=4
+Part 2 Ablation,ablation_a,Ablation Block A,pending,scenario_count=0
+Part 2 Ablation,ablation_b,Ablation Block B,completed,scenario_count=6
+Part 2 Ablation,ablation_c,Ablation Block C,pending,scenario_count=0
+Part 3 Subperiod,fixed_subperiod_windows,Fixed Window Subperiod Tables,completed,rows=15; unavailable_rows=0
+Part 3 Subperiod,regime_decomposition,Normal / Stress / All Regime Decomposition,completed,rows=6
+Part 4 Stochastic,test_9,Test 9,completed,scenario_count=1; path_count_max=2000
+Part 4 Stochastic,test_10,Test 10,completed,scenario_count=3; path_count_max=10000
+Part 4 Stochastic,test_11,Test 11,completed,scenario_count=3; path_count_max=2
+Part 4 Stochastic,test_12,Test 12,completed,scenario_count=1; path_count_max=0
+Part 4 Stochastic,test_13,Test 13,completed,scenario_count=1; path_count_max=10000
+Part 5 Packaging,tables_and_conclusions,Per-test tables and conclusion paragraphs,completed,acceptance_rows=9
+Part 5 Packaging,robustness_dashboard,Comprehensive robustness dashboard,completed,dashboard_rows=10

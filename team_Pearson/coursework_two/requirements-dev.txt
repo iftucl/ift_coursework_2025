@@ -1,0 +1,17 @@
+-r requirements-runtime.txt
+black
+isort
+flake8
+bandit
+safety
+pytest
+pytest-cov
+sphinx
+myst-parser
+pre-commit
+mypy
+pylint
+vulture
+playwright
+pandas-stubs
+types-PyYAML

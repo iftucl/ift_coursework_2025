@@ -3,10 +3,11 @@ from __future__ import annotations
 """ORM models for core project tables."""
 
 from datetime import date, datetime
-from typing import Optional
+from typing import Generic, Optional, TypeVar
 
 from sqlalchemy import (
     CheckConstraint,
+    Column,
     Date,
     DateTime,
     Index,
@@ -16,11 +17,25 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
 )
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
+try:
+    from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
-class Base(DeclarativeBase):
-    """Shared SQLAlchemy declarative base for project models."""
+    class Base(DeclarativeBase):
+        """Shared SQLAlchemy declarative base for project models."""
+
+except ImportError:
+    from sqlalchemy.orm import declarative_base
+
+    T = TypeVar("T")
+
+    class Mapped(Generic[T]):
+        """Typing shim for SQLAlchemy 1.4 runtime environments."""
+
+    def mapped_column(*args, **kwargs):
+        return Column(*args, **kwargs)
+
+    Base = declarative_base()
 
 
 class FactorObservation(Base):
@@ -35,6 +50,8 @@ class FactorObservation(Base):
         Index("idx_factor_obs_observation_date", "observation_date"),
         Index("idx_factor_obs_symbol_factor_date", "symbol", "factor_name", "observation_date"),
         Index("idx_factor_obs_factor_date", "factor_name", "observation_date"),
+        Index("idx_factor_obs_publish_date", "publish_date"),
+        Index("idx_factor_obs_symbol_publish_date", "symbol", "publish_date"),
         {"schema": "systematic_equity"},
     )
 
@@ -46,6 +63,7 @@ class FactorObservation(Base):
     source: Mapped[Optional[str]] = mapped_column(String(50))
     metric_frequency: Mapped[Optional[str]] = mapped_column(String(20))
     source_report_date: Mapped[Optional[date]] = mapped_column(Date)
+    publish_date: Mapped[Optional[date]] = mapped_column(Date)
     updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
 
 
@@ -63,6 +81,8 @@ class FinancialObservation(Base):
         ),
         Index("idx_financial_obs_symbol", "symbol"),
         Index("idx_financial_obs_report_date", "report_date"),
+        Index("idx_financial_obs_publish_date", "publish_date"),
+        Index("idx_financial_obs_symbol_publish_date", "symbol", "publish_date"),
         {"schema": "systematic_equity"},
     )
 
@@ -75,7 +95,10 @@ class FinancialObservation(Base):
     period_type: Mapped[Optional[str]] = mapped_column(String(20))
     metric_definition: Mapped[Optional[str]] = mapped_column(String(50))
     source: Mapped[Optional[str]] = mapped_column(String(50))
+    value_source: Mapped[Optional[str]] = mapped_column(String(64))
     as_of: Mapped[Optional[date]] = mapped_column(Date)
+    publish_date: Mapped[Optional[date]] = mapped_column(Date)
+    publish_date_source: Mapped[Optional[str]] = mapped_column(String(64))
     updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
 
 

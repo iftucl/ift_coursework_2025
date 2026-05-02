@@ -52,6 +52,7 @@ class RunContext:
     args: Any
     cfg: Dict[str, Any]
     log_cfg: Dict[str, Any]
+    run_date: str
     frequency: str
     backfill_years: int
     company_limit: Optional[int]
@@ -82,7 +83,11 @@ FINANCIAL_ATOMIC_FACTORS = {
     "enterprise_ebitda",
     "enterprise_revenue",
 }
-ALLOWED_EXTRACTORS = {"source_a", "source_b"}
+ALLOWED_EXTRACTORS = {
+    "source_a",  # Structured data: market yfinance->AV; financial yfinance->AV with EDGAR authoritative overlap
+    "source_b",  # Unstructured data: news/sentiment (AV historical + Finnhub incremental + L-M lexicon)
+    "market_factors",  # Derived factors computed from source_a and source_b outputs
+}
 
 
 def utc_now_iso() -> str:
@@ -129,6 +134,8 @@ def apply_env_defaults_from_config(cfg: Dict[str, Any]) -> Dict[str, str]:
     """Use config values as env fallbacks, while keeping env as source of truth."""
     db_cfg = cfg.get("database") or {}
     minio_cfg = cfg.get("minio") or {}
+    redis_cfg = cfg.get("redis") or {}
+    kafka_cfg = cfg.get("kafka") or {}
     api_cfg = cfg.get("api") or {}
     legacy_api_cfg = cfg.get("alpha_vantage") or {}
 
@@ -143,10 +150,27 @@ def apply_env_defaults_from_config(cfg: Dict[str, Any]) -> Dict[str, str]:
         "MINIO_ACCESS_KEY": minio_cfg.get("access_key"),
         "MINIO_SECRET_KEY": minio_cfg.get("secret_key"),
         "MINIO_BUCKET": minio_cfg.get("bucket"),
+        "REDIS_HOST": redis_cfg.get("host"),
+        "REDIS_PORT": redis_cfg.get("port"),
+        "REDIS_DB": redis_cfg.get("db"),
+        "REDIS_PASSWORD": redis_cfg.get("password"),
+        "REDIS_REQUIRED": redis_cfg.get("required"),
+        "KAFKA_ENABLED": kafka_cfg.get("enabled"),
+        "KAFKA_REQUIRED": kafka_cfg.get("required"),
+        "KAFKA_CLIENT_ID": kafka_cfg.get("client_id"),
     }
     for key, value in mapping.items():
         if os.getenv(key) in (None, "") and value not in (None, ""):
             os.environ[key] = str(value)
+
+    bootstrap_servers = kafka_cfg.get("bootstrap_servers") or []
+    if os.getenv("KAFKA_BOOTSTRAP_SERVERS") in (None, "") and bootstrap_servers:
+        if isinstance(bootstrap_servers, str):
+            os.environ["KAFKA_BOOTSTRAP_SERVERS"] = str(bootstrap_servers)
+        else:
+            os.environ["KAFKA_BOOTSTRAP_SERVERS"] = ",".join(
+                str(item).strip() for item in bootstrap_servers if str(item).strip()
+            )
 
     env_primary = _sanitize_alpha_key(os.getenv("ALPHA_VANTAGE_API_KEY"))
     env_alias = _sanitize_alpha_key(os.getenv("ALPHA_VANTAGE_KEY"))
@@ -208,6 +232,148 @@ def _summary_with_limit(items: List[Dict[str, str]], limit: int = 20) -> str:
     )
 
 
+def _source_a_supporting_rows_exist(
+    *,
+    run_date: str,
+    backfill_years: int,
+    symbol: str,
+    reusable_details: Optional[Dict[str, Any]] = None,
+) -> bool:
+    """Return whether reusable Source A outputs still exist in PostgreSQL.
+
+    The materialization registry is filesystem-backed, so it can survive a DB reset.
+    A registry hit alone is therefore insufficient to skip Source A. We require
+    representative pricing rows in ``factor_observations`` and, when the original
+    run emitted them, financial rows in ``financial_observations``.
+    """
+
+    details = reusable_details or {}
+    expect_price_rows = bool(
+        int(details.get("curated_rows") or 0) > 0 or int(details.get("loaded_rows") or 0) > 0
+    )
+    expect_financial_rows = int(details.get("financial_rows") or 0) > 0
+    if not expect_price_rows and not expect_financial_rows:
+        return False
+
+    try:
+        from sqlalchemy import text
+
+        from modules.db.db_connection import get_db_engine
+        from modules.input.extract_source_a import _rolling_window_start_date
+
+        start_date = _rolling_window_start_date(run_date, backfill_years)
+        query = text("""
+            SELECT
+                EXISTS (
+                    SELECT 1
+                    FROM systematic_equity.factor_observations
+                    WHERE symbol = :symbol
+                      AND observation_date BETWEEN :start_date AND :run_date
+                      AND factor_name IN (
+                          'adjusted_close_price',
+                          'open_price',
+                          'high_price',
+                          'low_price',
+                          'daily_volume'
+                      )
+                ) AS has_price_rows,
+                EXISTS (
+                    SELECT 1
+                    FROM systematic_equity.financial_observations
+                    WHERE symbol = :symbol
+                      AND COALESCE(publish_date, report_date) BETWEEN :start_date AND :run_date
+                ) AS has_financial_rows
+            """)
+        with get_db_engine().begin() as conn:
+            row = (
+                conn.execute(
+                    query,
+                    {
+                        "symbol": symbol,
+                        "start_date": start_date,
+                        "run_date": run_date,
+                    },
+                )
+                .mappings()
+                .one()
+            )
+    except Exception as exc:
+        logger.info(
+            "source_a support_check_failed symbol=%s run_date=%s reason=%r",
+            symbol,
+            run_date,
+            exc,
+        )
+        return False
+
+    has_price_rows = bool(row.get("has_price_rows"))
+    has_financial_rows = bool(row.get("has_financial_rows"))
+    if not expect_price_rows:
+        has_price_rows = True
+    return has_price_rows and (not expect_financial_rows or has_financial_rows)
+
+
+def _source_b_supporting_rows_exist(
+    *,
+    symbol: str,
+    month_start: date,
+    fetch_end: date,
+    reusable_details: Optional[Dict[str, Any]] = None,
+) -> bool:
+    """Return whether reusable Source B atomics still exist in PostgreSQL.
+
+    The materialization registry is filesystem-backed, so registry hits can
+    survive a database reset. For symbol-month windows that previously emitted
+    Source B atomics, require representative ``factor_observations`` rows to
+    still exist before allowing the extractor to skip.
+    """
+
+    details = reusable_details or {}
+    expect_rows = bool(
+        int(details.get("loaded_rows") or 0) > 0 or int(details.get("articles") or 0) > 0
+    )
+    if not expect_rows:
+        return True
+
+    try:
+        from sqlalchemy import text
+
+        from modules.db.db_connection import get_db_engine
+
+        query = text("""
+            SELECT EXISTS (
+                SELECT 1
+                FROM systematic_equity.factor_observations
+                WHERE symbol = :symbol
+                  AND observation_date BETWEEN :month_start AND :fetch_end
+                  AND factor_name IN ('news_sentiment_daily', 'news_article_count_daily')
+            ) AS has_source_b_rows
+        """)
+        with get_db_engine().begin() as conn:
+            row = (
+                conn.execute(
+                    query,
+                    {
+                        "symbol": symbol,
+                        "month_start": month_start,
+                        "fetch_end": fetch_end,
+                    },
+                )
+                .mappings()
+                .one()
+            )
+    except Exception as exc:
+        logger.info(
+            "source_b support_check_failed symbol=%s month_start=%s reason=%r",
+            symbol,
+            month_start,
+            exc,
+        )
+        return False
+
+    return bool(row.get("has_source_b_rows"))
+
+
 def _log_stage_event(
     *,
     run_id: str,
@@ -216,6 +382,7 @@ def _log_stage_event(
     rows_in: Optional[int] = None,
     rows_out: Optional[int] = None,
     elapsed_ms: Optional[int] = None,
+    details: Optional[Dict[str, Any]] = None,
 ) -> None:
     """Emit normalized stage telemetry for pipeline observability."""
     logger.info(
@@ -227,6 +394,58 @@ def _log_stage_event(
         rows_out if rows_out is not None else -1,
         elapsed_ms if elapsed_ms is not None else -1,
     )
+    try:
+        from modules.output.audit import write_pipeline_stage_event
+
+        write_pipeline_stage_event(
+            run_id=run_id,
+            stage_name=stage,
+            status=status,
+            rows_in=rows_in,
+            rows_out=rows_out,
+            elapsed_ms=elapsed_ms,
+            details=details or {},
+        )
+    except Exception:
+        logger.debug(
+            "stage_event_db_write_skipped run_id=%s stage=%s",
+            run_id,
+            stage,
+            exc_info=True,
+        )
+
+
+def _write_dataset_refresh_event(
+    *,
+    run_id: str,
+    run_date: str,
+    dataset_name: str,
+    stage_name: str,
+    status: str,
+    rows_written: int = 0,
+    details: Optional[Dict[str, Any]] = None,
+) -> None:
+    """Best-effort append-only dataset refresh evidence."""
+    try:
+        from modules.output.audit import write_dataset_refresh_event
+
+        write_dataset_refresh_event(
+            run_id=run_id,
+            run_date=run_date,
+            dataset_name=dataset_name,
+            stage_name=stage_name,
+            status=status,
+            rows_written=rows_written,
+            details=details or {},
+        )
+    except Exception:
+        logger.debug(
+            "dataset_refresh_event_db_write_skipped run_id=%s dataset=%s stage=%s",
+            run_id,
+            dataset_name,
+            stage_name,
+            exc_info=True,
+        )
 
 
 def _resolve_backfill_years(cli_value: Optional[int], pipeline_cfg: Dict[str, Any]) -> int:
@@ -296,7 +515,9 @@ def _resolve_enabled_extractors(
 
     invalid = sorted(x for x in out if x not in ALLOWED_EXTRACTORS)
     if invalid:
-        raise ValueError(f"Invalid enabled_extractors={invalid}. Allowed: source_a, source_b.")
+        raise ValueError(
+            f"Invalid enabled_extractors={invalid}. " f"Allowed: {sorted(ALLOWED_EXTRACTORS)}."
+        )
     return out
 
 
@@ -369,7 +590,7 @@ def collect_raw_records(
                     "observation_date": run_date,
                     "factor_name": "test_factor",
                     "factor_value": 1.0,
-                    "source": "alpha_vantage",
+                    "source": "yfinance",
                     "metric_frequency": frequency,
                     "source_report_date": run_date,
                 }
@@ -432,7 +653,8 @@ def summarize_provider_usage(records: List[Dict[str, Any]]) -> Dict[str, int]:
     """Summarize provider usage by symbol based on total_debt marker rows."""
     symbol_provider: Dict[str, str] = {}
     for rec in records:
-        if rec.get("factor_name") != "total_debt":
+        metric_name = str(rec.get("metric_name") or rec.get("factor_name") or "").strip().lower()
+        if metric_name != "total_debt":
             continue
         symbol = str(rec.get("symbol") or "").strip()
         source = str(rec.get("source") or "").strip().lower()
@@ -541,8 +763,8 @@ def split_atomic_financial_records(
     financial: List[Dict[str, Any]] = []
     remaining: List[Dict[str, Any]] = []
     for rec in records:
-        factor_name = str(rec.get("factor_name") or "").strip().lower()
-        if factor_name in FINANCIAL_ATOMIC_FACTORS and rec.get("source") != "factor_transform":
+        metric_name = str(rec.get("metric_name") or rec.get("factor_name") or "").strip().lower()
+        if metric_name in FINANCIAL_ATOMIC_FACTORS and rec.get("source") != "factor_transform":
             financial.append(rec)
         else:
             remaining.append(rec)
@@ -617,6 +839,7 @@ def resolve_runtime(base_dir: str, args: Any) -> Optional[RunContext]:
         args=args,
         cfg=cfg,
         log_cfg=log_cfg,
+        run_date=str(args.run_date),
         frequency=frequency,
         backfill_years=backfill_years,
         company_limit=company_limit,
@@ -709,8 +932,8 @@ def run_pipeline_stage(ctx: RunContext, state: PipelineState) -> None:
         from modules.input.extract_source_b import (
             _filter_symbols_for_source_b,
             _month_windows,
-            ingest_source_b_raw,
-            transform_source_b_features,
+            _source_b_supporting_objects_exist,
+            extract_source_b_window,
         )
         from modules.output import (
             load_curated,
@@ -725,13 +948,25 @@ def run_pipeline_stage(ctx: RunContext, state: PipelineState) -> None:
             source_a_materialization_key,
             source_b_materialization_key,
         )
+        from modules.output.metadata import write_quality_snapshot, write_source_coverage_audit
         from modules.output.quality import QualityAccumulator
-        from modules.transform import build_and_load_final_factors
+        from modules.transform import build_and_load_cw2_features, build_and_load_final_factors
+        from modules.utils.source_coverage import (
+            finalize_source_coverage_contract,
+            initialize_source_coverage_contract,
+            mark_source_a_result,
+            mark_source_b_window_result,
+            summarize_source_coverage_counts,
+        )
 
         t0 = time.monotonic()
         universe_cfg = ctx.cfg.get("universe") or {}
         country_allowlist = universe_cfg.get("country_allowlist")
-        universe = get_company_universe(ctx.company_limit, country_allowlist=country_allowlist)
+        universe = get_company_universe(
+            ctx.company_limit,
+            country_allowlist=country_allowlist,
+            as_of_date=ctx.run_date,
+        )
         symbols_preview = universe[:20]
         logger.info(
             "stage_ok run_id=%s stage=universe symbols_count=%s symbols_list=%s%s",
@@ -793,6 +1028,17 @@ def run_pipeline_stage(ctx: RunContext, state: PipelineState) -> None:
         state.notes = _append_note(
             state.notes, f"manifest_events_path={manifest_summary['events_path']}"
         )
+        source_b_windows = (
+            _month_windows(ctx.args.run_date, ctx.backfill_years)
+            if "source_b" in {str(x).strip().lower() for x in ctx.enabled_extractors}
+            else []
+        )
+        source_coverage_tracker = initialize_source_coverage_contract(
+            universe=universe,
+            config=ctx.cfg,
+            enabled_extractors=ctx.enabled_extractors,
+            source_b_expected_windows=len(source_b_windows),
+        )
 
         if "source_a" in {str(x).strip().lower() for x in ctx.enabled_extractors}:
             for idx, symbol in enumerate(universe, start=1):
@@ -801,17 +1047,34 @@ def run_pipeline_stage(ctx: RunContext, state: PipelineState) -> None:
                 materialization_key = source_a_materialization_key(
                     symbol, ctx.args.run_date, ctx.backfill_years
                 )
-                reusable = None if ctx.args.dry_run else materialization_registry.get_reusable(
-                    materialization_key,
-                    config_identity=source_a_config_id,
-                )
-                if reusable:
-                    reused_unit_count += 1
-                    reused_loaded_rows += int(
-                        ((reusable.get("details") or {}).get("loaded_rows") or 0)
+                reusable = (
+                    None
+                    if ctx.args.dry_run
+                    else materialization_registry.get_reusable(
+                        materialization_key,
+                        config_identity=source_a_config_id,
                     )
-                    quality_accumulator.update_report(
-                        (reusable.get("details") or {}).get("quality_report") or {}
+                )
+                reusable_details = (reusable or {}).get("details") or {}
+                support_rows_ready = bool(
+                    reusable
+                    and _source_a_supporting_rows_exist(
+                        run_date=ctx.args.run_date,
+                        backfill_years=ctx.backfill_years,
+                        symbol=symbol,
+                        reusable_details=reusable_details,
+                    )
+                )
+                if reusable and support_rows_ready:
+                    reused_unit_count += 1
+                    reused_loaded_rows += int(reusable_details.get("loaded_rows") or 0)
+                    quality_accumulator.update_report(reusable_details.get("quality_report") or {})
+                    mark_source_a_result(
+                        source_coverage_tracker,
+                        symbol,
+                        outcome="reused",
+                        raw_records=int(reusable_details.get("raw_records") or 0),
+                        loaded_rows=int(reusable_details.get("loaded_rows") or 0),
                     )
                     manifest.mark_unit(
                         unit_id,
@@ -824,6 +1087,12 @@ def run_pipeline_stage(ctx: RunContext, state: PipelineState) -> None:
                         },
                     )
                     continue
+                if reusable and not support_rows_ready:
+                    logger.info(
+                        "source_a materialization_replay_required symbol=%s "
+                        "reason=missing_supporting_db_rows",
+                        symbol,
+                    )
                 try:
                     unit_raw = extract_source_a(
                         [symbol],
@@ -835,13 +1104,25 @@ def run_pipeline_stage(ctx: RunContext, state: PipelineState) -> None:
                     )
                     if unit_failed:
                         source_a_failed_symbols.extend(unit_failed)
+                        mark_source_a_result(
+                            source_coverage_tracker,
+                            symbol,
+                            outcome="failed",
+                            reason=str(unit_failed[0].get("reason") or ""),
+                        )
                         manifest.mark_unit(unit_id, "failed", details=unit_failed[0])
                         continue
                     if not unit_raw:
+                        mark_source_a_result(
+                            source_coverage_tracker,
+                            symbol,
+                            outcome="skipped",
+                            reason="source_a_no_data_returned",
+                        )
                         manifest.mark_unit(
                             unit_id,
                             "skipped",
-                            details={"symbol": symbol, "reason": "filtered_or_routing_skipped"},
+                            details={"symbol": symbol, "reason": "source_a_no_data_returned"},
                         )
                         continue
 
@@ -866,6 +1147,13 @@ def run_pipeline_stage(ctx: RunContext, state: PipelineState) -> None:
                     atomic_loaded_rows += unit_loaded_rows
                     _merge_stats(curated_load_stats_total, curated_stats)
                     _merge_stats(financial_load_stats_total, financial_stats)
+                    mark_source_a_result(
+                        source_coverage_tracker,
+                        symbol,
+                        outcome="success",
+                        raw_records=len(unit_raw),
+                        loaded_rows=unit_loaded_rows,
+                    )
                     manifest.mark_unit(
                         unit_id,
                         "success",
@@ -899,6 +1187,12 @@ def run_pipeline_stage(ctx: RunContext, state: PipelineState) -> None:
                         {"extractor": "source_a", "symbol": symbol, "error": err}
                     )
                     source_a_failed_symbols.append({"symbol": symbol, "reason": err})
+                    mark_source_a_result(
+                        source_coverage_tracker,
+                        symbol,
+                        outcome="failed",
+                        reason=err,
+                    )
                     manifest.mark_unit(
                         unit_id,
                         "failed",
@@ -914,16 +1208,122 @@ def run_pipeline_stage(ctx: RunContext, state: PipelineState) -> None:
                         atomic_loaded_rows,
                     )
 
+            # ----------------------------------------------------------------
+            # EDGAR XBRL enrichment — filing-based publish_date authority plus
+            # authoritative overwrite on mapped core financial atomics.
+            # Source A provider order remains yfinance primary, Alpha Vantage
+            # gap-fill, then EDGAR authoritative on overlapping SEC-mapped metrics.
+            # ----------------------------------------------------------------
+            t0_edgar = time.monotonic()
+            try:
+                from datetime import date as _date
+
+                from modules.extract.edgar_xbrl import run_edgar_extraction
+                from modules.input.extract_source_a import (
+                    enrich_source_a_raw_with_edgar_publish_dates,
+                )
+
+                as_of = _date.fromisoformat(ctx.args.run_date)
+                edgar_records = run_edgar_extraction(
+                    universe,
+                    backfill_years=ctx.backfill_years,
+                    as_of=as_of,
+                )
+                financial_normalized = normalize_financial_records(edgar_records)
+                edgar_stats: Dict[str, int] = {}
+                edgar_rows = int(
+                    load_financial_observations(
+                        financial_normalized,
+                        dry_run=bool(ctx.args.dry_run),
+                        stats_out=edgar_stats,
+                    )
+                )
+                _merge_stats(financial_load_stats_total, edgar_stats)
+                atomic_loaded_rows += edgar_rows
+                state.loaded_rows += edgar_rows
+                logger.info(
+                    "stage_ok run_id=%s stage=edgar_xbrl rows=%s stats=%s",
+                    ctx.run_id,
+                    edgar_rows,
+                    edgar_stats,
+                )
+                try:
+                    raw_enrichment_stats = enrich_source_a_raw_with_edgar_publish_dates(
+                        ctx.cfg,
+                        ctx.args.run_date,
+                        edgar_records,
+                    )
+                    logger.info(
+                        "stage_ok run_id=%s stage=edgar_raw_enrichment stats=%s",
+                        ctx.run_id,
+                        raw_enrichment_stats,
+                    )
+                except Exception as raw_exc:
+                    logger.warning(
+                        "stage_warn run_id=%s stage=edgar_raw_enrichment error=%r",
+                        ctx.run_id,
+                        raw_exc,
+                    )
+                state.stages_ok += 1
+                _log_stage_event(
+                    run_id=ctx.run_id,
+                    stage="edgar_xbrl",
+                    status="ok",
+                    rows_in=len(universe),
+                    rows_out=edgar_rows,
+                    elapsed_ms=int((time.monotonic() - t0_edgar) * 1000),
+                )
+                _write_dataset_refresh_event(
+                    run_id=ctx.run_id,
+                    run_date=ctx.args.run_date,
+                    dataset_name="financial_observations",
+                    stage_name="edgar_xbrl",
+                    status="ok",
+                    rows_written=edgar_rows,
+                    details=edgar_stats,
+                )
+            except Exception as exc:
+                err = f"{exc!r}"
+                logger.exception(
+                    "stage_failed run_id=%s stage=edgar_xbrl error=%s", ctx.run_id, err
+                )
+                extractor_errors.append({"extractor": "edgar_xbrl", "error": err})
+                state.stages_failed += 1
+                state.notes = _append_note(state.notes, f"edgar_xbrl_error={err[:200]}")
+                _log_stage_event(
+                    run_id=ctx.run_id,
+                    stage="edgar_xbrl",
+                    status="failed",
+                    elapsed_ms=int((time.monotonic() - t0_edgar) * 1000),
+                    details={"error": err},
+                )
+                _write_dataset_refresh_event(
+                    run_id=ctx.run_id,
+                    run_date=ctx.args.run_date,
+                    dataset_name="financial_observations",
+                    stage_name="edgar_xbrl",
+                    status="failed",
+                    rows_written=0,
+                    details={"error": err},
+                )
+
+        # ----------------------------------------------------------------
+        # Stage: source_b — Unstructured data: news + L-M sentiment
+        # Sources: AV (historical, before cutoff) + Finnhub (incremental, after cutoff)
+        # Incremental: per-symbol per-month materialization registry tracks
+        # which (symbol, month) units are already processed so daily runs
+        # only fetch the new window, not the full history again.
+        # ----------------------------------------------------------------
         if "source_b" in {str(x).strip().lower() for x in ctx.enabled_extractors}:
+            from modules.input.extract_source_b import build_source_b_kafka_payloads
+
             source_b_symbols = _filter_symbols_for_source_b(universe, ctx.cfg)
-            windows = _month_windows(ctx.args.run_date, ctx.backfill_years)
+            from modules.utils.kafka import publish_json_events
+
             for idx, symbol in enumerate(source_b_symbols, start=1):
-                failed_months_local: List[Dict[str, str]] = []
-                month_failures_by_key: Dict[str, Dict[str, str]] = {}
-                reusable_by_month: Dict[str, Dict[str, Any]] = {}
-                skip_month_keys: set[str] = set()
-                for month_start, fetch_end in windows:
+                for month_start, fetch_end in source_b_windows:
                     month_key = month_start.isoformat()
+                    unit_id = f"source_b:{symbol}:{month_key}"
                     materialization_key = source_b_materialization_key(
                         symbol, month_key, fetch_end.isoformat()
                     )
@@ -935,161 +1335,165 @@ def run_pipeline_stage(ctx: RunContext, state: PipelineState) -> None:
                             config_identity=source_b_config_id,
                         )
                     )
-                    if reusable:
-                        reusable_by_month[month_key] = reusable
-                        skip_month_keys.add(
-                            f"{str(symbol).strip().upper()}:{month_key}:{fetch_end.isoformat()}"
+                    reusable_details = (reusable or {}).get("details") or {}
+                    support_objects_ready = bool(
+                        reusable
+                        and _source_b_supporting_objects_exist(
+                            ctx.cfg,
+                            symbol=symbol,
+                            run_date=ctx.args.run_date,
+                            month_start=month_start,
                         )
-                try:
-                    raw_payloads = []
-                    if len(reusable_by_month) < len(windows):
-                        raw_payloads = ingest_source_b_raw(
-                            [symbol],
-                            ctx.args.run_date,
-                            ctx.backfill_years,
-                            "daily",
-                            config=ctx.cfg,
-                            failed_months_out=failed_months_local,
-                            skip_month_keys=skip_month_keys,
-                        )
-                    month_failures_by_key = {
-                        str(entry.get("month_start")): entry for entry in failed_months_local
-                    }
-                    payloads_by_month = {
-                        str(payload.get("month_start")): payload for payload in raw_payloads
-                    }
-
-                    for month_start, _fetch_end in windows:
-                        month_key = month_start.isoformat()
-                        unit_id = f"source_b:{symbol}:{month_key}"
-                        if month_key in reusable_by_month:
-                            reusable = reusable_by_month[month_key]
-                            reused_unit_count += 1
-                            reused_loaded_rows += int(
-                                ((reusable.get("details") or {}).get("loaded_rows") or 0)
-                            )
-                            quality_accumulator.update_report(
-                                (reusable.get("details") or {}).get("quality_report") or {}
-                            )
-                            manifest.mark_unit(
-                                unit_id,
-                                "skipped",
-                                details={
-                                    "symbol": symbol,
-                                    "month_start": month_key,
-                                    "reason": "atomic_materialization_reused",
-                                    "materialization_key": reusable.get(
-                                        "materialization_key", ""
-                                    ),
-                                    "source_run_id": reusable.get("run_id"),
-                                },
-                            )
-                        elif month_key in payloads_by_month:
-                            payload = payloads_by_month[month_key]
-                            try:
-                                unit_raw = transform_source_b_features(
-                                    [payload],
-                                    [symbol],
-                                    ctx.args.run_date,
-                                    "daily",
-                                    config=ctx.cfg,
-                                )
-                                raw_record_count += len(payload.get("feed") or [])
-                                (
-                                    curated_count,
-                                    financial_count,
-                                    unit_loaded_rows,
-                                    curated_stats,
-                                    financial_stats,
-                                    unit_quality_report,
-                                ) = _persist_atomic_unit_records(
-                                    raw_records=unit_raw,
-                                    dry_run=bool(ctx.args.dry_run),
-                                    normalize_records_fn=normalize_records,
-                                    normalize_financial_records_fn=normalize_financial_records,
-                                    load_curated_fn=load_curated,
-                                    load_financial_observations_fn=load_financial_observations,
-                                    quality_accumulator=quality_accumulator,
-                                )
-                                atomic_loaded_rows += unit_loaded_rows
-                                _merge_stats(curated_load_stats_total, curated_stats)
-                                _merge_stats(financial_load_stats_total, financial_stats)
-                                manifest.mark_unit(
-                                    unit_id,
-                                    "success",
-                                    details={
-                                        "symbol": symbol,
-                                        "month_start": month_key,
-                                        "raw_records": len(payload.get("feed") or []),
-                                        "curated_rows": curated_count,
-                                        "financial_rows": financial_count,
-                                        "loaded_rows": unit_loaded_rows,
-                                    },
-                                )
-                                if not ctx.args.dry_run:
-                                    materialization_registry.record_success(
-                                        source_b_materialization_key(
-                                            symbol,
-                                            month_key,
-                                            payload.get("fetch_end") or month_key,
-                                        ),
-                                        run_id=ctx.run_id,
-                                        unit_id=unit_id,
-                                        extractor="source_b",
-                                        config_identity=source_b_config_id,
-                                        details={
-                                            "symbol": symbol,
-                                            "month_start": month_key,
-                                            "raw_records": len(payload.get("feed") or []),
-                                            "curated_rows": curated_count,
-                                            "financial_rows": financial_count,
-                                            "loaded_rows": unit_loaded_rows,
-                                            "quality_report": unit_quality_report,
-                                        },
-                                    )
-                            except Exception as exc:
-                                err = f"{exc!r}"
-                                source_b_failed_months.append(
-                                    {"symbol": symbol, "month_start": month_key, "reason": err}
-                                )
-                                manifest.mark_unit(
-                                    unit_id,
-                                    "failed",
-                                    details={
-                                        "symbol": symbol,
-                                        "month_start": month_key,
-                                        "reason": err,
-                                    },
-                                )
-                        elif month_key in month_failures_by_key:
-                            failure = month_failures_by_key[month_key]
-                            source_b_failed_months.append(failure)
-                            manifest.mark_unit(unit_id, "failed", details=failure)
-                        else:
-                            manifest.mark_unit(
-                                unit_id,
-                                "skipped",
-                                details={
-                                    "symbol": symbol,
-                                    "month_start": month_key,
-                                    "reason": "no_fetch_needed_or_filtered",
-                                },
-                            )
-                except Exception as exc:
-                    err = f"{exc!r}"
-                    extractor_errors.append(
-                        {"extractor": "source_b", "symbol": symbol, "error": err}
                     )
-                    for month_start, _fetch_end in windows:
-                        month_key = month_start.isoformat()
-                        unit_id = f"source_b:{symbol}:{month_key}"
+                    support_rows_ready = bool(
+                        reusable
+                        and _source_b_supporting_rows_exist(
+                            symbol=symbol,
+                            month_start=month_start,
+                            fetch_end=fetch_end,
+                            reusable_details=reusable_details,
+                        )
+                    )
+                    if reusable and support_objects_ready and support_rows_ready:
+                        reused_unit_count += 1
+                        reused_loaded_rows += int(reusable_details.get("loaded_rows") or 0)
+                        mark_source_b_window_result(
+                            source_coverage_tracker,
+                            symbol,
+                            outcome="reused",
+                            article_count=int(reusable_details.get("articles") or 0),
+                            loaded_rows=int(reusable_details.get("loaded_rows") or 0),
+                        )
+                        manifest.mark_unit(
+                            unit_id,
+                            "skipped",
+                            details={
+                                "symbol": symbol,
+                                "month_start": month_key,
+                                "reason": "atomic_materialization_reused",
+                                "materialization_key": reusable.get("materialization_key", ""),
+                                "source_run_id": reusable.get("run_id"),
+                            },
+                        )
+                        continue
+                    if reusable and not support_objects_ready:
+                        logger.info(
+                            "source_b materialization_replay_required symbol=%s month_start=%s "
+                            "reason=missing_supporting_minio_objects",
+                            symbol,
+                            month_key,
+                        )
+                    if reusable and support_objects_ready and not support_rows_ready:
+                        logger.info(
+                            "source_b materialization_replay_required symbol=%s month_start=%s "
+                            "reason=missing_supporting_db_rows",
+                            symbol,
+                            month_key,
+                        )
+
+                    try:
+                        window_result = extract_source_b_window(
+                            symbol=symbol,
+                            run_date=ctx.args.run_date,
+                            month_start=month_start,
+                            fetch_end=fetch_end,
+                            backfill_years=ctx.backfill_years,
+                            frequency="daily",
+                            config=ctx.cfg,
+                            force_replay=bool(reusable and not support_objects_ready),
+                        )
+                        sentiment_records = list(window_result.get("records") or [])
+                        article_count = int(window_result.get("article_count") or 0)
+                        sentiment_normalized = normalize_records(sentiment_records)
+                        sentiment_stats: Dict[str, int] = {}
+                        unit_loaded_rows = int(
+                            load_curated(
+                                sentiment_normalized,
+                                dry_run=bool(ctx.args.dry_run),
+                                stats_out=sentiment_stats,
+                            )
+                        )
+                        if not ctx.args.dry_run and unit_loaded_rows > 0:
+                            kafka_payloads = build_source_b_kafka_payloads(
+                                raw_payload=window_result.get("raw_payload"),
+                                records=sentiment_normalized,
+                                run_id=ctx.run_id,
+                                run_date=ctx.args.run_date,
+                            )
+                            publish_json_events(
+                                ctx.cfg,
+                                topic_key="cw1_news_structured",
+                                default_topic="cw1.news.structured.v1",
+                                events=kafka_payloads.get("news_structured", []),
+                                key_field="symbol",
+                                default_client_id="team_pearson_cw1",
+                            )
+                            publish_json_events(
+                                ctx.cfg,
+                                topic_key="cw1_event_proxies",
+                                default_topic="cw1.event.proxies.v1",
+                                events=kafka_payloads.get("event_proxies", []),
+                                key_field="symbol",
+                                default_client_id="team_pearson_cw1",
+                            )
+                        _merge_stats(curated_load_stats_total, sentiment_stats)
+                        atomic_loaded_rows += unit_loaded_rows
+                        state.loaded_rows += unit_loaded_rows
+                        mark_source_b_window_result(
+                            source_coverage_tracker,
+                            symbol,
+                            outcome="success",
+                            article_count=article_count,
+                            loaded_rows=unit_loaded_rows,
+                        )
+
+                        manifest.mark_unit(
+                            unit_id,
+                            "success",
+                            details={
+                                "symbol": symbol,
+                                "month_start": month_key,
+                                "articles": article_count,
+                                "loaded_rows": unit_loaded_rows,
+                            },
+                        )
+                        if not ctx.args.dry_run:
+                            materialization_registry.record_success(
+                                materialization_key,
+                                run_id=ctx.run_id,
+                                unit_id=unit_id,
+                                extractor="source_b",
+                                config_identity=source_b_config_id,
+                                details={
+                                    "symbol": symbol,
+                                    "month_start": month_key,
+                                    "articles": article_count,
+                                    "loaded_rows": unit_loaded_rows,
+                                },
+                            )
+                    except Exception as exc:
+                        err = f"{exc!r}"
+                        extractor_errors.append(
+                            {
+                                "extractor": "source_b",
+                                "symbol": symbol,
+                                "month_start": month_key,
+                                "error": err,
+                            }
+                        )
+                        source_b_failed_months.append(
+                            {"symbol": symbol, "month_start": month_key, "reason": err}
+                        )
+                        mark_source_b_window_result(
+                            source_coverage_tracker,
+                            symbol,
+                            outcome="failed",
+                            reason=err,
+                        )
                         manifest.mark_unit(
                             unit_id,
                             "failed",
                             details={"symbol": symbol, "month_start": month_key, "reason": err},
-                        )
-                        source_b_failed_months.append(
-                            {"symbol": symbol, "month_start": month_key, "reason": err}
                         )
 
                 if idx % 10 == 0:
@@ -1100,6 +1504,170 @@ def run_pipeline_stage(ctx: RunContext, state: PipelineState) -> None:
                         len(source_b_symbols),
                         atomic_loaded_rows,
                     )
+
+        t0_source_coverage = time.monotonic()
+        source_coverage_rows, source_coverage_report = finalize_source_coverage_contract(
+            source_coverage_tracker,
+            config=ctx.cfg,
+        )
+        source_coverage_details = summarize_source_coverage_counts(source_coverage_report)
+        source_coverage_rows_written = write_source_coverage_audit(
+            run_id=ctx.run_id,
+            run_date=ctx.args.run_date,
+            rows=source_coverage_rows,
+        )
+        write_quality_snapshot(
+            run_id=ctx.run_id,
+            run_date=ctx.args.run_date,
+            dataset_name="source_coverage_audit",
+            quality_report=source_coverage_report,
+        )
+        state.notes = _append_note(
+            state.notes,
+            f"source_coverage_summary={json.dumps(source_coverage_details, sort_keys=True)}",
+        )
+        if source_coverage_report.get("failures"):
+            state.notes = _append_note(
+                state.notes,
+                "source_coverage_failures="
+                f"{json.dumps(source_coverage_report.get('failures') or [], ensure_ascii=False)}",
+            )
+        if source_coverage_report.get("passed"):
+            logger.info(
+                "stage_ok run_id=%s stage=source_coverage_contract rows=%s details=%s",
+                ctx.run_id,
+                source_coverage_rows_written,
+                json.dumps(source_coverage_details, sort_keys=True),
+            )
+            state.stages_ok += 1
+            _log_stage_event(
+                run_id=ctx.run_id,
+                stage="source_coverage_contract",
+                status="ok",
+                rows_in=len(universe),
+                rows_out=source_coverage_rows_written,
+                elapsed_ms=int((time.monotonic() - t0_source_coverage) * 1000),
+                details=source_coverage_details,
+            )
+            _write_dataset_refresh_event(
+                run_id=ctx.run_id,
+                run_date=ctx.args.run_date,
+                dataset_name="source_coverage_audit",
+                stage_name="source_coverage_contract",
+                status="ok",
+                rows_written=source_coverage_rows_written,
+                details=source_coverage_details,
+            )
+        else:
+            state.stages_failed += 1
+            _log_stage_event(
+                run_id=ctx.run_id,
+                stage="source_coverage_contract",
+                status="failed",
+                rows_in=len(universe),
+                rows_out=source_coverage_rows_written,
+                elapsed_ms=int((time.monotonic() - t0_source_coverage) * 1000),
+                details=source_coverage_details,
+            )
+            _write_dataset_refresh_event(
+                run_id=ctx.run_id,
+                run_date=ctx.args.run_date,
+                dataset_name="source_coverage_audit",
+                stage_name="source_coverage_contract",
+                status="failed",
+                rows_written=source_coverage_rows_written,
+                details=source_coverage_details,
+            )
+            raise RuntimeError(
+                "source_coverage_contract_failed: "
+                + "; ".join(source_coverage_report.get("failures") or [])
+            )
+
+        # ----------------------------------------------------------------
+        # Stage: market_factors — beta_1y, momentum_6m/12m, vol_60d, etc.
+        # Runs AFTER source_a so price data is already in DB.
+        # ----------------------------------------------------------------
+        if "market_factors" in {str(x).strip().lower() for x in ctx.enabled_extractors}:
+            t0 = time.monotonic()
+            try:
+                from datetime import date as _date
+
+                from modules.transform.market_factors import build_market_factors
+
+                run_date_obj = _date.fromisoformat(ctx.args.run_date)
+                start_date_obj = _date.fromisoformat(
+                    get_window(ctx.args.run_date, ctx.frequency)[0]
+                )
+                mf_records = build_market_factors(
+                    universe,
+                    end_date=run_date_obj,
+                    start_date=start_date_obj,
+                    output_frequency=ctx.frequency,
+                    benchmark_ticker=str(
+                        (ctx.cfg.get("market_factors") or {}).get("benchmark_ticker", "SPY")
+                    ).strip()
+                    or "SPY",
+                )
+                mf_normalized = normalize_records(mf_records)
+                mf_stats: Dict[str, int] = {}
+                mf_rows = int(
+                    load_curated(
+                        mf_normalized,
+                        dry_run=bool(ctx.args.dry_run),
+                        stats_out=mf_stats,
+                    )
+                )
+                _merge_stats(curated_load_stats_total, mf_stats)
+                atomic_loaded_rows += mf_rows
+                state.loaded_rows += mf_rows
+                logger.info(
+                    "stage_ok run_id=%s stage=market_factors rows=%s stats=%s",
+                    ctx.run_id,
+                    mf_rows,
+                    mf_stats,
+                )
+                state.stages_ok += 1
+                _log_stage_event(
+                    run_id=ctx.run_id,
+                    stage="market_factors",
+                    status="ok",
+                    rows_in=len(universe),
+                    rows_out=mf_rows,
+                    elapsed_ms=int((time.monotonic() - t0) * 1000),
+                )
+                _write_dataset_refresh_event(
+                    run_id=ctx.run_id,
+                    run_date=ctx.args.run_date,
+                    dataset_name="factor_observations",
+                    stage_name="market_factors",
+                    status="ok",
+                    rows_written=mf_rows,
+                    details=mf_stats,
+                )
+            except Exception as exc:
+                err = f"{exc!r}"
+                logger.exception(
+                    "stage_failed run_id=%s stage=market_factors error=%s", ctx.run_id, err
+                )
+                extractor_errors.append({"extractor": "market_factors", "error": err})
+                state.stages_failed += 1
+                state.notes = _append_note(state.notes, f"market_factors_error={err[:200]}")
+                _log_stage_event(
+                    run_id=ctx.run_id,
+                    stage="market_factors",
+                    status="failed",
+                    elapsed_ms=int((time.monotonic() - t0) * 1000),
+                    details={"error": err},
+                )
+                _write_dataset_refresh_event(
+                    run_id=ctx.run_id,
+                    run_date=ctx.args.run_date,
+                    dataset_name="factor_observations",
+                    stage_name="market_factors",
+                    status="failed",
+                    rows_written=0,
+                    details={"error": err},
+                )
 
         if source_a_failed_symbols or source_b_failed_months:
             state.notes = _append_note(state.notes, "pipeline_extractor_degraded=true")
@@ -1149,12 +1717,8 @@ def run_pipeline_stage(ctx: RunContext, state: PipelineState) -> None:
                 state.notes,
                 f"provider_usage={json.dumps(state.provider_usage, sort_keys=True)}",
             )
-        state.notes = _append_note(
-            state.notes, f"reused_atomic_units={reused_unit_count}"
-        )
-        state.notes = _append_note(
-            state.notes, f"reused_atomic_loaded_rows={reused_loaded_rows}"
-        )
+        state.notes = _append_note(state.notes, f"reused_atomic_units={reused_unit_count}")
+        state.notes = _append_note(state.notes, f"reused_atomic_loaded_rows={reused_loaded_rows}")
 
         state.loaded_rows = atomic_loaded_rows
         manifest_summary = manifest.summary()
@@ -1181,6 +1745,28 @@ def run_pipeline_stage(ctx: RunContext, state: PipelineState) -> None:
             rows_out=state.loaded_rows,
             elapsed_ms=int((time.monotonic() - t0) * 1000),
         )
+        if curated_load_stats_total:
+            _write_dataset_refresh_event(
+                run_id=ctx.run_id,
+                run_date=ctx.args.run_date,
+                dataset_name="factor_observations",
+                stage_name="atomic_persist",
+                status="ok",
+                rows_written=int(curated_load_stats_total.get("inserted", 0))
+                + int(curated_load_stats_total.get("updated", 0)),
+                details=curated_load_stats_total,
+            )
+        if financial_load_stats_total:
+            _write_dataset_refresh_event(
+                run_id=ctx.run_id,
+                run_date=ctx.args.run_date,
+                dataset_name="financial_observations",
+                stage_name="atomic_persist",
+                status="ok",
+                rows_written=int(financial_load_stats_total.get("inserted", 0))
+                + int(financial_load_stats_total.get("updated", 0)),
+                details=financial_load_stats_total,
+            )
 
         t0 = time.monotonic()
         state.quality_report = quality_accumulator.report()
@@ -1242,6 +1828,78 @@ def run_pipeline_stage(ctx: RunContext, state: PipelineState) -> None:
             rows_out=int(final_factor_rows),
             elapsed_ms=int((time.monotonic() - t0) * 1000),
         )
+        _write_dataset_refresh_event(
+            run_id=ctx.run_id,
+            run_date=ctx.args.run_date,
+            dataset_name="factor_observations",
+            stage_name="transform_final",
+            status="ok",
+            rows_written=int(final_factor_rows),
+            details={"frequency": ctx.frequency},
+        )
+
+        t0 = time.monotonic()
+        cw2_feature_rows = {
+            "sub_scores": 0,
+            "factor_scores": 0,
+            "risk_overlay": 0,
+            "as_of_date_shifted": 0,
+        }
+        if os.getenv("CW1_TEST_MODE") != "1":
+            cw2_feature_rows = build_and_load_cw2_features(
+                run_date=ctx.args.run_date,
+                symbols=universe,
+            )
+        cw2_total_rows = int(
+            cw2_feature_rows.get("sub_scores", 0)
+            + cw2_feature_rows.get("factor_scores", 0)
+            + cw2_feature_rows.get("risk_overlay", 0)
+        )
+        state.loaded_rows += cw2_total_rows
+        logger.info(
+            "stage_ok run_id=%s stage=cw2_features rows=%s details=%s total_loaded_rows=%s",
+            ctx.run_id,
+            cw2_total_rows,
+            cw2_feature_rows,
+            state.loaded_rows,
+        )
+        state.stages_ok += 1
+        _log_stage_event(
+            run_id=ctx.run_id,
+            stage="cw2_features",
+            status="ok",
+            rows_in=len(universe),
+            rows_out=cw2_total_rows,
+            elapsed_ms=int((time.monotonic() - t0) * 1000),
+            details=cw2_feature_rows,
+        )
+        _write_dataset_refresh_event(
+            run_id=ctx.run_id,
+            run_date=ctx.args.run_date,
+            dataset_name="feature_sub_scores",
+            stage_name="cw2_features",
+            status="ok",
+            rows_written=int(cw2_feature_rows.get("sub_scores", 0)),
+            details={"as_of_date_shifted": int(cw2_feature_rows.get("as_of_date_shifted", 0))},
+        )
+        _write_dataset_refresh_event(
+            run_id=ctx.run_id,
+            run_date=ctx.args.run_date,
+            dataset_name="feature_factor_scores",
+            stage_name="cw2_features",
+            status="ok",
+            rows_written=int(cw2_feature_rows.get("factor_scores", 0)),
+            details={"as_of_date_shifted": int(cw2_feature_rows.get("as_of_date_shifted", 0))},
+        )
+        _write_dataset_refresh_event(
+            run_id=ctx.run_id,
+            run_date=ctx.args.run_date,
+            dataset_name="feature_risk_overlay",
+            stage_name="cw2_features",
+            status="ok",
+            rows_written=int(cw2_feature_rows.get("risk_overlay", 0)),
+            details={"as_of_date_shifted": int(cw2_feature_rows.get("as_of_date_shifted", 0))},
+        )
 
         fallback_count = (state.provider_usage or {}).get("yfinance", 0)
         fallback_used = "yes" if fallback_count > 0 else "no"
@@ -1269,6 +1927,7 @@ def run_pipeline_stage(ctx: RunContext, state: PipelineState) -> None:
             run_id=ctx.run_id,
             stage="pipeline",
             status="failed",
+            details={"error": state.err},
         )
 
 
@@ -1330,6 +1989,15 @@ def finalize_audit_and_runlog(ctx: RunContext, state: PipelineState) -> int:
             dataset_name="factor_observations",
             quality_report=state.quality_report or {},
         )
+        _write_dataset_refresh_event(
+            run_id=ctx.run_id,
+            run_date=ctx.args.run_date,
+            dataset_name="quality_snapshots",
+            stage_name="quality_snapshot",
+            status="ok",
+            rows_written=1,
+            details={"dataset_name": "factor_observations"},
+        )
     except Exception as metadata_exc:
         logger.warning(
             "quality_snapshot_warning run_id=%s warning=%r",
@@ -1384,6 +2052,16 @@ def run_mongo_index_stage(ctx: RunContext, state: PipelineState) -> None:
             stage="mongo_index",
             status="warning",
             elapsed_ms=int((time.monotonic() - t0) * 1000),
+            details={"returncode": int(result.returncode)},
+        )
+        _write_dataset_refresh_event(
+            run_id=ctx.run_id,
+            run_date=ctx.args.run_date,
+            dataset_name="news_articles",
+            stage_name="mongo_index",
+            status="warning",
+            rows_written=0,
+            details={"returncode": int(result.returncode)},
         )
         return
 
@@ -1394,6 +2072,15 @@ def run_mongo_index_stage(ctx: RunContext, state: PipelineState) -> None:
         stage="mongo_index",
         status="ok",
         elapsed_ms=int((time.monotonic() - t0) * 1000),
+    )
+    _write_dataset_refresh_event(
+        run_id=ctx.run_id,
+        run_date=ctx.args.run_date,
+        dataset_name="news_articles",
+        stage_name="mongo_index",
+        status="ok",
+        rows_written=0,
+        details={},
     )
 
 

@@ -2,8 +2,9 @@ from __future__ import annotations
 
 """Pipeline run audit persistence helpers."""
 
+import json
 import os
-from typing import Optional
+from typing import Any, Optional
 
 from sqlalchemy import text
 
@@ -29,8 +30,7 @@ def write_pipeline_run_start(
     if not _audit_enabled():
         return
 
-    sql = text(
-        """
+    sql = text("""
         INSERT INTO systematic_equity.pipeline_runs (
             run_id, run_date, started_at, status, frequency, backfill_years,
             company_limit, enabled_extractors, notes
@@ -48,8 +48,7 @@ def write_pipeline_run_start(
             enabled_extractors = EXCLUDED.enabled_extractors,
             notes = EXCLUDED.notes,
             updated_at = CURRENT_TIMESTAMP
-        """
-    )
+        """)
     params = {
         "run_id": run_id,
         "run_date": run_date,
@@ -84,8 +83,7 @@ def write_pipeline_run_finish(
     if not _audit_enabled():
         return
 
-    update_sql = text(
-        """
+    update_sql = text("""
         UPDATE systematic_equity.pipeline_runs
         SET finished_at = :finished_at,
             status = :status,
@@ -95,10 +93,8 @@ def write_pipeline_run_finish(
             notes = :notes,
             updated_at = CURRENT_TIMESTAMP
         WHERE run_id = :run_id
-        """
-    )
-    insert_sql = text(
-        """
+        """)
+    insert_sql = text("""
         INSERT INTO systematic_equity.pipeline_runs (
             run_id, run_date, started_at, finished_at, status, frequency, backfill_years,
             company_limit, enabled_extractors, rows_written, error_message, error_traceback, notes
@@ -115,8 +111,7 @@ def write_pipeline_run_finish(
             error_traceback = EXCLUDED.error_traceback,
             notes = EXCLUDED.notes,
             updated_at = CURRENT_TIMESTAMP
-        """
-    )
+        """)
     params = {
         "run_id": run_id,
         "run_date": run_date,
@@ -136,3 +131,75 @@ def write_pipeline_run_finish(
         result = conn.execute(update_sql, params)
         if result.rowcount == 0:
             conn.execute(insert_sql, params)
+
+
+def write_pipeline_stage_event(
+    *,
+    run_id: str,
+    stage_name: str,
+    status: str,
+    rows_in: Optional[int] = None,
+    rows_out: Optional[int] = None,
+    elapsed_ms: Optional[int] = None,
+    details: Optional[dict[str, Any]] = None,
+) -> None:
+    """Append one stage-level orchestration event."""
+    if not _audit_enabled():
+        return
+
+    sql = text("""
+        INSERT INTO systematic_equity.pipeline_stage_events (
+            run_id, stage_name, status, rows_in, rows_out, elapsed_ms, details_json
+        ) VALUES (
+            :run_id, :stage_name, :status, :rows_in, :rows_out, :elapsed_ms,
+            CAST(:details_json AS jsonb)
+        )
+        """)
+    params = {
+        "run_id": run_id,
+        "stage_name": stage_name,
+        "status": status,
+        "rows_in": rows_in,
+        "rows_out": rows_out,
+        "elapsed_ms": elapsed_ms,
+        "details_json": json.dumps(details or {}, ensure_ascii=False, sort_keys=True),
+    }
+    engine = get_db_engine()
+    with engine.begin() as conn:
+        conn.execute(sql, params)
+
+
+def write_dataset_refresh_event(
+    *,
+    run_id: str,
+    run_date: str,
+    dataset_name: str,
+    stage_name: str,
+    status: str,
+    rows_written: int = 0,
+    details: Optional[dict[str, Any]] = None,
+) -> None:
+    """Append one dataset refresh evidence row."""
+    if not _audit_enabled():
+        return
+
+    sql = text("""
+        INSERT INTO systematic_equity.dataset_refresh_events (
+            run_id, run_date, dataset_name, stage_name, status, rows_written, details_json
+        ) VALUES (
+            :run_id, :run_date, :dataset_name, :stage_name, :status, :rows_written,
+            CAST(:details_json AS jsonb)
+        )
+        """)
+    params = {
+        "run_id": run_id,
+        "run_date": run_date,
+        "dataset_name": dataset_name,
+        "stage_name": stage_name,
+        "status": status,
+        "rows_written": int(rows_written),
+        "details_json": json.dumps(details or {}, ensure_ascii=False, sort_keys=True),
+    }
+    engine = get_db_engine()
+    with engine.begin() as conn:
+        conn.execute(sql, params)

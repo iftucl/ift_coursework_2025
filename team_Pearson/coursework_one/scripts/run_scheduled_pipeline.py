@@ -2,8 +2,11 @@ from __future__ import annotations
 
 """Run pipeline schedule wrapper in one entrypoint.
 
-Typical usage with cron/launchd:
+Typical usage:
     poetry run python scripts/run_scheduled_pipeline.py
+
+This script is intentionally scheduler-agnostic so it can be invoked by
+Airflow, manual replay commands, or other orchestration layers.
 """
 
 import argparse
@@ -13,6 +16,10 @@ from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import List
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 from modules.utils.env import load_dotenv_if_exists
 
@@ -81,7 +88,7 @@ def _build_cmd(
 
 
 def main() -> int:
-    """CLI entrypoint for cron-friendly schedule orchestration."""
+    """CLI entrypoint for scheduler-friendly pipeline orchestration."""
     parser = argparse.ArgumentParser(description="Calendar-triggered runner for Main.py")
     parser.add_argument("--run-date", default=None, help="YYYY-MM-DD; default is today (UTC).")
     parser.add_argument(
@@ -114,7 +121,7 @@ def main() -> int:
         help="Print would-run commands without executing.",
     )
     args = parser.parse_args()
-    project_root = Path(__file__).resolve().parents[1]
+    project_root = PROJECT_ROOT
     load_dotenv_if_exists(project_root / ".env")
 
     run_date = _parse_run_date(args.run_date)

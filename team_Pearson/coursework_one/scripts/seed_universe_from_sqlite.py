@@ -15,8 +15,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from modules.utils.env import load_dotenv_if_exists  # noqa: E402
 from modules.db.db_connection import get_db_engine  # noqa: E402
+from modules.utils.env import load_dotenv_if_exists  # noqa: E402
 
 
 def default_sqlite_path() -> Path:
@@ -53,11 +53,12 @@ def load_equity_static(sqlite_path: Path) -> pd.DataFrame:
 
 def seed_company_static(df: pd.DataFrame) -> int:
     engine = get_db_engine()
+    columns = ["symbol", "security", "gics_sector", "gics_industry", "country", "region"]
+    frame = df.reindex(columns=columns).astype(object)
+    rows = frame.where(pd.notna(frame), None).to_dict(orient="records")
     with engine.begin() as conn:
         conn.execute(text("CREATE SCHEMA IF NOT EXISTS systematic_equity;"))
-        conn.execute(
-            text(
-                """
+        conn.execute(text("""
                 CREATE TABLE IF NOT EXISTS systematic_equity.company_static (
                     symbol TEXT PRIMARY KEY,
                     security TEXT,
@@ -66,21 +67,31 @@ def seed_company_static(df: pd.DataFrame) -> int:
                     country TEXT,
                     region TEXT
                 );
-                """
-            )
-        )
+                """))
         conn.execute(text("TRUNCATE TABLE systematic_equity.company_static;"))
-
-    df.to_sql(
-        "company_static",
-        engine,
-        schema="systematic_equity",
-        if_exists="append",
-        index=False,
-        method="multi",
-        chunksize=1000,
-    )
-    return int(len(df))
+        if rows:
+            conn.execute(
+                text("""
+                    INSERT INTO systematic_equity.company_static (
+                        symbol,
+                        security,
+                        gics_sector,
+                        gics_industry,
+                        country,
+                        region
+                    )
+                    VALUES (
+                        :symbol,
+                        :security,
+                        :gics_sector,
+                        :gics_industry,
+                        :country,
+                        :region
+                    )
+                    """),
+                rows,
+            )
+    return int(len(rows))
 
 
 def main() -> int:

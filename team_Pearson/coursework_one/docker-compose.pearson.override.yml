@@ -3,6 +3,27 @@ services:
     image: dpage/pgadmin4:8
     volumes:
       - ./pgadmin-data:/var/lib/pgadmin
+  kafka_cw:
+    container_name: kafka_cw
+    image: bitnamilegacy/kafka:4.0.0-debian-12-r10
+    ports:
+      - "29092:29092"
+    environment:
+      - KAFKA_CFG_NODE_ID=0
+      - KAFKA_CFG_PROCESS_ROLES=broker,controller
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka_cw:9093
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:29092
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka_cw:9092,EXTERNAL://localhost:29092
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true
+      - KAFKA_KRAFT_CLUSTER_ID=abcdefghijklmnopqrstuv
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/127.0.0.1/9092'"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
   miniocw:
     volumes:
       - ./minio-data:/data
@@ -30,6 +51,160 @@ services:
       mc anonymous set public minio/csreport;
       echo 'MinIO bucket csreport reset done.'
       "
+
+  # Redis — rate-limiter state (Token Bucket) and Circuit Breaker state.
+  # Port 6380 avoids conflicts with other teams using default 6379.
+  # RDB snapshot every 60 s if ≥1 write ensures Circuit Breaker state
+  # survives pipeline restarts (prevents hammering APIs after a crash).
+  team_pearson_redis:
+    image: redis:7-alpine
+    container_name: team_pearson_redis
+    ports:
+      - "6380:6379"
+    command: >
+      redis-server
+      --dir /data
+      --appendonly yes
+      --appendfsync everysec
+      --save 60 1
+      --maxmemory 256mb
+      --maxmemory-policy volatile-ttl
+      --loglevel warning
+    volumes:
+      - ./redis-data:/data
+    networks:
+      iceberg_net:
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  airflow_cw:
+    build:
+      context: .
+      dockerfile: team_Pearson/coursework_one/docker/airflow/Dockerfile
+    container_name: airflow_cw
+    depends_on:
+      - postgres_db
+      - mongo_db
+      - miniocw
+      - team_pearson_redis
+      - kafka_cw
+    environment:
+      AIRFLOW_HOME: /opt/airflow
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "false"
+      AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "true"
+      PYTHONPATH: /opt/airflow
+      POSTGRES_HOST: postgres_db
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: fift
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_CONTAINER: postgres_db_cw
+      POSTGRES_ADMIN_DB: postgres
+      MONGO_HOST: mongo_db
+      MONGO_PORT: 27017
+      MONGO_DB: ift_cw
+      MINIO_ENDPOINT: miniocw:9000
+      MINIO_ACCESS_KEY: ift_bigdata
+      MINIO_SECRET_KEY: minio_password
+      MINIO_BUCKET: csreport
+      REDIS_HOST: team_pearson_redis
+      REDIS_PORT: 6379
+      REDIS_DB: 0
+      REDIS_REQUIRED: "true"
+      KAFKA_ENABLED: "true"
+      KAFKA_REQUIRED: "false"
+      KAFKA_BOOTSTRAP_SERVERS: kafka_cw:9092
+      KAFKA_CLIENT_ID: airflow_cw
+      SOURCE_B_INCREMENTAL_BUFFER_DAYS: 7
+      FINNHUB_API_KEY: ${FINNHUB_API_KEY:-}
+      ALPHA_VANTAGE_API_KEY: ${ALPHA_VANTAGE_API_KEY:-}
+    command: standalone
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./team_Pearson:/opt/airflow/team_Pearson
+      - ./team_Pearson/coursework_one/airflow/dags:/opt/airflow/dags
+      - ./team_Pearson/coursework_one/airflow/logs:/opt/airflow/logs
+    healthcheck:
+      test: ["CMD", "python", "/opt/airflow/team_Pearson/coursework_one/docker/airflow/runtime_env_healthcheck.py"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 45s
+    networks:
+      - default
+      - iceberg_net
+    restart: unless-stopped
+
+  cw2_kafka_audit_consumer:
+    build:
+      context: .
+      dockerfile: team_Pearson/coursework_one/docker/airflow/Dockerfile
+    container_name: cw2_kafka_audit_consumer
+    depends_on:
+      - postgres_db
+      - mongo_db
+      - miniocw
+      - team_pearson_redis
+      - kafka_cw
+    environment:
+      AIRFLOW_HOME: /opt/airflow
+      PYTHONPATH: /opt/airflow
+      POSTGRES_HOST: postgres_db
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: fift
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_CONTAINER: postgres_db_cw
+      POSTGRES_ADMIN_DB: postgres
+      MONGO_HOST: mongo_db
+      MONGO_PORT: 27017
+      MONGO_DB: ift_cw
+      MINIO_ENDPOINT: miniocw:9000
+      MINIO_ACCESS_KEY: ift_bigdata
+      MINIO_SECRET_KEY: minio_password
+      MINIO_BUCKET: csreport
+      REDIS_HOST: team_pearson_redis
+      REDIS_PORT: 6379
+      REDIS_DB: 0
+      REDIS_REQUIRED: "true"
+      KAFKA_ENABLED: "true"
+      KAFKA_REQUIRED: "false"
+      KAFKA_BOOTSTRAP_SERVERS: kafka_cw:9092
+      KAFKA_CLIENT_ID: cw2_kafka_audit_consumer
+      SOURCE_B_INCREMENTAL_BUFFER_DAYS: 7
+      FINNHUB_API_KEY: ${FINNHUB_API_KEY:-}
+      ALPHA_VANTAGE_API_KEY: ${ALPHA_VANTAGE_API_KEY:-}
+    working_dir: /opt/airflow
+    entrypoint:
+      - /bin/bash
+      - -lc
+      - >
+        python team_Pearson/coursework_two/scripts/run_kafka_event_audit_daemon.py
+        --cw1-config /opt/airflow/team_Pearson/coursework_one/config/conf.yaml
+        --cw2-config /opt/airflow/team_Pearson/coursework_two/config/conf.yaml
+        --poll-interval-seconds 30
+        --max-messages 200
+        --poll-timeout-ms 1000
+        --max-idle-polls 10
+    volumes:
+      - ./team_Pearson:/opt/airflow/team_Pearson
+      - ./team_Pearson/coursework_one/airflow/logs:/opt/airflow/logs
+    healthcheck:
+      test: ["CMD", "python", "/opt/airflow/team_Pearson/coursework_one/docker/airflow/runtime_env_healthcheck.py"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 45s
+    networks:
+      - default
+      - iceberg_net
+    restart: unless-stopped
 
 networks:
   iceberg_net:

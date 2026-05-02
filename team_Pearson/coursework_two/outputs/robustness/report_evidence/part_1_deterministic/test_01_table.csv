@@ -1,0 +1,5 @@
+﻿scenario_key,risk_adjusted.sharpe_ratio,return.annualized_return,portfolio.total_cost_drag,static_baseline.excess_return_annualized
+cost_10bps,0.592534,12.123438,0.368294,4.507717452035464
+cost_15bps_mainline,0.582195,11.939623,0.552109,4.323902099790455
+cost_25bps,0.56146,11.572655,0.919077,3.9569342494873103
+cost_40bps,0.530225,11.023856,1.467875,3.408135947552693

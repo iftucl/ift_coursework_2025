@@ -1,0 +1,4083 @@
+{
+  "url": "http://127.0.0.1:8011/",
+  "generatedAt": "2026-04-30T23:56:12.783Z",
+  "counts": {
+    "tested": 191,
+    "skipped": 96,
+    "failures": 13,
+    "consoleErrors": 1,
+    "pageErrors": 0,
+    "requestFailures": 0,
+    "httpErrors": 0,
+    "dialogs": 0,
+    "downloads": 6
+  },
+  "pageCounts": [
+    {
+      "pageId": "welcome",
+      "title": "Welcome",
+      "buttons": 14
+    },
+    {
+      "pageId": "overview",
+      "title": "System Overview",
+      "buttons": 18
+    },
+    {
+      "pageId": "scenario_builder",
+      "title": "Scenario Builder",
+      "buttons": 33
+    },
+    {
+      "pageId": "universe_selector",
+      "title": "Universe & Company Selector",
+      "buttons": 13
+    },
+    {
+      "pageId": "regime_control",
+      "title": "Regime & Threshold Control",
+      "buttons": 14
+    },
+    {
+      "pageId": "optimizer_settings",
+      "title": "Portfolio Optimizer Settings",
+      "buttons": 14
+    },
+    {
+      "pageId": "data_health",
+      "title": "Data Health",
+      "buttons": 6
+    },
+    {
+      "pageId": "backtest_runner",
+      "title": "Backtest Runner",
+      "buttons": 16
+    },
+    {
+      "pageId": "run_history",
+      "title": "Run History",
+      "buttons": 42
+    },
+    {
+      "pageId": "factor_lab",
+      "title": "Signal & Factor Builder",
+      "buttons": 11
+    },
+    {
+      "pageId": "performance_dashboard",
+      "title": "Performance Dashboard",
+      "buttons": 19
+    },
+    {
+      "pageId": "risk_dashboard",
+      "title": "Risk Dashboard",
+      "buttons": 15
+    },
+    {
+      "pageId": "robustness_lab",
+      "title": "Robustness Lab",
+      "buttons": 21
+    },
+    {
+      "pageId": "holdings_trades",
+      "title": "Trade Blotter & Execution",
+      "buttons": 22
+    },
+    {
+      "pageId": "artifacts",
+      "title": "Artifacts",
+      "buttons": 7
+    },
+    {
+      "pageId": "report_studio",
+      "title": "Report Studio",
+      "buttons": 16
+    },
+    {
+      "pageId": "help",
+      "title": "Help",
+      "buttons": 9
+    }
+  ],
+  "tested": [
+    {
+      "scope": "global",
+      "page": "Welcome",
+      "text": "Home",
+      "action": "",
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "global",
+      "page": "Welcome",
+      "text": "Research Setup",
+      "action": "",
+      "feedback": [
+        "page:Welcome->Scenario Builder"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "global",
+      "page": "Scenario Builder",
+      "text": "Analytics",
+      "action": "",
+      "feedback": [
+        "page:Scenario Builder->Signal & Factor Builder"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "global",
+      "page": "Signal & Factor Builder",
+      "text": "Portfolio",
+      "action": "",
+      "feedback": [
+        "page:Signal & Factor Builder->Trade Blotter & Execution"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "global",
+      "page": "Trade Blotter & Execution",
+      "text": "Delivery",
+      "action": "",
+      "feedback": [
+        "page:Trade Blotter & Execution->Artifacts"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "global",
+      "page": "Artifacts",
+      "text": "Help",
+      "action": "",
+      "feedback": [
+        "page:Artifacts->Help"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "global",
+      "page": "Help",
+      "text": "qnative_v2_mainline (Mainline) ▾",
+      "action": "",
+      "feedback": [
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "global",
+      "page": "Help",
+      "text": "0 notices",
+      "action": "",
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "global",
+      "page": "Help",
+      "text": "Hide",
+      "action": "",
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Welcome",
+      "pageId": "welcome",
+      "text": "Open latest workspace",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "overview"
+      },
+      "feedback": [
+        "page:Welcome->System Overview"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Welcome",
+      "pageId": "welcome",
+      "text": "View run history",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "run_history"
+      },
+      "feedback": [
+        "page:Welcome->Run History"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Welcome",
+      "pageId": "welcome",
+      "text": "SScenario BuilderConfigure universe, sleeves, and threshold assumptions before running research.",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "scenario_builder"
+      },
+      "feedback": [
+        "page:Welcome->Scenario Builder"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Welcome",
+      "pageId": "welcome",
+      "text": "BBacktest RunnerLaunch baseline and batch runs after checking pipeline readiness.",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "backtest_runner"
+      },
+      "feedback": [
+        "page:Welcome->Backtest Runner"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Welcome",
+      "pageId": "welcome",
+      "text": "PPerformance DashboardReview NAV, benchmark spread, drawdown, and rolling Sharpe.",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "performance_dashboard"
+      },
+      "feedback": [
+        "page:Welcome->Performance Dashboard"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Welcome",
+      "pageId": "welcome",
+      "text": "RRisk DashboardInspect regime state, factor relationships, and exposure changes.",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "risk_dashboard"
+      },
+      "feedback": [
+        "page:Welcome->Risk Dashboard"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Welcome",
+      "pageId": "welcome",
+      "text": "RReport StudioAssemble charts, evidence blocks, and final delivery materials.",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "report_studio"
+      },
+      "feedback": [
+        "page:Welcome->Report Studio"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Welcome",
+      "pageId": "welcome",
+      "text": "↑",
+      "action": "back-to-top",
+      "attrs": {
+        "data-action": "back-to-top"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Welcome",
+      "pageId": "welcome",
+      "text": "Preview",
+      "action": "preview-current-work",
+      "attrs": {
+        "data-action": "preview-current-work"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "System Overview",
+      "pageId": "overview",
+      "text": "Open summary",
+      "action": "",
+      "attrs": {},
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "System Overview",
+      "pageId": "overview",
+      "text": "Export snapshot",
+      "action": "",
+      "attrs": {},
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "System Overview",
+      "pageId": "overview",
+      "text": "UUniverse480 names98.8% coverage / benchmark Static baseline + market benchmark",
+      "action": "overview-drilldown-universe",
+      "attrs": {
+        "data-action": "overview-drilldown-universe"
+      },
+      "feedback": [
+        "page:System Overview->Universe & Company Selector"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "System Overview",
+      "pageId": "overview",
+      "text": "RRegimeStressThreshold 22 / latest VIX 22",
+      "action": "overview-drilldown-regime",
+      "attrs": {
+        "data-action": "overview-drilldown-regime"
+      },
+      "feedback": [
+        "page:System Overview->Regime & Threshold Control"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "System Overview",
+      "pageId": "overview",
+      "text": "OOptimizer25-3515.8% turnover / 11% vol",
+      "action": "overview-drilldown-optimizer",
+      "attrs": {
+        "data-action": "overview-drilldown-optimizer"
+      },
+      "feedback": [
+        "page:System Overview->Portfolio Optimizer Settings"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "System Overview",
+      "pageId": "overview",
+      "text": "FFactors4 sleevesAvg IC 0.046 / 12 sub-variables",
+      "action": "overview-drilldown-factors",
+      "attrs": {
+        "data-action": "overview-drilldown-factors"
+      },
+      "feedback": [
+        "page:System Overview->Signal & Factor Builder"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "System Overview",
+      "pageId": "overview",
+      "text": "TTrades4 names16.8% turnover / Quarterly batch with overlay exception handling",
+      "action": "overview-drilldown-trades",
+      "attrs": {
+        "data-action": "overview-drilldown-trades"
+      },
+      "feedback": [
+        "page:System Overview->Trade Blotter & Execution"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "System Overview",
+      "pageId": "overview",
+      "text": "UUniverse & Company Selector480 names98.8% coverage in current preview",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "universe_selector"
+      },
+      "feedback": [
+        "page:System Overview->Universe & Company Selector"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "System Overview",
+      "pageId": "overview",
+      "text": "RRegime & Threshold ControlVIX 22Stress state / latest VIX 22",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "regime_control"
+      },
+      "feedback": [
+        "page:System Overview->Regime & Threshold Control"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "System Overview",
+      "pageId": "overview",
+      "text": "PPortfolio Optimizer Settings25-35 band15.8% est. turnover / 11% est. vol",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "optimizer_settings"
+      },
+      "feedback": [
+        "page:System Overview->Portfolio Optimizer Settings"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "System Overview",
+      "pageId": "overview",
+      "text": "SSignal & Factor Builder4 sleevesAvg IC 0.046 / top 25 preview",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "factor_lab"
+      },
+      "feedback": [
+        "page:System Overview->Signal & Factor Builder"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "System Overview",
+      "pageId": "overview",
+      "text": "TTrade Blotter & Execution4 trades16.8% est. turnover / Quarterly batch with overlay exception handling",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "holdings_trades"
+      },
+      "feedback": [
+        "page:System Overview->Trade Blotter & Execution"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "System Overview",
+      "pageId": "overview",
+      "text": "↑",
+      "action": "back-to-top",
+      "attrs": {
+        "data-action": "back-to-top"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "System Overview",
+      "pageId": "overview",
+      "text": "Preview",
+      "action": "preview-current-work",
+      "attrs": {
+        "data-action": "preview-current-work"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Scenario Builder",
+      "pageId": "scenario_builder",
+      "text": "undefined▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "universe",
+        "data-control-options": "US Large Cap||US Broad Market||Defensive Basket"
+      },
+      "feedback": [
+        "overlay:US Large CapUS Broad MarketDefensive Basket"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Scenario Builder",
+      "pageId": "scenario_builder",
+      "text": "Quarterly▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "rebalance",
+        "data-control-options": "Quarterly"
+      },
+      "feedback": [
+        "overlay:Quarterly"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Scenario Builder",
+      "pageId": "scenario_builder",
+      "text": "undefined✎",
+      "action": "",
+      "attrs": {
+        "data-control-key": "top_n"
+      },
+      "feedback": [
+        "overlay:Edit fieldTop NCloseSave"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Scenario Builder",
+      "pageId": "scenario_builder",
+      "text": "undefined✎",
+      "action": "",
+      "attrs": {
+        "data-control-key": "vix_threshold"
+      },
+      "feedback": [
+        "overlay:Edit fieldVIX ThresholdCloseSave"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Scenario Builder",
+      "pageId": "scenario_builder",
+      "text": "undefined▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "transaction_cost",
+        "data-control-options": "10bps||15bps||25bps||40bps"
+      },
+      "feedback": [
+        "overlay:10bps15bps25bps40bps"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Scenario Builder",
+      "pageId": "scenario_builder",
+      "text": "Disabled",
+      "action": "",
+      "attrs": {
+        "data-control-key": "neutralisation"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Scenario Builder",
+      "pageId": "scenario_builder",
+      "text": "Value",
+      "action": "",
+      "attrs": {
+        "data-control-key": "factor_sleeves",
+        "data-tag-value": "Value"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Scenario Builder",
+      "pageId": "scenario_builder",
+      "text": "Quality",
+      "action": "",
+      "attrs": {
+        "data-control-key": "factor_sleeves",
+        "data-tag-value": "Quality"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Scenario Builder",
+      "pageId": "scenario_builder",
+      "text": "Momentum",
+      "action": "",
+      "attrs": {
+        "data-control-key": "factor_sleeves",
+        "data-tag-value": "Momentum"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Scenario Builder",
+      "pageId": "scenario_builder",
+      "text": "Dividend",
+      "action": "",
+      "attrs": {
+        "data-control-key": "factor_sleeves",
+        "data-tag-value": "Dividend"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Scenario Builder",
+      "pageId": "scenario_builder",
+      "text": "undefined✎",
+      "action": "",
+      "attrs": {
+        "data-control-key": "hold_cap"
+      },
+      "feedback": [
+        "overlay:Edit fieldHold CapCloseSave"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Scenario Builder",
+      "pageId": "scenario_builder",
+      "text": "undefined▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "benchmark",
+        "data-control-options": "Static baseline + market benchmark||Benchmark only||Custom control portfolio"
+      },
+      "feedback": [
+        "overlay:Static baseline + market benchmarkBenchmark onlyCustom control portfolio"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Scenario Builder",
+      "pageId": "scenario_builder",
+      "text": "Disabled",
+      "action": "",
+      "attrs": {
+        "data-control-key": "stress_overlay"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Scenario Builder",
+      "pageId": "scenario_builder",
+      "text": "undefined▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "lookback_window",
+        "data-control-options": "6 months||12 months||24 months"
+      },
+      "feedback": [
+        "overlay:6 months12 months24 months"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Scenario Builder",
+      "pageId": "scenario_builder",
+      "text": "undefined▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "output_pack",
+        "data-control-options": "NAV + holdings + risk||NAV only||Full artifact bundle"
+      },
+      "feedback": [
+        "overlay:NAV + holdings + riskNAV onlyFull artifact bundle"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Scenario Builder",
+      "pageId": "scenario_builder",
+      "text": "Apply",
+      "action": "apply-preset",
+      "attrs": {
+        "data-action": "apply-preset",
+        "data-preset": "Base"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Scenario Builder",
+      "pageId": "scenario_builder",
+      "text": "Apply",
+      "action": "apply-preset",
+      "attrs": {
+        "data-action": "apply-preset",
+        "data-preset": "Stress-aware"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Scenario Builder",
+      "pageId": "scenario_builder",
+      "text": "Apply",
+      "action": "apply-preset",
+      "attrs": {
+        "data-action": "apply-preset",
+        "data-preset": "Low-turnover"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Scenario Builder",
+      "pageId": "scenario_builder",
+      "text": "↑",
+      "action": "back-to-top",
+      "attrs": {
+        "data-action": "back-to-top"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Scenario Builder",
+      "pageId": "scenario_builder",
+      "text": "Preview",
+      "action": "preview-current-work",
+      "attrs": {
+        "data-action": "preview-current-work"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Universe & Company Selector",
+      "pageId": "universe_selector",
+      "text": "Refresh preview",
+      "action": "preview-universe",
+      "attrs": {
+        "data-action": "preview-universe"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Universe & Company Selector",
+      "pageId": "universe_selector",
+      "text": "Open in Runner",
+      "action": "handoff-to-runner",
+      "attrs": {
+        "data-action": "handoff-to-runner"
+      },
+      "feedback": [
+        "page:Universe & Company Selector->Backtest Runner"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Universe & Company Selector",
+      "pageId": "universe_selector",
+      "text": "US Large Cap▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "universe",
+        "data-control-options": "US Large Cap||US Broad Market||Defensive Basket"
+      },
+      "feedback": [
+        "overlay:US Large CapUS Broad MarketDefensive Basket"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Universe & Company Selector",
+      "pageId": "universe_selector",
+      "text": "Benchmark only▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "benchmark",
+        "data-control-options": "Static baseline + market benchmark||Benchmark only||Custom control portfolio"
+      },
+      "feedback": [
+        "overlay:Static baseline + market benchmarkBenchmark onlyCustom control portfolio"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Universe & Company Selector",
+      "pageId": "universe_selector",
+      "text": "Large and liquid only▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "company_focus",
+        "data-control-options": "Large and liquid only||Balanced quality/liquidity||Defensive resilient names"
+      },
+      "feedback": [
+        "overlay:Large and liquid onlyBalanced quality/liquidityDefensive resilient names"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Universe & Company Selector",
+      "pageId": "universe_selector",
+      "text": "Disabled",
+      "action": "",
+      "attrs": {
+        "data-control-key": "require_dividend"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Universe & Company Selector",
+      "pageId": "universe_selector",
+      "text": "Balanced▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "sector_tilt",
+        "data-control-options": "Balanced||Defensive||Cyclical check"
+      },
+      "feedback": [
+        "overlay:BalancedDefensiveCyclical check"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Universe & Company Selector",
+      "pageId": "universe_selector",
+      "text": "↑",
+      "action": "back-to-top",
+      "attrs": {
+        "data-action": "back-to-top"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Universe & Company Selector",
+      "pageId": "universe_selector",
+      "text": "Preview",
+      "action": "preview-universe",
+      "attrs": {
+        "data-action": "preview-universe"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Regime & Threshold Control",
+      "pageId": "regime_control",
+      "text": "Refresh preview",
+      "action": "preview-regime",
+      "attrs": {
+        "data-action": "preview-regime"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Regime & Threshold Control",
+      "pageId": "regime_control",
+      "text": "Open in Runner",
+      "action": "handoff-to-runner",
+      "attrs": {
+        "data-action": "handoff-to-runner"
+      },
+      "feedback": [
+        "page:Regime & Threshold Control->Backtest Runner"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Regime & Threshold Control",
+      "pageId": "regime_control",
+      "text": "Enabled",
+      "action": "",
+      "attrs": {
+        "data-control-key": "stress_overlay"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Regime & Threshold Control",
+      "pageId": "regime_control",
+      "text": "25✎",
+      "action": "",
+      "attrs": {
+        "data-control-key": "vix_threshold"
+      },
+      "feedback": [
+        "overlay:Edit fieldVIX ThresholdCloseSave"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Regime & Threshold Control",
+      "pageId": "regime_control",
+      "text": "20✎",
+      "action": "",
+      "attrs": {
+        "data-control-key": "warning_band"
+      },
+      "feedback": [
+        "overlay:Edit fieldWarning BandCloseSave"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Regime & Threshold Control",
+      "pageId": "regime_control",
+      "text": "18✎",
+      "action": "",
+      "attrs": {
+        "data-control-key": "exit_band"
+      },
+      "feedback": [
+        "overlay:Edit fieldExit BandCloseSave"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Regime & Threshold Control",
+      "pageId": "regime_control",
+      "text": "VIX-aware▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "regime_mode",
+        "data-control-options": "VIX-aware||Manual override||Threshold off"
+      },
+      "feedback": [
+        "overlay:VIX-awareManual overrideThreshold off"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Regime & Threshold Control",
+      "pageId": "regime_control",
+      "text": "Last 12 observations▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "replay_window",
+        "data-control-options": "Last 8 observations||Last 12 observations||Last 24 observations"
+      },
+      "feedback": [
+        "overlay:Last 8 observationsLast 12 observationsLast 24 observations"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Regime & Threshold Control",
+      "pageId": "regime_control",
+      "text": "↑",
+      "action": "back-to-top",
+      "attrs": {
+        "data-action": "back-to-top"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Regime & Threshold Control",
+      "pageId": "regime_control",
+      "text": "Preview",
+      "action": "preview-regime",
+      "attrs": {
+        "data-action": "preview-regime"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Portfolio Optimizer Settings",
+      "pageId": "optimizer_settings",
+      "text": "Refresh preview",
+      "action": "preview-optimizer",
+      "attrs": {
+        "data-action": "preview-optimizer"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Portfolio Optimizer Settings",
+      "pageId": "optimizer_settings",
+      "text": "Open in Runner",
+      "action": "handoff-to-runner",
+      "attrs": {
+        "data-action": "handoff-to-runner"
+      },
+      "feedback": [
+        "page:Portfolio Optimizer Settings->Backtest Runner"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Portfolio Optimizer Settings",
+      "pageId": "optimizer_settings",
+      "text": "25✎",
+      "action": "",
+      "attrs": {
+        "data-control-key": "top_n"
+      },
+      "feedback": [
+        "overlay:Edit fieldTop NCloseSave"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Portfolio Optimizer Settings",
+      "pageId": "optimizer_settings",
+      "text": "4%✎",
+      "action": "",
+      "attrs": {
+        "data-control-key": "hold_cap"
+      },
+      "feedback": [
+        "overlay:Edit fieldHold CapCloseSave"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Portfolio Optimizer Settings",
+      "pageId": "optimizer_settings",
+      "text": "15bps▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "transaction_cost",
+        "data-control-options": "10bps||15bps||25bps||40bps"
+      },
+      "feedback": [
+        "overlay:10bps15bps25bps40bps"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Portfolio Optimizer Settings",
+      "pageId": "optimizer_settings",
+      "text": "Enabled",
+      "action": "",
+      "attrs": {
+        "data-control-key": "neutralisation"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Portfolio Optimizer Settings",
+      "pageId": "optimizer_settings",
+      "text": "18%✎",
+      "action": "",
+      "attrs": {
+        "data-control-key": "turnover_target"
+      },
+      "feedback": [
+        "overlay:Edit fieldTurnover TargetCloseSave"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Portfolio Optimizer Settings",
+      "pageId": "optimizer_settings",
+      "text": "Balanced alpha / risk▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "optimizer_goal",
+        "data-control-options": "Balanced alpha / risk||Low turnover first||Higher conviction"
+      },
+      "feedback": [
+        "overlay:Balanced alpha / riskLow turnover firstHigher conviction"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Portfolio Optimizer Settings",
+      "pageId": "optimizer_settings",
+      "text": "↑",
+      "action": "back-to-top",
+      "attrs": {
+        "data-action": "back-to-top"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Portfolio Optimizer Settings",
+      "pageId": "optimizer_settings",
+      "text": "Preview",
+      "action": "preview-optimizer",
+      "attrs": {
+        "data-action": "preview-optimizer"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Data Health",
+      "pageId": "data_health",
+      "text": "↑",
+      "action": "back-to-top",
+      "attrs": {
+        "data-action": "back-to-top"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Data Health",
+      "pageId": "data_health",
+      "text": "Preview",
+      "action": "preview-current-work",
+      "attrs": {
+        "data-action": "preview-current-work"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Backtest Runner",
+      "pageId": "backtest_runner",
+      "text": "Watch live status",
+      "action": "watch-live-status",
+      "attrs": {
+        "data-action": "watch-live-status"
+      },
+      "feedback": [
+        "overlay:Balanced alpha / riskLow turnover firstHigher conviction"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Backtest Runner",
+      "pageId": "backtest_runner",
+      "text": "Current working scenario▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "scenario",
+        "data-control-options": "Current working scenario||qnative_v2_mainline||Base||Stress-aware||Low-turnover"
+      },
+      "feedback": [
+        "overlay:Current working scenarioqnative_v2_mainlineBaseStress-awareLow-turnover"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Backtest Runner",
+      "pageId": "backtest_runner",
+      "text": "Single run▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "execution_mode",
+        "data-control-options": "Single run||Batch compare||Nightly refresh"
+      },
+      "feedback": [
+        "overlay:Single runBatch compareNightly refresh"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Backtest Runner",
+      "pageId": "backtest_runner",
+      "text": "Normal▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "priority",
+        "data-control-options": "Normal||High||Low"
+      },
+      "feedback": [
+        "overlay:NormalHighLow"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Backtest Runner",
+      "pageId": "backtest_runner",
+      "text": "Team C✎",
+      "action": "",
+      "attrs": {
+        "data-control-key": "owner"
+      },
+      "feedback": [
+        "overlay:Edit fieldOwnerCloseSave"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Backtest Runner",
+      "pageId": "backtest_runner",
+      "text": "Enabled",
+      "action": "",
+      "attrs": {
+        "data-control-key": "artifact_bundle"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Backtest Runner",
+      "pageId": "backtest_runner",
+      "text": "Enabled",
+      "action": "",
+      "attrs": {
+        "data-control-key": "notifications"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Backtest Runner",
+      "pageId": "backtest_runner",
+      "text": "Return to Portfolio Optimizer Settings",
+      "action": "return-to-setup-context",
+      "attrs": {
+        "data-action": "return-to-setup-context"
+      },
+      "feedback": [
+        "page:Backtest Runner->Portfolio Optimizer Settings"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Backtest Runner",
+      "pageId": "backtest_runner",
+      "text": "↑",
+      "action": "back-to-top",
+      "attrs": {
+        "data-action": "back-to-top"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Backtest Runner",
+      "pageId": "backtest_runner",
+      "text": "Preview",
+      "action": "preview-current-work",
+      "attrs": {
+        "data-action": "preview-current-work"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Run History",
+      "pageId": "run_history",
+      "text": "Open latest",
+      "action": "open-latest-run",
+      "attrs": {
+        "data-action": "open-latest-run"
+      },
+      "feedback": [
+        "overlay:Execution Logs BT-2026-0406-01 Close [08:15:02] Job accepted by scheduler[08:15:09] Scenario config loaded: Stress-aware monthly monitoring refresh[08:16:14] Feature store sync completed[08:20:27] Backtest run finished successfully[08:23:16] NAV pack exported to artifact bundle"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Run History",
+      "pageId": "run_history",
+      "text": "Download logs",
+      "action": "download-logs",
+      "attrs": {
+        "data-action": "download-logs"
+      },
+      "feedback": [
+        "download:BT-2026-0406-01-logs.txt"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Run History",
+      "pageId": "run_history",
+      "text": "Open latest artifacts",
+      "action": "open-artifacts",
+      "attrs": {
+        "data-action": "open-artifacts"
+      },
+      "feedback": [
+        "download:BT-2026-0406-01-logs.txt"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Run History",
+      "pageId": "run_history",
+      "text": "All scenarios▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "scenario_filter",
+        "data-control-options": "All scenarios||Stress-aware monitoring refresh||Daily refresh / export pack||Scenario compare batch||Monthly performance snapshot",
+        "data-multi-select": "true"
+      },
+      "feedback": [
+        "overlay:All scenariosStress-aware monitoring refreshDaily refresh / export packScenario compare batchMonthly performance snapshot",
+        "download:BT-2026-0406-01-logs.txt"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Run History",
+      "pageId": "run_history",
+      "text": "All status▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "status_filter",
+        "data-control-options": "All status||Success||Warning||Queued||Running||Scheduled",
+        "data-multi-select": "true"
+      },
+      "feedback": [
+        "overlay:All statusSuccessWarningQueuedRunningScheduled",
+        "download:BT-2026-0406-01-logs.txt"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Run History",
+      "pageId": "run_history",
+      "text": "All owners▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "owner_filter",
+        "data-control-options": "All owners||Team C||Automation||Research Ops",
+        "data-multi-select": "true"
+      },
+      "feedback": [
+        "overlay:All ownersTeam CAutomationResearch Ops",
+        "download:BT-2026-0406-01-logs.txt"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Run History",
+      "pageId": "run_history",
+      "text": "Last 7 days▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "date_range",
+        "data-control-options": "Last 24 hours||Last 7 days||Last 30 days||All dates||Custom range"
+      },
+      "feedback": [
+        "overlay:Last 24 hoursLast 7 daysLast 30 daysAll datesCustom range",
+        "download:BT-2026-0406-01-logs.txt"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Run History",
+      "pageId": "run_history",
+      "text": "Enabled",
+      "action": "",
+      "attrs": {
+        "data-control-key": "include_warnings"
+      },
+      "feedback": [
+        "download:BT-2026-0406-01-logs.txt"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Run History",
+      "pageId": "run_history",
+      "text": "Latest first▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "sort_order",
+        "data-control-options": "Latest first||Oldest first||Status priority"
+      },
+      "feedback": [
+        "overlay:Latest firstOldest firstStatus priority",
+        "download:BT-2026-0406-01-logs.txt"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Run History",
+      "pageId": "run_history",
+      "text": "Refresh table",
+      "action": "refresh-history",
+      "attrs": {
+        "data-action": "refresh-history"
+      },
+      "feedback": [
+        "download:BT-2026-0406-01-logs.txt"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Run History",
+      "pageId": "run_history",
+      "text": "Export history",
+      "action": "export-history",
+      "attrs": {
+        "data-action": "export-history"
+      },
+      "feedback": [
+        "download:run-history.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Run History",
+      "pageId": "run_history",
+      "text": "Logs",
+      "action": "",
+      "attrs": {
+        "data-open-run-log": "BT-2026-0406-01"
+      },
+      "feedback": [
+        "overlay:Latest firstOldest firstStatus priority",
+        "download:run-history.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Run History",
+      "pageId": "run_history",
+      "text": "Detail",
+      "action": "",
+      "attrs": {
+        "data-open-run-detail": "BT-2026-0406-01"
+      },
+      "feedback": [
+        "overlay:Run Detail BT-2026-0406-01 Close Status: Idle Created: n/a",
+        "download:run-history.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Run History",
+      "pageId": "run_history",
+      "text": "Artifacts",
+      "action": "",
+      "attrs": {
+        "data-open-run-artifacts": "BT-2026-0406-01"
+      },
+      "feedback": [
+        "download:run-history.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Run History",
+      "pageId": "run_history",
+      "text": "Logs",
+      "action": "",
+      "attrs": {
+        "data-open-run-log": "BT-2026-0405-01"
+      },
+      "feedback": [
+        "download:run-history.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Run History",
+      "pageId": "run_history",
+      "text": "Detail",
+      "action": "",
+      "attrs": {
+        "data-open-run-detail": "BT-2026-0405-01"
+      },
+      "feedback": [
+        "overlay:Run Detail BT-2026-0405-01 Close Status: Idle Created: n/a",
+        "download:run-history.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Run History",
+      "pageId": "run_history",
+      "text": "Artifacts",
+      "action": "",
+      "attrs": {
+        "data-open-run-artifacts": "BT-2026-0405-01"
+      },
+      "feedback": [
+        "download:run-history.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Run History",
+      "pageId": "run_history",
+      "text": "Logs",
+      "action": "",
+      "attrs": {
+        "data-open-run-log": "BT-2026-0404-01"
+      },
+      "feedback": [
+        "download:run-history.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Run History",
+      "pageId": "run_history",
+      "text": "Detail",
+      "action": "",
+      "attrs": {
+        "data-open-run-detail": "BT-2026-0404-01"
+      },
+      "feedback": [
+        "overlay:Run Detail BT-2026-0404-01 Close Status: Idle Created: n/a",
+        "download:run-history.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Run History",
+      "pageId": "run_history",
+      "text": "Artifacts",
+      "action": "",
+      "attrs": {
+        "data-open-run-artifacts": "BT-2026-0404-01"
+      },
+      "feedback": [
+        "download:run-history.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Run History",
+      "pageId": "run_history",
+      "text": "Logs",
+      "action": "",
+      "attrs": {
+        "data-open-run-log": "BT-2026-0403-01"
+      },
+      "feedback": [
+        "download:run-history.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Run History",
+      "pageId": "run_history",
+      "text": "Detail",
+      "action": "",
+      "attrs": {
+        "data-open-run-detail": "BT-2026-0403-01"
+      },
+      "feedback": [
+        "overlay:Run Detail BT-2026-0403-01 Close Status: Idle Created: n/a",
+        "download:run-history.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Run History",
+      "pageId": "run_history",
+      "text": "Artifacts",
+      "action": "",
+      "attrs": {
+        "data-open-run-artifacts": "BT-2026-0403-01"
+      },
+      "feedback": [
+        "download:run-history.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Run History",
+      "pageId": "run_history",
+      "text": "Select records",
+      "action": "start-history-selection",
+      "attrs": {
+        "data-action": "start-history-selection"
+      },
+      "feedback": [
+        "download:run-history.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Run History",
+      "pageId": "run_history",
+      "text": "↑",
+      "action": "back-to-top",
+      "attrs": {
+        "data-action": "back-to-top"
+      },
+      "feedback": [
+        "download:run-history.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Run History",
+      "pageId": "run_history",
+      "text": "Preview",
+      "action": "preview-current-work",
+      "attrs": {
+        "data-action": "preview-current-work"
+      },
+      "feedback": [
+        "download:run-history.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Signal & Factor Builder",
+      "pageId": "factor_lab",
+      "text": "Refresh preview",
+      "action": "preview-factors",
+      "attrs": {
+        "data-action": "preview-factors"
+      },
+      "feedback": [
+        "download:run-history.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Signal & Factor Builder",
+      "pageId": "factor_lab",
+      "text": "Open in Runner",
+      "action": "handoff-to-runner",
+      "attrs": {
+        "data-action": "handoff-to-runner"
+      },
+      "feedback": [
+        "page:Signal & Factor Builder->Backtest Runner",
+        "download:run-history.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Signal & Factor Builder",
+      "pageId": "factor_lab",
+      "text": "Open Research Setup",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "scenario_builder"
+      },
+      "feedback": [
+        "page:Signal & Factor Builder->Scenario Builder",
+        "download:run-history.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Signal & Factor Builder",
+      "pageId": "factor_lab",
+      "text": "Open Optimizer Settings",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "optimizer_settings"
+      },
+      "feedback": [
+        "page:Signal & Factor Builder->Portfolio Optimizer Settings",
+        "download:run-history.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Signal & Factor Builder",
+      "pageId": "factor_lab",
+      "text": "↑",
+      "action": "back-to-top",
+      "attrs": {
+        "data-action": "back-to-top"
+      },
+      "feedback": [
+        "download:run-history.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Signal & Factor Builder",
+      "pageId": "factor_lab",
+      "text": "Preview",
+      "action": "preview-factors",
+      "attrs": {
+        "data-action": "preview-factors"
+      },
+      "feedback": [
+        "download:run-history.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Signal & Factor Builder",
+      "pageId": "factor_lab",
+      "text": "+",
+      "action": "toggle-floating-controls",
+      "attrs": {
+        "data-action": "toggle-floating-controls"
+      },
+      "feedback": [
+        "download:run-history.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Performance Dashboard",
+      "pageId": "performance_dashboard",
+      "text": "Open run viewer",
+      "action": "compare-performance-runs",
+      "attrs": {
+        "data-action": "compare-performance-runs"
+      },
+      "feedback": [
+        "download:run-history.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Performance Dashboard",
+      "pageId": "performance_dashboard",
+      "text": "Open point drilldown",
+      "action": "open-performance-drilldown",
+      "attrs": {
+        "data-action": "open-performance-drilldown"
+      },
+      "feedback": [
+        "overlay:Point Drilldown Latest Point Detail Close Date: T12 Portfolio NAV: 174.12 Benchmark NAV: 173.27 Net return: n/a Turnover: n/a TickerSectorWeightRolePGConsumer Staples4.7%Dividend / defenceJNJHealth Care4.5%QualityMSFTInformation Technology4.3%Core qualityXOMEnergy4%Value / dividendABBVHealth Care3.7%Defensive growth FactorICRank ICHit RateQuality0.0580.07262.2%Value0.0410.05459.2%Market Technical0.0330.04655.2%Dividend0.0520.06561.2%",
+        "download:run-history.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Performance Dashboard",
+      "pageId": "performance_dashboard",
+      "text": "Export charts",
+      "action": "export-performance-charts",
+      "attrs": {
+        "data-action": "export-performance-charts"
+      },
+      "feedback": [
+        "download:performance-dashboard-series.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Performance Dashboard",
+      "pageId": "performance_dashboard",
+      "text": "Latest point▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "nav_focus_period",
+        "data-control-options": "Latest point||Peak drawdown"
+      },
+      "feedback": [
+        "overlay:Latest pointPeak drawdown",
+        "download:performance-dashboard-series.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Performance Dashboard",
+      "pageId": "performance_dashboard",
+      "text": "Holdings + factors▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "drilldown_view",
+        "data-control-options": "Holdings + factors||Holdings only||Factors only"
+      },
+      "feedback": [
+        "overlay:Holdings + factorsHoldings onlyFactors only",
+        "download:performance-dashboard-series.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Performance Dashboard",
+      "pageId": "performance_dashboard",
+      "text": "Open Trade Blotter",
+      "action": "performance-open-trades",
+      "attrs": {
+        "data-action": "performance-open-trades"
+      },
+      "feedback": [
+        "page:Performance Dashboard->Trade Blotter & Execution",
+        "download:performance-dashboard-series.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Performance Dashboard",
+      "pageId": "performance_dashboard",
+      "text": "↑",
+      "action": "back-to-top",
+      "attrs": {
+        "data-action": "back-to-top"
+      },
+      "feedback": [
+        "download:performance-dashboard-series.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Performance Dashboard",
+      "pageId": "performance_dashboard",
+      "text": "Preview",
+      "action": "preview-current-work",
+      "attrs": {
+        "data-action": "preview-current-work"
+      },
+      "feedback": [
+        "download:performance-dashboard-series.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Performance Dashboard",
+      "pageId": "performance_dashboard",
+      "text": "+",
+      "action": "toggle-floating-controls",
+      "attrs": {
+        "data-action": "toggle-floating-controls"
+      },
+      "feedback": [
+        "download:performance-dashboard-series.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Risk Dashboard",
+      "pageId": "risk_dashboard",
+      "text": "Compare risk profile",
+      "action": "compare-risk-profile",
+      "attrs": {
+        "data-action": "compare-risk-profile"
+      },
+      "feedback": [
+        "overlay:Holdings + factorsHoldings onlyFactors only",
+        "download:performance-dashboard-series.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Risk Dashboard",
+      "pageId": "risk_dashboard",
+      "text": "Open holdings detail",
+      "action": "risk-open-holdings",
+      "attrs": {
+        "data-action": "risk-open-holdings"
+      },
+      "feedback": [
+        "page:Risk Dashboard->Trade Blotter & Execution",
+        "download:performance-dashboard-series.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Risk Dashboard",
+      "pageId": "risk_dashboard",
+      "text": "Refresh VIX",
+      "action": "refresh-vix",
+      "attrs": {
+        "data-action": "refresh-vix"
+      },
+      "feedback": [
+        "download:performance-dashboard-series.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Risk Dashboard",
+      "pageId": "risk_dashboard",
+      "text": "▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "snapshot_date",
+        "data-control-options": "No stored snapshots"
+      },
+      "feedback": [
+        "overlay:No stored snapshots",
+        "download:performance-dashboard-series.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Risk Dashboard",
+      "pageId": "risk_dashboard",
+      "text": "All sectors▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "sector_focus",
+        "data-control-options": "All sectors||Consumer Staples||Energy||Health Care||Information Technology"
+      },
+      "feedback": [
+        "overlay:All sectorsConsumer StaplesEnergyHealth CareInformation Technology",
+        "download:performance-dashboard-series.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Risk Dashboard",
+      "pageId": "risk_dashboard",
+      "text": "Static baseline▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "compare_mode",
+        "data-control-options": "Static baseline||Primary benchmark||Previous snapshot"
+      },
+      "feedback": [
+        "overlay:Static baselinePrimary benchmarkPrevious snapshot",
+        "download:performance-dashboard-series.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Risk Dashboard",
+      "pageId": "risk_dashboard",
+      "text": "Latest covariance metrics▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "covariance_focus",
+        "data-control-options": "Latest covariance metrics||Tracking error lens||Diversification lens"
+      },
+      "feedback": [
+        "overlay:Latest covariance metricsTracking error lensDiversification lens",
+        "download:performance-dashboard-series.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Risk Dashboard",
+      "pageId": "risk_dashboard",
+      "text": "Open Trade Blotter",
+      "action": "risk-open-holdings",
+      "attrs": {
+        "data-action": "risk-open-holdings"
+      },
+      "feedback": [
+        "page:Risk Dashboard->Trade Blotter & Execution",
+        "download:performance-dashboard-series.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Risk Dashboard",
+      "pageId": "risk_dashboard",
+      "text": "↑",
+      "action": "back-to-top",
+      "attrs": {
+        "data-action": "back-to-top"
+      },
+      "feedback": [
+        "download:performance-dashboard-series.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Risk Dashboard",
+      "pageId": "risk_dashboard",
+      "text": "Preview",
+      "action": "preview-current-work",
+      "attrs": {
+        "data-action": "preview-current-work"
+      },
+      "feedback": [
+        "download:performance-dashboard-series.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Risk Dashboard",
+      "pageId": "risk_dashboard",
+      "text": "+",
+      "action": "toggle-floating-controls",
+      "attrs": {
+        "data-action": "toggle-floating-controls"
+      },
+      "feedback": [
+        "download:performance-dashboard-series.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Robustness Lab",
+      "pageId": "robustness_lab",
+      "text": "Export table",
+      "action": "export-robustness-table",
+      "attrs": {
+        "data-action": "export-robustness-table"
+      },
+      "feedback": [
+        "download:robustness-table.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Robustness Lab",
+      "pageId": "robustness_lab",
+      "text": "Current working scenario▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "base_scenario",
+        "data-control-options": "Current working scenario||Base||Stress-aware||Low-turnover"
+      },
+      "feedback": [
+        "overlay:Current working scenarioBaseStress-awareLow-turnover",
+        "download:robustness-table.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Robustness Lab",
+      "pageId": "robustness_lab",
+      "text": "Transaction cost",
+      "action": "",
+      "attrs": {
+        "data-control-key": "sensitivity_dimensions",
+        "data-min-select": "2",
+        "data-tag-value": "Transaction cost"
+      },
+      "feedback": [
+        "download:robustness-table.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Robustness Lab",
+      "pageId": "robustness_lab",
+      "text": "Regime threshold",
+      "action": "",
+      "attrs": {
+        "data-control-key": "sensitivity_dimensions",
+        "data-min-select": "2",
+        "data-tag-value": "Regime threshold"
+      },
+      "feedback": [
+        "download:robustness-table.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Robustness Lab",
+      "pageId": "robustness_lab",
+      "text": "Breadth range",
+      "action": "",
+      "attrs": {
+        "data-control-key": "sensitivity_dimensions",
+        "data-min-select": "2",
+        "data-tag-value": "Breadth range"
+      },
+      "feedback": [
+        "download:robustness-table.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Robustness Lab",
+      "pageId": "robustness_lab",
+      "text": "Trade constraints",
+      "action": "",
+      "attrs": {
+        "data-control-key": "sensitivity_dimensions",
+        "data-min-select": "2",
+        "data-tag-value": "Trade constraints"
+      },
+      "feedback": [
+        "download:robustness-table.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Robustness Lab",
+      "pageId": "robustness_lab",
+      "text": "Incumbent band",
+      "action": "",
+      "attrs": {
+        "data-control-key": "sensitivity_dimensions",
+        "data-min-select": "2",
+        "data-tag-value": "Incumbent band"
+      },
+      "feedback": [
+        "download:robustness-table.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Robustness Lab",
+      "pageId": "robustness_lab",
+      "text": "Drawdown brake",
+      "action": "",
+      "attrs": {
+        "data-control-key": "sensitivity_dimensions",
+        "data-min-select": "2",
+        "data-tag-value": "Drawdown brake"
+      },
+      "feedback": [
+        "download:robustness-table.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Robustness Lab",
+      "pageId": "robustness_lab",
+      "text": "Mainline core▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "range_profile",
+        "data-control-options": "Mainline core||Wide sweep||Tighter production"
+      },
+      "feedback": [
+        "overlay:Mainline coreWide sweepTighter production",
+        "download:robustness-table.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Robustness Lab",
+      "pageId": "robustness_lab",
+      "text": "1000✎",
+      "action": "",
+      "attrs": {
+        "data-control-key": "bootstrap_iterations"
+      },
+      "feedback": [
+        "overlay:Edit fieldBootstrap IterationsCloseSave",
+        "download:robustness-table.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Robustness Lab",
+      "pageId": "robustness_lab",
+      "text": "Bootstrap + Monte Carlo▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "stochastic_mode",
+        "data-control-options": "Bootstrap + Monte Carlo||Bootstrap only||Monte Carlo only"
+      },
+      "feedback": [
+        "overlay:Bootstrap + Monte CarloBootstrap onlyMonte Carlo only",
+        "download:robustness-table.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Robustness Lab",
+      "pageId": "robustness_lab",
+      "text": "Normal vs stress▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "subperiod_definition",
+        "data-control-options": "Normal vs stress||Fixed window||Rolling split"
+      },
+      "feedback": [
+        "overlay:Normal vs stressFixed windowRolling split",
+        "download:robustness-table.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Robustness Lab",
+      "pageId": "robustness_lab",
+      "text": "Open in Performance Dashboard",
+      "action": "open-subperiod-performance",
+      "attrs": {
+        "data-action": "open-subperiod-performance"
+      },
+      "feedback": [
+        "page:Robustness Lab->Performance Dashboard",
+        "download:robustness-table.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Robustness Lab",
+      "pageId": "robustness_lab",
+      "text": "↑",
+      "action": "back-to-top",
+      "attrs": {
+        "data-action": "back-to-top"
+      },
+      "feedback": [
+        "download:robustness-table.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Robustness Lab",
+      "pageId": "robustness_lab",
+      "text": "Preview",
+      "action": "preview-current-work",
+      "attrs": {
+        "data-action": "preview-current-work"
+      },
+      "feedback": [
+        "download:robustness-table.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Trade Blotter & Execution",
+      "pageId": "holdings_trades",
+      "text": "Refresh preview",
+      "action": "preview-trades",
+      "attrs": {
+        "data-action": "preview-trades"
+      },
+      "feedback": [
+        "download:robustness-table.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Trade Blotter & Execution",
+      "pageId": "holdings_trades",
+      "text": "Open in Runner",
+      "action": "handoff-to-runner",
+      "attrs": {
+        "data-action": "handoff-to-runner"
+      },
+      "feedback": [
+        "page:Trade Blotter & Execution->Backtest Runner",
+        "download:robustness-table.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Trade Blotter & Execution",
+      "pageId": "holdings_trades",
+      "text": "Export holdings",
+      "action": "export-holdings",
+      "attrs": {
+        "data-action": "export-holdings"
+      },
+      "feedback": [
+        "download:portfolio-holdings.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Trade Blotter & Execution",
+      "pageId": "holdings_trades",
+      "text": "Open Research Setup",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "optimizer_settings"
+      },
+      "feedback": [
+        "page:Trade Blotter & Execution->Portfolio Optimizer Settings",
+        "download:portfolio-holdings.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Trade Blotter & Execution",
+      "pageId": "holdings_trades",
+      "text": "Open Scenario Builder",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "scenario_builder"
+      },
+      "feedback": [
+        "page:Trade Blotter & Execution->Scenario Builder",
+        "download:portfolio-holdings.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Trade Blotter & Execution",
+      "pageId": "holdings_trades",
+      "text": "All trades▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "trade_filter",
+        "data-control-options": "All trades||Buys only||Sells only||Largest changes"
+      },
+      "feedback": [
+        "overlay:All tradesBuys onlySells onlyLargest changes",
+        "download:portfolio-holdings.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Trade Blotter & Execution",
+      "pageId": "holdings_trades",
+      "text": "All sectors▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "sector_focus",
+        "data-control-options": "All sectors||Consumer Staples||Energy||Health Care||Information Technology"
+      },
+      "feedback": [
+        "overlay:All sectorsConsumer StaplesEnergyHealth CareInformation Technology",
+        "download:portfolio-holdings.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Trade Blotter & Execution",
+      "pageId": "holdings_trades",
+      "text": "Driver share▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "attribution_view",
+        "data-control-options": "Driver share||Overlay vs ranking||Constraints only"
+      },
+      "feedback": [
+        "overlay:Driver shareOverlay vs rankingConstraints only",
+        "download:portfolio-holdings.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Trade Blotter & Execution",
+      "pageId": "holdings_trades",
+      "text": "↑",
+      "action": "back-to-top",
+      "attrs": {
+        "data-action": "back-to-top"
+      },
+      "feedback": [
+        "download:portfolio-holdings.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Trade Blotter & Execution",
+      "pageId": "holdings_trades",
+      "text": "Preview",
+      "action": "preview-trades",
+      "attrs": {
+        "data-action": "preview-trades"
+      },
+      "feedback": [
+        "download:portfolio-holdings.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Trade Blotter & Execution",
+      "pageId": "holdings_trades",
+      "text": "+",
+      "action": "toggle-floating-controls",
+      "attrs": {
+        "data-action": "toggle-floating-controls"
+      },
+      "feedback": [
+        "download:portfolio-holdings.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Artifacts",
+      "pageId": "artifacts",
+      "text": "Export ZIP",
+      "action": "export-delivery-zip",
+      "attrs": {
+        "data-action": "export-delivery-zip"
+      },
+      "feedback": [
+        "download:portfolio-holdings.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Artifacts",
+      "pageId": "artifacts",
+      "text": "↑",
+      "action": "back-to-top",
+      "attrs": {
+        "data-action": "back-to-top"
+      },
+      "feedback": [
+        "download:portfolio-holdings.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Artifacts",
+      "pageId": "artifacts",
+      "text": "Preview",
+      "action": "preview-current-work",
+      "attrs": {
+        "data-action": "preview-current-work"
+      },
+      "feedback": [
+        "download:cw2-delivery-bundle-20260501-005552.zip"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Report Studio",
+      "pageId": "report_studio",
+      "text": "Export PDF",
+      "action": "export-ai-analysis",
+      "attrs": {
+        "data-action": "export-ai-analysis"
+      },
+      "feedback": [
+        "download:cw2-delivery-bundle-20260501-005552.zip"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Report Studio",
+      "pageId": "report_studio",
+      "text": "https://api.openai.com/v1✎",
+      "action": "",
+      "attrs": {
+        "data-control-key": "api_url"
+      },
+      "feedback": [
+        "overlay:Edit fieldAPI URLCloseSave",
+        "download:cw2-delivery-bundle-20260501-005552.zip"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Report Studio",
+      "pageId": "report_studio",
+      "text": "gpt-4.1-mini✎",
+      "action": "",
+      "attrs": {
+        "data-control-key": "model"
+      },
+      "feedback": [
+        "overlay:Edit fieldModelCloseSave",
+        "download:cw2-delivery-bundle-20260501-005552.zip"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Report Studio",
+      "pageId": "report_studio",
+      "text": "openai▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "request_format",
+        "data-control-options": "openai||claude||gemini||compatible api||custom json"
+      },
+      "feedback": [
+        "overlay:openaiclaudegeminicompatible apicustom json",
+        "download:cw2-delivery-bundle-20260501-005552.zip"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Report Studio",
+      "pageId": "report_studio",
+      "text": "0.2✎",
+      "action": "",
+      "attrs": {
+        "data-control-key": "temperature"
+      },
+      "feedback": [
+        "overlay:Edit fieldTemperatureCloseSave",
+        "download:cw2-delivery-bundle-20260501-005552.zip"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Report Studio",
+      "pageId": "report_studio",
+      "text": "session only✎",
+      "action": "",
+      "attrs": {
+        "data-control-key": "api_key"
+      },
+      "feedback": [
+        "overlay:Edit fieldAPI KeyCloseSave",
+        "download:cw2-delivery-bundle-20260501-005552.zip"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Report Studio",
+      "pageId": "report_studio",
+      "text": "Write an investor-facing portfolio analysis report. Focus on strategy logic, backtest evidence, risk profile, and concise robustness conclusions. Keep numeric claims tied to the su",
+      "action": "",
+      "attrs": {
+        "data-control-key": "user_instruction"
+      },
+      "feedback": [
+        "overlay:Edit fieldUser InstructionCloseSave",
+        "download:cw2-delivery-bundle-20260501-005552.zip"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Report Studio",
+      "pageId": "report_studio",
+      "text": "optional✎",
+      "action": "",
+      "attrs": {
+        "data-control-key": "system_prompt"
+      },
+      "feedback": [
+        "overlay:Edit fieldSystem PromptCloseSave",
+        "download:cw2-delivery-bundle-20260501-005552.zip"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Report Studio",
+      "pageId": "report_studio",
+      "text": "Manual model",
+      "action": "edit-model-manual",
+      "attrs": {
+        "data-action": "edit-model-manual"
+      },
+      "feedback": [
+        "overlay:Edit fieldModelCloseSave",
+        "download:cw2-delivery-bundle-20260501-005552.zip"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Report Studio",
+      "pageId": "report_studio",
+      "text": "↑",
+      "action": "back-to-top",
+      "attrs": {
+        "data-action": "back-to-top"
+      },
+      "feedback": [
+        "download:cw2-delivery-bundle-20260501-005552.zip"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Report Studio",
+      "pageId": "report_studio",
+      "text": "Preview",
+      "action": "preview-current-work",
+      "attrs": {
+        "data-action": "preview-current-work"
+      },
+      "feedback": [
+        "download:cw2-delivery-bundle-20260501-005552.zip"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Help",
+      "pageId": "help",
+      "text": "Definitions",
+      "action": "help-benchmark-anchor",
+      "attrs": {
+        "data-action": "help-benchmark-anchor"
+      },
+      "feedback": [
+        "download:cw2-delivery-bundle-20260501-005552.zip"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Help",
+      "pageId": "help",
+      "text": "Run modes",
+      "action": "help-run-modes-anchor",
+      "attrs": {
+        "data-action": "help-run-modes-anchor"
+      },
+      "feedback": [
+        "download:cw2-delivery-bundle-20260501-005552.zip"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Help",
+      "pageId": "help",
+      "text": "Platform guide",
+      "action": "help-platform-anchor",
+      "attrs": {
+        "data-action": "help-platform-anchor"
+      },
+      "feedback": [
+        "download:cw2-delivery-bundle-20260501-005552.zip"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Help",
+      "pageId": "help",
+      "text": "↑",
+      "action": "back-to-top",
+      "attrs": {
+        "data-action": "back-to-top"
+      },
+      "feedback": [
+        "download:cw2-delivery-bundle-20260501-005552.zip"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "page": "Help",
+      "pageId": "help",
+      "text": "Preview",
+      "action": "preview-current-work",
+      "attrs": {
+        "data-action": "preview-current-work"
+      },
+      "feedback": [
+        "download:cw2-delivery-bundle-20260501-005552.zip"
+      ],
+      "errorDelta": 0
+    }
+  ],
+  "skipped": [
+    {
+      "scope": "global",
+      "page": "global chrome",
+      "text": "Set Mainline",
+      "action": "",
+      "reason": "unsafe/text"
+    },
+    {
+      "scope": "page",
+      "page": "Welcome",
+      "pageId": "welcome",
+      "text": "RRobustness LabReview quarterly-rebalanced sensitivity sweeps, period splits, and stochastic robustness outcomes.",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "robustness_lab"
+      },
+      "reason": "unsafe/text"
+    },
+    {
+      "scope": "page",
+      "page": "Welcome",
+      "pageId": "welcome",
+      "text": "Save",
+      "action": "save-scenario",
+      "attrs": {
+        "data-action": "save-scenario"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "page": "Welcome",
+      "pageId": "welcome",
+      "text": "Run",
+      "action": "run-baseline",
+      "attrs": {
+        "data-action": "run-baseline"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "page": "Welcome",
+      "pageId": "welcome",
+      "text": "Compare",
+      "action": "queue-batch",
+      "attrs": {
+        "data-action": "queue-batch"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "page": "Welcome",
+      "pageId": "welcome",
+      "text": "Generate",
+      "action": "generate-ai-report-analysis",
+      "attrs": {
+        "data-action": "generate-ai-report-analysis"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "page": "System Overview",
+      "pageId": "overview",
+      "text": "Save",
+      "action": "save-scenario",
+      "attrs": {
+        "data-action": "save-scenario"
+      },
+      "reason": "unsafe/action:save-scenario"
+    },
+    {
+      "scope": "page",
+      "page": "System Overview",
+      "pageId": "overview",
+      "text": "Run",
+      "action": "run-baseline",
+      "attrs": {
+        "data-action": "run-baseline"
+      },
+      "reason": "unsafe/action:run-baseline"
+    },
+    {
+      "scope": "page",
+      "page": "System Overview",
+      "pageId": "overview",
+      "text": "Compare",
+      "action": "queue-batch",
+      "attrs": {
+        "data-action": "queue-batch"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "page": "System Overview",
+      "pageId": "overview",
+      "text": "Generate",
+      "action": "generate-ai-report-analysis",
+      "attrs": {
+        "data-action": "generate-ai-report-analysis"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "page": "Scenario Builder",
+      "pageId": "scenario_builder",
+      "text": "Clear draft",
+      "action": "clear-draft",
+      "attrs": {
+        "data-action": "clear-draft"
+      },
+      "reason": "unsafe/action:clear-draft"
+    },
+    {
+      "scope": "page",
+      "page": "Scenario Builder",
+      "pageId": "scenario_builder",
+      "text": "Save preset",
+      "action": "save-preset",
+      "attrs": {
+        "data-action": "save-preset"
+      },
+      "reason": "unsafe/action:save-preset"
+    },
+    {
+      "scope": "page",
+      "page": "Scenario Builder",
+      "pageId": "scenario_builder",
+      "text": "Duplicate preset",
+      "action": "duplicate-preset",
+      "attrs": {
+        "data-action": "duplicate-preset"
+      },
+      "reason": "unsafe/action:duplicate-preset"
+    },
+    {
+      "scope": "page",
+      "page": "Scenario Builder",
+      "pageId": "scenario_builder",
+      "text": "Rename",
+      "action": "rename-preset",
+      "attrs": {
+        "data-action": "rename-preset",
+        "data-preset": "Base"
+      },
+      "reason": "unsafe/action:rename-preset"
+    },
+    {
+      "scope": "page",
+      "page": "Scenario Builder",
+      "pageId": "scenario_builder",
+      "text": "Delete",
+      "action": "delete-preset",
+      "attrs": {
+        "data-action": "delete-preset",
+        "data-preset": "Base"
+      },
+      "reason": "unsafe/action:delete-preset"
+    },
+    {
+      "scope": "page",
+      "page": "Scenario Builder",
+      "pageId": "scenario_builder",
+      "text": "Rename",
+      "action": "rename-preset",
+      "attrs": {
+        "data-action": "rename-preset",
+        "data-preset": "Stress-aware"
+      },
+      "reason": "unsafe/action:rename-preset"
+    },
+    {
+      "scope": "page",
+      "page": "Scenario Builder",
+      "pageId": "scenario_builder",
+      "text": "Delete",
+      "action": "delete-preset",
+      "attrs": {
+        "data-action": "delete-preset",
+        "data-preset": "Stress-aware"
+      },
+      "reason": "unsafe/action:delete-preset"
+    },
+    {
+      "scope": "page",
+      "page": "Scenario Builder",
+      "pageId": "scenario_builder",
+      "text": "Rename",
+      "action": "rename-preset",
+      "attrs": {
+        "data-action": "rename-preset",
+        "data-preset": "Low-turnover"
+      },
+      "reason": "unsafe/action:rename-preset"
+    },
+    {
+      "scope": "page",
+      "page": "Scenario Builder",
+      "pageId": "scenario_builder",
+      "text": "Delete",
+      "action": "delete-preset",
+      "attrs": {
+        "data-action": "delete-preset",
+        "data-preset": "Low-turnover"
+      },
+      "reason": "unsafe/action:delete-preset"
+    },
+    {
+      "scope": "page",
+      "page": "Scenario Builder",
+      "pageId": "scenario_builder",
+      "text": "Save",
+      "action": "save-scenario",
+      "attrs": {
+        "data-action": "save-scenario"
+      },
+      "reason": "unsafe/action:save-scenario"
+    },
+    {
+      "scope": "page",
+      "page": "Scenario Builder",
+      "pageId": "scenario_builder",
+      "text": "Run",
+      "action": "run-baseline",
+      "attrs": {
+        "data-action": "run-baseline"
+      },
+      "reason": "unsafe/action:run-baseline"
+    },
+    {
+      "scope": "page",
+      "page": "Scenario Builder",
+      "pageId": "scenario_builder",
+      "text": "Compare",
+      "action": "queue-batch",
+      "attrs": {
+        "data-action": "queue-batch"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "page": "Scenario Builder",
+      "pageId": "scenario_builder",
+      "text": "Generate",
+      "action": "generate-ai-report-analysis",
+      "attrs": {
+        "data-action": "generate-ai-report-analysis"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "page": "Universe & Company Selector",
+      "pageId": "universe_selector",
+      "text": "Save Required",
+      "action": "save-scenario",
+      "attrs": {
+        "data-action": "save-scenario"
+      },
+      "reason": "unsafe/action:save-scenario"
+    },
+    {
+      "scope": "page",
+      "page": "Universe & Company Selector",
+      "pageId": "universe_selector",
+      "text": "Run",
+      "action": "run-baseline",
+      "attrs": {
+        "data-action": "run-baseline"
+      },
+      "reason": "unsafe/action:run-baseline"
+    },
+    {
+      "scope": "page",
+      "page": "Universe & Company Selector",
+      "pageId": "universe_selector",
+      "text": "Compare",
+      "action": "queue-batch",
+      "attrs": {
+        "data-action": "queue-batch"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "page": "Universe & Company Selector",
+      "pageId": "universe_selector",
+      "text": "Generate",
+      "action": "generate-ai-report-analysis",
+      "attrs": {
+        "data-action": "generate-ai-report-analysis"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "page": "Regime & Threshold Control",
+      "pageId": "regime_control",
+      "text": "Save Required",
+      "action": "save-scenario",
+      "attrs": {
+        "data-action": "save-scenario"
+      },
+      "reason": "unsafe/action:save-scenario"
+    },
+    {
+      "scope": "page",
+      "page": "Regime & Threshold Control",
+      "pageId": "regime_control",
+      "text": "Run",
+      "action": "run-baseline",
+      "attrs": {
+        "data-action": "run-baseline"
+      },
+      "reason": "unsafe/action:run-baseline"
+    },
+    {
+      "scope": "page",
+      "page": "Regime & Threshold Control",
+      "pageId": "regime_control",
+      "text": "Compare",
+      "action": "queue-batch",
+      "attrs": {
+        "data-action": "queue-batch"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "page": "Regime & Threshold Control",
+      "pageId": "regime_control",
+      "text": "Generate",
+      "action": "generate-ai-report-analysis",
+      "attrs": {
+        "data-action": "generate-ai-report-analysis"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "page": "Portfolio Optimizer Settings",
+      "pageId": "optimizer_settings",
+      "text": "Save Required",
+      "action": "save-scenario",
+      "attrs": {
+        "data-action": "save-scenario"
+      },
+      "reason": "unsafe/action:save-scenario"
+    },
+    {
+      "scope": "page",
+      "page": "Portfolio Optimizer Settings",
+      "pageId": "optimizer_settings",
+      "text": "Run",
+      "action": "run-baseline",
+      "attrs": {
+        "data-action": "run-baseline"
+      },
+      "reason": "unsafe/action:run-baseline"
+    },
+    {
+      "scope": "page",
+      "page": "Portfolio Optimizer Settings",
+      "pageId": "optimizer_settings",
+      "text": "Compare",
+      "action": "queue-batch",
+      "attrs": {
+        "data-action": "queue-batch"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "page": "Portfolio Optimizer Settings",
+      "pageId": "optimizer_settings",
+      "text": "Generate",
+      "action": "generate-ai-report-analysis",
+      "attrs": {
+        "data-action": "generate-ai-report-analysis"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "page": "Data Health",
+      "pageId": "data_health",
+      "text": "Save Required",
+      "action": "save-scenario",
+      "attrs": {
+        "data-action": "save-scenario"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "page": "Data Health",
+      "pageId": "data_health",
+      "text": "Run",
+      "action": "run-baseline",
+      "attrs": {
+        "data-action": "run-baseline"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "page": "Data Health",
+      "pageId": "data_health",
+      "text": "Compare",
+      "action": "queue-batch",
+      "attrs": {
+        "data-action": "queue-batch"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "page": "Data Health",
+      "pageId": "data_health",
+      "text": "Generate",
+      "action": "generate-ai-report-analysis",
+      "attrs": {
+        "data-action": "generate-ai-report-analysis"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "page": "Backtest Runner",
+      "pageId": "backtest_runner",
+      "text": "Queue batch",
+      "action": "queue-batch",
+      "attrs": {
+        "data-action": "queue-batch"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "page": "Backtest Runner",
+      "pageId": "backtest_runner",
+      "text": "Schedule nightly refresh",
+      "action": "schedule-nightly",
+      "attrs": {
+        "data-action": "schedule-nightly"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "page": "Backtest Runner",
+      "pageId": "backtest_runner",
+      "text": "Save Required",
+      "action": "save-scenario",
+      "attrs": {
+        "data-action": "save-scenario"
+      },
+      "reason": "unsafe/action:save-scenario"
+    },
+    {
+      "scope": "page",
+      "page": "Backtest Runner",
+      "pageId": "backtest_runner",
+      "text": "Run",
+      "action": "run-baseline",
+      "attrs": {
+        "data-action": "run-baseline"
+      },
+      "reason": "unsafe/action:run-baseline"
+    },
+    {
+      "scope": "page",
+      "page": "Backtest Runner",
+      "pageId": "backtest_runner",
+      "text": "Compare",
+      "action": "queue-batch",
+      "attrs": {
+        "data-action": "queue-batch"
+      },
+      "reason": "unsafe/action:queue-batch"
+    },
+    {
+      "scope": "page",
+      "page": "Backtest Runner",
+      "pageId": "backtest_runner",
+      "text": "Generate",
+      "action": "generate-ai-report-analysis",
+      "attrs": {
+        "data-action": "generate-ai-report-analysis"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "page": "Run History",
+      "pageId": "run_history",
+      "text": "Rerun",
+      "action": "",
+      "attrs": {
+        "data-rerun-id": "BT-2026-0406-01"
+      },
+      "reason": "unsafe/data-rerun-id"
+    },
+    {
+      "scope": "page",
+      "page": "Run History",
+      "pageId": "run_history",
+      "text": "Clone",
+      "action": "",
+      "attrs": {
+        "data-clone-run-id": "BT-2026-0406-01"
+      },
+      "reason": "unsafe/data-clone-run-id"
+    },
+    {
+      "scope": "page",
+      "page": "Run History",
+      "pageId": "run_history",
+      "text": "Delete",
+      "action": "",
+      "attrs": {
+        "data-delete-run-id": "BT-2026-0406-01"
+      },
+      "reason": "unsafe/data-delete-run-id"
+    },
+    {
+      "scope": "page",
+      "page": "Run History",
+      "pageId": "run_history",
+      "text": "Rerun",
+      "action": "",
+      "attrs": {
+        "data-rerun-id": "BT-2026-0405-01"
+      },
+      "reason": "unsafe/data-rerun-id"
+    },
+    {
+      "scope": "page",
+      "page": "Run History",
+      "pageId": "run_history",
+      "text": "Clone",
+      "action": "",
+      "attrs": {
+        "data-clone-run-id": "BT-2026-0405-01"
+      },
+      "reason": "unsafe/data-clone-run-id"
+    },
+    {
+      "scope": "page",
+      "page": "Run History",
+      "pageId": "run_history",
+      "text": "Delete",
+      "action": "",
+      "attrs": {
+        "data-delete-run-id": "BT-2026-0405-01"
+      },
+      "reason": "unsafe/data-delete-run-id"
+    },
+    {
+      "scope": "page",
+      "page": "Run History",
+      "pageId": "run_history",
+      "text": "Rerun",
+      "action": "",
+      "attrs": {
+        "data-rerun-id": "BT-2026-0404-01"
+      },
+      "reason": "unsafe/data-rerun-id"
+    },
+    {
+      "scope": "page",
+      "page": "Run History",
+      "pageId": "run_history",
+      "text": "Clone",
+      "action": "",
+      "attrs": {
+        "data-clone-run-id": "BT-2026-0404-01"
+      },
+      "reason": "unsafe/data-clone-run-id"
+    },
+    {
+      "scope": "page",
+      "page": "Run History",
+      "pageId": "run_history",
+      "text": "Rerun",
+      "action": "",
+      "attrs": {
+        "data-rerun-id": "BT-2026-0403-01"
+      },
+      "reason": "unsafe/data-rerun-id"
+    },
+    {
+      "scope": "page",
+      "page": "Run History",
+      "pageId": "run_history",
+      "text": "Clone",
+      "action": "",
+      "attrs": {
+        "data-clone-run-id": "BT-2026-0403-01"
+      },
+      "reason": "unsafe/data-clone-run-id"
+    },
+    {
+      "scope": "page",
+      "page": "Run History",
+      "pageId": "run_history",
+      "text": "Delete",
+      "action": "",
+      "attrs": {
+        "data-delete-run-id": "BT-2026-0403-01"
+      },
+      "reason": "unsafe/data-delete-run-id"
+    },
+    {
+      "scope": "page",
+      "page": "Run History",
+      "pageId": "run_history",
+      "text": "Clear all",
+      "action": "clear-all-history",
+      "attrs": {
+        "data-action": "clear-all-history"
+      },
+      "reason": "unsafe/action:clear-all-history"
+    },
+    {
+      "scope": "page",
+      "page": "Run History",
+      "pageId": "run_history",
+      "text": "Save Required",
+      "action": "save-scenario",
+      "attrs": {
+        "data-action": "save-scenario"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "page": "Run History",
+      "pageId": "run_history",
+      "text": "Run",
+      "action": "run-baseline",
+      "attrs": {
+        "data-action": "run-baseline"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "page": "Run History",
+      "pageId": "run_history",
+      "text": "Compare",
+      "action": "queue-batch",
+      "attrs": {
+        "data-action": "queue-batch"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "page": "Run History",
+      "pageId": "run_history",
+      "text": "Generate",
+      "action": "generate-ai-report-analysis",
+      "attrs": {
+        "data-action": "generate-ai-report-analysis"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "page": "Signal & Factor Builder",
+      "pageId": "factor_lab",
+      "text": "Save Required",
+      "action": "save-scenario",
+      "attrs": {
+        "data-action": "save-scenario"
+      },
+      "reason": "unsafe/action:save-scenario"
+    },
+    {
+      "scope": "page",
+      "page": "Signal & Factor Builder",
+      "pageId": "factor_lab",
+      "text": "Run",
+      "action": "run-baseline",
+      "attrs": {
+        "data-action": "run-baseline"
+      },
+      "reason": "unsafe/action:run-baseline"
+    },
+    {
+      "scope": "page",
+      "page": "Signal & Factor Builder",
+      "pageId": "factor_lab",
+      "text": "Compare",
+      "action": "queue-batch",
+      "attrs": {
+        "data-action": "queue-batch"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "page": "Signal & Factor Builder",
+      "pageId": "factor_lab",
+      "text": "Generate",
+      "action": "generate-ai-report-analysis",
+      "attrs": {
+        "data-action": "generate-ai-report-analysis"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "page": "Performance Dashboard",
+      "pageId": "performance_dashboard",
+      "text": "Save Required",
+      "action": "save-scenario",
+      "attrs": {
+        "data-action": "save-scenario"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "page": "Performance Dashboard",
+      "pageId": "performance_dashboard",
+      "text": "Run",
+      "action": "run-baseline",
+      "attrs": {
+        "data-action": "run-baseline"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "page": "Performance Dashboard",
+      "pageId": "performance_dashboard",
+      "text": "Compare",
+      "action": "queue-batch",
+      "attrs": {
+        "data-action": "queue-batch"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "page": "Performance Dashboard",
+      "pageId": "performance_dashboard",
+      "text": "Generate",
+      "action": "generate-ai-report-analysis",
+      "attrs": {
+        "data-action": "generate-ai-report-analysis"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "page": "Risk Dashboard",
+      "pageId": "risk_dashboard",
+      "text": "Save Required",
+      "action": "save-scenario",
+      "attrs": {
+        "data-action": "save-scenario"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "page": "Risk Dashboard",
+      "pageId": "risk_dashboard",
+      "text": "Run",
+      "action": "run-baseline",
+      "attrs": {
+        "data-action": "run-baseline"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "page": "Risk Dashboard",
+      "pageId": "risk_dashboard",
+      "text": "Compare",
+      "action": "queue-batch",
+      "attrs": {
+        "data-action": "queue-batch"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "page": "Risk Dashboard",
+      "pageId": "risk_dashboard",
+      "text": "Generate",
+      "action": "generate-ai-report-analysis",
+      "attrs": {
+        "data-action": "generate-ai-report-analysis"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "page": "Robustness Lab",
+      "pageId": "robustness_lab",
+      "text": "Run sensitivity",
+      "action": "run-sensitivity",
+      "attrs": {
+        "data-action": "run-sensitivity"
+      },
+      "reason": "unsafe/action:run-sensitivity"
+    },
+    {
+      "scope": "page",
+      "page": "Robustness Lab",
+      "pageId": "robustness_lab",
+      "text": "Promote best",
+      "action": "promote-best-robustness",
+      "attrs": {
+        "data-action": "promote-best-robustness"
+      },
+      "reason": "unsafe/action:promote-best-robustness"
+    },
+    {
+      "scope": "page",
+      "page": "Robustness Lab",
+      "pageId": "robustness_lab",
+      "text": "Save Required",
+      "action": "save-scenario",
+      "attrs": {
+        "data-action": "save-scenario"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "page": "Robustness Lab",
+      "pageId": "robustness_lab",
+      "text": "Run",
+      "action": "run-baseline",
+      "attrs": {
+        "data-action": "run-baseline"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "page": "Robustness Lab",
+      "pageId": "robustness_lab",
+      "text": "Compare",
+      "action": "queue-batch",
+      "attrs": {
+        "data-action": "queue-batch"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "page": "Robustness Lab",
+      "pageId": "robustness_lab",
+      "text": "Generate",
+      "action": "generate-ai-report-analysis",
+      "attrs": {
+        "data-action": "generate-ai-report-analysis"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "page": "Trade Blotter & Execution",
+      "pageId": "holdings_trades",
+      "text": "Save Required",
+      "action": "save-scenario",
+      "attrs": {
+        "data-action": "save-scenario"
+      },
+      "reason": "unsafe/action:save-scenario"
+    },
+    {
+      "scope": "page",
+      "page": "Trade Blotter & Execution",
+      "pageId": "holdings_trades",
+      "text": "Run",
+      "action": "run-baseline",
+      "attrs": {
+        "data-action": "run-baseline"
+      },
+      "reason": "unsafe/action:run-baseline"
+    },
+    {
+      "scope": "page",
+      "page": "Trade Blotter & Execution",
+      "pageId": "holdings_trades",
+      "text": "Compare",
+      "action": "queue-batch",
+      "attrs": {
+        "data-action": "queue-batch"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "page": "Trade Blotter & Execution",
+      "pageId": "holdings_trades",
+      "text": "Generate",
+      "action": "generate-ai-report-analysis",
+      "attrs": {
+        "data-action": "generate-ai-report-analysis"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "page": "Artifacts",
+      "pageId": "artifacts",
+      "text": "Save Required",
+      "action": "save-scenario",
+      "attrs": {
+        "data-action": "save-scenario"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "page": "Artifacts",
+      "pageId": "artifacts",
+      "text": "Run",
+      "action": "run-baseline",
+      "attrs": {
+        "data-action": "run-baseline"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "page": "Artifacts",
+      "pageId": "artifacts",
+      "text": "Compare",
+      "action": "queue-batch",
+      "attrs": {
+        "data-action": "queue-batch"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "page": "Artifacts",
+      "pageId": "artifacts",
+      "text": "Generate",
+      "action": "generate-ai-report-analysis",
+      "attrs": {
+        "data-action": "generate-ai-report-analysis"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "page": "Report Studio",
+      "pageId": "report_studio",
+      "text": "Load models",
+      "action": "refresh-llm-models",
+      "attrs": {
+        "data-action": "refresh-llm-models"
+      },
+      "reason": "unsafe/action:refresh-llm-models"
+    },
+    {
+      "scope": "page",
+      "page": "Report Studio",
+      "pageId": "report_studio",
+      "text": "Save Required",
+      "action": "save-scenario",
+      "attrs": {
+        "data-action": "save-scenario"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "page": "Report Studio",
+      "pageId": "report_studio",
+      "text": "Run",
+      "action": "run-baseline",
+      "attrs": {
+        "data-action": "run-baseline"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "page": "Report Studio",
+      "pageId": "report_studio",
+      "text": "Compare",
+      "action": "queue-batch",
+      "attrs": {
+        "data-action": "queue-batch"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "page": "Report Studio",
+      "pageId": "report_studio",
+      "text": "Generate",
+      "action": "generate-ai-report-analysis",
+      "attrs": {
+        "data-action": "generate-ai-report-analysis"
+      },
+      "reason": "unsafe/action:generate-ai-report-analysis"
+    },
+    {
+      "scope": "page",
+      "page": "Help",
+      "pageId": "help",
+      "text": "Save Required",
+      "action": "save-scenario",
+      "attrs": {
+        "data-action": "save-scenario"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "page": "Help",
+      "pageId": "help",
+      "text": "Run",
+      "action": "run-baseline",
+      "attrs": {
+        "data-action": "run-baseline"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "page": "Help",
+      "pageId": "help",
+      "text": "Compare",
+      "action": "queue-batch",
+      "attrs": {
+        "data-action": "queue-batch"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "page": "Help",
+      "pageId": "help",
+      "text": "Generate",
+      "action": "generate-ai-report-analysis",
+      "attrs": {
+        "data-action": "generate-ai-report-analysis"
+      },
+      "reason": "disabled"
+    }
+  ],
+  "failures": [
+    {
+      "scope": "page",
+      "page": "Performance Dashboard",
+      "pageId": "performance_dashboard",
+      "text": "Close",
+      "action": "close-floating-controls",
+      "attrs": {
+        "data-action": "close-floating-controls"
+      },
+      "error": "button not found on click; matches=0"
+    },
+    {
+      "scope": "page",
+      "page": "Performance Dashboard",
+      "pageId": "performance_dashboard",
+      "text": "Baseline▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "compare_runs",
+        "data-control-options": "Baseline"
+      },
+      "error": "button not found on click; matches=0"
+    },
+    {
+      "scope": "page",
+      "page": "Performance Dashboard",
+      "pageId": "performance_dashboard",
+      "text": "Latest point▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "nav_focus_period",
+        "data-control-options": "Latest point||Peak drawdown"
+      },
+      "error": "button not found on click; matches=1"
+    },
+    {
+      "scope": "page",
+      "page": "Performance Dashboard",
+      "pageId": "performance_dashboard",
+      "text": "Holdings + factors▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "drilldown_view",
+        "data-control-options": "Holdings + factors||Holdings only||Factors only"
+      },
+      "error": "button not found on click; matches=1"
+    },
+    {
+      "scope": "page",
+      "page": "Performance Dashboard",
+      "pageId": "performance_dashboard",
+      "text": "Selected Run Summary",
+      "action": "",
+      "attrs": {
+        "data-jump-anchor": "performance-multi-run-anchor"
+      },
+      "error": "button not found on click; matches=0"
+    },
+    {
+      "scope": "page",
+      "page": "Performance Dashboard",
+      "pageId": "performance_dashboard",
+      "text": "Benchmark Lens",
+      "action": "",
+      "attrs": {
+        "data-jump-anchor": "performance-benchmark-anchor"
+      },
+      "error": "button not found on click; matches=0"
+    },
+    {
+      "scope": "page",
+      "page": "Trade Blotter & Execution",
+      "pageId": "holdings_trades",
+      "text": "Close",
+      "action": "close-floating-controls",
+      "attrs": {
+        "data-action": "close-floating-controls"
+      },
+      "error": "button not found on click; matches=0"
+    },
+    {
+      "scope": "page",
+      "page": "Trade Blotter & Execution",
+      "pageId": "holdings_trades",
+      "text": "All trades▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "trade_filter",
+        "data-control-options": "All trades||Buys only||Sells only||Largest changes"
+      },
+      "error": "button not found on click; matches=1"
+    },
+    {
+      "scope": "page",
+      "page": "Trade Blotter & Execution",
+      "pageId": "holdings_trades",
+      "text": "All sectors▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "sector_focus",
+        "data-control-options": "All sectors||Consumer Staples||Energy||Health Care||Information Technology"
+      },
+      "error": "button not found on click; matches=1"
+    },
+    {
+      "scope": "page",
+      "page": "Trade Blotter & Execution",
+      "pageId": "holdings_trades",
+      "text": "Driver share▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "attribution_view",
+        "data-control-options": "Driver share||Overlay vs ranking||Constraints only"
+      },
+      "error": "button not found on click; matches=1"
+    },
+    {
+      "scope": "page",
+      "page": "Trade Blotter & Execution",
+      "pageId": "holdings_trades",
+      "text": "Source Attribution",
+      "action": "",
+      "attrs": {
+        "data-jump-anchor": "trade-source-attribution-anchor"
+      },
+      "error": "button not found on click; matches=0"
+    },
+    {
+      "scope": "page",
+      "page": "Trade Blotter & Execution",
+      "pageId": "holdings_trades",
+      "text": "Trade Blotter",
+      "action": "",
+      "attrs": {
+        "data-jump-anchor": "trade-blotter-preview-anchor"
+      },
+      "error": "button not found on click; matches=0"
+    },
+    {
+      "scope": "page",
+      "page": "Trade Blotter & Execution",
+      "pageId": "holdings_trades",
+      "text": "Holdings Slice",
+      "action": "",
+      "attrs": {
+        "data-jump-anchor": "trade-holdings-slice-anchor"
+      },
+      "error": "button not found on click; matches=0"
+    }
+  ],
+  "logs": {
+    "consoleErrors": [
+      {
+        "type": "error",
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      }
+    ],
+    "pageErrors": [],
+    "requestFailures": [],
+    "httpErrors": [],
+    "dialogs": [],
+    "downloads": [
+      {
+        "filename": "BT-2026-0406-01-logs.txt"
+      },
+      {
+        "filename": "run-history.csv"
+      },
+      {
+        "filename": "performance-dashboard-series.csv"
+      },
+      {
+        "filename": "robustness-table.csv"
+      },
+      {
+        "filename": "portfolio-holdings.csv"
+      },
+      {
+        "filename": "cw2-delivery-bundle-20260501-005552.zip"
+      }
+    ]
+  }
+}

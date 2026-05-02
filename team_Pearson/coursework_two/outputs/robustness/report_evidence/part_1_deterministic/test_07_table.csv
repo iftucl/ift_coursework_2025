@@ -1,0 +1,5 @@
+﻿scenario_key,risk_adjusted.sharpe_ratio,portfolio.avg_monthly_recorded_turnover,portfolio.avg_holdings
+band_medium,0.536723,15.213912,34.728814
+band_narrow,0.520534,15.282998,33.508475
+band_none,0.508928,15.218128,34.932203
+band_wide,0.51551,15.151903,35.338983

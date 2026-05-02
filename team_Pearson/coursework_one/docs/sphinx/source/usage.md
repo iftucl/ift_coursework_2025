@@ -1,79 +1,174 @@
 # Usage Instructions
 
-## 1. Quick Start
+## Core Manual Commands
 
-Run from project root:
-
-```bash
-cd team_Pearson/coursework_one
-```
-
-### 1.1 Standard daily run
+### CW1 upstream pipeline
 
 ```bash
-poetry run python Main.py --run-date 2026-02-14 --frequency daily
+# single upstream run
+poetry run python Main.py --run-date 2026-04-13 --frequency daily
+
+# dry run
+poetry run python Main.py --run-date 2026-04-13 --frequency daily --dry-run
+
+# selected extractors only
+poetry run python Main.py --run-date 2026-04-13 --frequency daily --enabled-extractors source_a,source_b
+
+# scheduler-facing wrapper
+poetry run python scripts/run_scheduled_pipeline.py --run-date 2026-04-13 --only daily --plan-only
+
+# validation
+poetry run python scripts/validate_pipeline_data.py --tolerance 1e-6
+
+# rebuild Mongo search layer
+poetry run python scripts/index_news_to_mongo.py --run-date 2026-04-13 --since 2026-03-01 --until 2026-04-13
 ```
 
-### 1.2 Small-Sample Acceptance Run
+### CW2 feature and portfolio flow
 
 ```bash
-poetry run python scripts/run_pipeline_and_index.py \
-  --run-date 2026-02-14 \
-  --frequency daily \
-  --backfill-years 1 \
-  --company-limit 5
+cd ../coursework_two
+
+# build CW2 universe screen, first-level factors, composite alpha, and portfolio targets
+../coursework_one/.venv/bin/python Main.py --mode features --run-date 2026-04-20
+
+# same feature pipeline, but refresh CW1 upstream first
+../coursework_one/.venv/bin/python Main.py --mode features --with-upstream --run-date 2026-04-20
+
+# production-style operated flow
+../coursework_one/.venv/bin/python Main.py --mode operate --run-date 2026-04-20
+
+# daily update decision
+../coursework_one/.venv/bin/python Main.py --mode update-decision --run-date 2026-04-21
+
+# persisted control-plane monitoring snapshot
+../coursework_one/.venv/bin/python Main.py --mode monitor
+
+# publish a formal recommendation
+../coursework_one/.venv/bin/python Main.py --mode recommend --run-date 2026-04-20
 ```
 
-Notes:
-- `source_b` is enabled by default via `pipeline.enabled_extractors` (`source_a,source_b`).
-- Mongo indexing is enabled by default in `Main.py`, `run_pipeline_and_index.py`, and `run_scheduled_pipeline.py`.
-- Disable Mongo indexing explicitly with `--no-index-mongo` when needed.
-
-## 2. Command Reference
-
-### 2.1 Pipeline execution
-
-| Goal | Command |
-| --- | --- |
-| Main pipeline single run | `poetry run python Main.py --run-date 2026-02-14 --frequency daily` |
-| Main pipeline without Mongo indexing | `poetry run python Main.py --run-date 2026-02-14 --frequency daily --no-index-mongo` |
-| Run with scheduler wrapper (daily default) | `poetry run python scripts/run_scheduled_pipeline.py` |
-| Weekly replay plan only | `poetry run python scripts/run_scheduled_pipeline.py --run-date 2026-03-02 --only weekly --plan-only` |
-| Multi-frequency replay plan only | `poetry run python scripts/run_scheduled_pipeline.py --run-date 2026-04-01 --only daily,weekly,monthly,quarterly --plan-only` |
-
-### 2.2 Validation and inspection
-
-| Goal | Command |
-| --- | --- |
-| Validate pipeline consistency | `poetry run python scripts/validate_pipeline_data.py --tolerance 1e-6` |
-| Search Mongo news index | `poetry run python scripts/search_news.py --symbol AAPL --limit 10` |
-
-### 2.3 Quality and security checks
+### CW2 backtest, analysis, and report
 
 ```bash
-poetry run pytest -q
-poetry run bandit -r modules Main.py scripts
-poetry run safety scan -r poetry.lock
+# backtest only
+../coursework_one/.venv/bin/python Main.py --mode backtest --run-name cw2_bt_demo
+
+# analysis only
+../coursework_one/.venv/bin/python Main.py --mode analyse --run-id <backtest_run_id>
+
+# combined backtest and analysis
+../coursework_one/.venv/bin/python Main.py --mode backtest-and-analyse --run-name cw2_bt_analysis_demo
+
+# reporting package
+../coursework_one/.venv/bin/python Main.py --mode report --run-id <backtest_run_id>
+
+# readiness audit
+../coursework_one/.venv/bin/python Main.py --mode audit
+
+# one-command end-to-end chain
+../coursework_one/.venv/bin/python Main.py --mode full-run --run-date 2026-04-20
+
+# full workflow: quality -> services -> full strategy/report -> robustness -> web
+../coursework_one/.venv/bin/python scripts/full_workflow.py --start-services --serve
 ```
 
-If `safety scan` is run for the first time, authenticate once:
+The full workflow command is the complete demonstration path. It validates the
+quality/docs gate, starts or reuses shared services, runs the formal full-chain
+strategy/report workflow, refreshes formal robustness evidence surfaces, and
+checks the web/API layer.
+
+### CW2 quality gate
 
 ```bash
-poetry run safety auth login --headless
+# from the repository root
+team_Pearson/coursework_two/scripts/run_quality_checks.sh
+
+# include the shared CW1+CW2 Sphinx documentation build
+team_Pearson/coursework_two/scripts/run_quality_checks.sh --docs
+
+# also write HTML coverage under coursework_two/htmlcov
+team_Pearson/coursework_two/scripts/run_quality_checks.sh --html-coverage
 ```
 
-## 3. Typical Run Sequence
+The gate executes through the shared CW1 Poetry project and runs `poetry check`,
+`black --line-length 100`, `isort --profile black --line-length 100`, `flake8`,
+`bandit`, and `pytest` against the CW2 codebase and checked-in CW2 test
+configuration. Add `--with-safety --skip-tests` when dependency vulnerability
+scanning of the full shared Poetry environment is required.
 
-<div>（1）On a freshly initialized environment, complete the Installation Guide first.</div>
-<div>（2）Run <code>Main.py</code> or <code>run_pipeline_and_index.py</code> for ingestion and load.</div>
-<div>（3）Run <code>validate_pipeline_data.py</code> to confirm cross-source consistency.</div>
-<div>（4）Run <code>search_news.py</code> when checking indexed news retrieval behavior.</div>
+## Airflow Operation
 
-## 4. Output Footprint
+Airflow replaces cron in this project.
 
-After a successful run, you should see:
+- UI: `http://localhost:8081`
+- recurring DAG: `cw1_pipeline_and_docs` at `06:00 UTC`
+- scheduled monthly DAGs:
+  - `cw2_monthly_snapshot_backfill` at `09:30 UTC` on calendar day `1`
+  - `cw2_backtest_analysis_report` at `11:30 UTC` on calendar day `1`
 
-- MinIO raw objects under `raw/source_a/...` and `raw/source_b/...`
-- PostgreSQL updates in `factor_observations`, `financial_observations`, and `pipeline_runs`
-- MongoDB documents in `ift_cw.news_articles`
-- Optional quality snapshots in `systematic_equity.quality_snapshots`
+### Main task chains
+
+`cw1_pipeline_and_docs`
+
+1. run scheduled `CW1` pipeline wrapper
+2. validate curated PostgreSQL data
+3. build Sphinx HTML
+4. materialize the daily `CW2` update decision
+5. trigger rebalance-anchor-gated `CW2 operate` when applicable
+
+`cw2_monthly_snapshot_backfill`
+
+1. backfill historical month-end `portfolio_target_positions`
+2. run post-backfill readiness audit
+3. audit Kafka event processing state
+4. clean up stage context
+
+`cw2_backtest_analysis_report`
+
+1. run preflight readiness audit
+2. run stored-strategy backtest
+3. materialize analysis outputs
+4. render database-backed report artifacts
+5. verify the regenerated summary against the tracked reference contract
+6. audit Kafka event processing state
+7. clean up stage context
+
+### Manual trigger examples
+
+```bash
+docker exec airflow_cw airflow dags trigger cw1_pipeline_and_docs
+docker exec airflow_cw airflow dags trigger cw2_monthly_snapshot_backfill
+docker exec airflow_cw airflow dags trigger cw2_backtest_analysis_report
+```
+
+## Kafka Operation
+
+Kafka is optional, but when enabled it complements the batch pipeline with event fan-out.
+
+Published topics currently include:
+
+- `cw1.news.structured.v1`
+- `cw1.event.proxies.v1`
+- `cw2.risk.actions.requested.v1`
+- `cw2.risk.actions.executed.v1`
+- `platform.runs.status.v1`
+
+Kafka is not the canonical source of truth. SQL and MinIO remain authoritative.
+Consumer acknowledgements, dead letters, and lag snapshots are persisted back to
+SQL through the `cw2_kafka_audit_consumer` service and on-demand audit tasks.
+
+## Documentation Build
+
+```bash
+poetry run python scripts/build_sphinx_docs.py --clean
+```
+
+The Sphinx source lives under `team_Pearson/coursework_one/docs/sphinx/source`,
+but the generated site documents the shared `CW1 + CW2` platform rather than a
+CW1-only subset.
+
+Generated HTML lives at `docs/sphinx/build/html`.
+
+For the current formal CW2 reference run and frozen exact-reproduction workflow,
+see `team_Pearson/coursework_two/repro/README.md`.

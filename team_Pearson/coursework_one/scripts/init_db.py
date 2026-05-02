@@ -115,9 +115,7 @@ def _database_exists(container: str, db_user: str, admin_db: str, target_db: str
     return False
 
 
-def ensure_database_exists(
-    container: str, db_user: str, admin_db: str, target_db: str
-) -> None:
+def ensure_database_exists(container: str, db_user: str, admin_db: str, target_db: str) -> None:
     safe_target_db = _validate_db_name(target_db)
     safe_admin_db = _validate_db_name(admin_db)
     if safe_target_db == safe_admin_db:
@@ -171,17 +169,37 @@ def run_seed(sqlite_path: str | None, project_root: Path) -> None:
     )  # nosec B603
 
 
+def run_migrations(container: str, db_user: str, db_name: str, migrations_dir: Path) -> None:
+    """Apply all SQL migration files in sorted order.
+
+    Each migration uses ``IF NOT EXISTS`` / ``ADD COLUMN IF NOT EXISTS``
+    so re-running is safe (idempotent).
+    """
+    if not migrations_dir.is_dir():
+        return
+    migration_files = sorted(migrations_dir.glob("*.sql"))
+    if not migration_files:
+        return
+    for mig in migration_files:
+        print(f"  applying migration: {mig.name}")
+        sql_bytes = mig.read_bytes()
+        cmd = _psql_base_cmd(container, db_user, db_name)
+        subprocess.run(cmd, input=sql_bytes, check=True)  # nosec B603
+
+
 def main() -> int:
     project_root = PROJECT_ROOT
     # Ensure POSTGRES_* defaults can be sourced from local .env for subprocess calls.
     load_dotenv_if_exists(project_root / ".env")
     args = parse_args()
     init_sql_path = project_root / "sql" / "init.sql"
+    migrations_dir = project_root / "sql" / "migrations"
 
     ensure_database_exists(args.container, args.db_user, args.admin_db, args.db_name)
     run_sql_init(args.container, args.db_user, args.db_name, init_sql_path)
+    run_migrations(args.container, args.db_user, args.db_name, migrations_dir)
     run_seed(args.sqlite_path, project_root)
-    print("DB init completed: schema/tables applied and universe seeded.")
+    print("DB init completed: schema/tables applied, migrations run, and universe seeded.")
     return 0
 
 

@@ -1,0 +1,4346 @@
+{
+  "url": "http://127.0.0.1:8011/",
+  "generatedAt": "2026-05-01T00:12:34.626Z",
+  "counts": {
+    "tested": 213,
+    "skipped": 96,
+    "failures": 0,
+    "consoleErrors": 0,
+    "pageErrors": 0,
+    "requestFailures": 0,
+    "httpErrors": 0,
+    "dialogs": 0,
+    "downloads": 7
+  },
+  "pageCounts": [
+    {
+      "pageId": "welcome",
+      "title": "Welcome",
+      "bodyButtons": 14,
+      "floatingButtons": 0
+    },
+    {
+      "pageId": "overview",
+      "title": "System Overview",
+      "bodyButtons": 18,
+      "floatingButtons": 0
+    },
+    {
+      "pageId": "scenario_builder",
+      "title": "Scenario Builder",
+      "bodyButtons": 33,
+      "floatingButtons": 0
+    },
+    {
+      "pageId": "universe_selector",
+      "title": "Universe & Company Selector",
+      "bodyButtons": 13,
+      "floatingButtons": 0
+    },
+    {
+      "pageId": "regime_control",
+      "title": "Regime & Threshold Control",
+      "bodyButtons": 14,
+      "floatingButtons": 0
+    },
+    {
+      "pageId": "optimizer_settings",
+      "title": "Portfolio Optimizer Settings",
+      "bodyButtons": 14,
+      "floatingButtons": 0
+    },
+    {
+      "pageId": "data_health",
+      "title": "Data Health",
+      "bodyButtons": 6,
+      "floatingButtons": 0
+    },
+    {
+      "pageId": "backtest_runner",
+      "title": "Backtest Runner",
+      "bodyButtons": 16,
+      "floatingButtons": 0
+    },
+    {
+      "pageId": "run_history",
+      "title": "Run History",
+      "bodyButtons": 42,
+      "floatingButtons": 0
+    },
+    {
+      "pageId": "factor_lab",
+      "title": "Scenario Builder",
+      "bodyButtons": 10,
+      "floatingButtons": 6
+    },
+    {
+      "pageId": "performance_dashboard",
+      "title": "Performance Dashboard",
+      "bodyButtons": 12,
+      "floatingButtons": 7
+    },
+    {
+      "pageId": "risk_dashboard",
+      "title": "Risk Dashboard",
+      "bodyButtons": 14,
+      "floatingButtons": 9
+    },
+    {
+      "pageId": "robustness_lab",
+      "title": "Robustness Lab",
+      "bodyButtons": 21,
+      "floatingButtons": 0
+    },
+    {
+      "pageId": "holdings_trades",
+      "title": "Trade Blotter & Execution",
+      "bodyButtons": 14,
+      "floatingButtons": 8
+    },
+    {
+      "pageId": "artifacts",
+      "title": "Artifacts",
+      "bodyButtons": 7,
+      "floatingButtons": 0
+    },
+    {
+      "pageId": "report_studio",
+      "title": "Report Studio",
+      "bodyButtons": 16,
+      "floatingButtons": 0
+    },
+    {
+      "pageId": "help",
+      "title": "Help",
+      "bodyButtons": 9,
+      "floatingButtons": 0
+    }
+  ],
+  "tested": [
+    {
+      "scope": "global",
+      "pageId": "welcome",
+      "page": "Welcome",
+      "text": "Home",
+      "action": "",
+      "attrs": {
+        "data-section": "home"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "global",
+      "pageId": "welcome",
+      "page": "Welcome",
+      "text": "Research Setup",
+      "action": "",
+      "attrs": {
+        "data-section": "research_setup"
+      },
+      "feedback": [
+        "page:Welcome->Scenario Builder"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "global",
+      "pageId": "welcome",
+      "page": "Welcome",
+      "text": "Analytics",
+      "action": "",
+      "attrs": {
+        "data-section": "analytics"
+      },
+      "feedback": [
+        "page:Welcome->Signal & Factor Builder"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "global",
+      "pageId": "welcome",
+      "page": "Welcome",
+      "text": "Portfolio",
+      "action": "",
+      "attrs": {
+        "data-section": "portfolio"
+      },
+      "feedback": [
+        "page:Welcome->Trade Blotter & Execution"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "global",
+      "pageId": "welcome",
+      "page": "Welcome",
+      "text": "Delivery",
+      "action": "",
+      "attrs": {
+        "data-section": "delivery"
+      },
+      "feedback": [
+        "page:Welcome->Artifacts"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "global",
+      "pageId": "welcome",
+      "page": "Welcome",
+      "text": "Help",
+      "action": "",
+      "attrs": {
+        "data-section": "help"
+      },
+      "feedback": [
+        "page:Welcome->Help"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "global",
+      "pageId": "welcome",
+      "page": "Welcome",
+      "text": "qnative_v2_mainline (Mainline) ▾",
+      "action": "",
+      "attrs": {},
+      "feedback": [
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "global",
+      "pageId": "welcome",
+      "page": "Welcome",
+      "text": "0 notices",
+      "action": "",
+      "attrs": {},
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "global",
+      "pageId": "welcome",
+      "page": "Welcome",
+      "text": "Hide",
+      "action": "",
+      "attrs": {},
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "welcome",
+      "page": "Welcome",
+      "text": "Open latest workspace",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "overview"
+      },
+      "feedback": [
+        "page:Welcome->System Overview"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "welcome",
+      "page": "Welcome",
+      "text": "View run history",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "run_history"
+      },
+      "feedback": [
+        "page:Welcome->Run History"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "welcome",
+      "page": "Welcome",
+      "text": "SScenario BuilderConfigure universe, sleeves, and threshold assumptions before running research.",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "scenario_builder"
+      },
+      "feedback": [
+        "page:Welcome->Scenario Builder"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "welcome",
+      "page": "Welcome",
+      "text": "BBacktest RunnerLaunch baseline and batch runs after checking pipeline readiness.",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "backtest_runner"
+      },
+      "feedback": [
+        "page:Welcome->Backtest Runner"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "welcome",
+      "page": "Welcome",
+      "text": "PPerformance DashboardReview NAV, benchmark spread, drawdown, and rolling Sharpe.",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "performance_dashboard"
+      },
+      "feedback": [
+        "page:Welcome->Performance Dashboard"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "welcome",
+      "page": "Welcome",
+      "text": "RRisk DashboardInspect regime state, factor relationships, and exposure changes.",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "risk_dashboard"
+      },
+      "feedback": [
+        "page:Welcome->Risk Dashboard"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "welcome",
+      "page": "Welcome",
+      "text": "RReport StudioAssemble charts, evidence blocks, and final delivery materials.",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "report_studio"
+      },
+      "feedback": [
+        "page:Welcome->Report Studio"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "welcome",
+      "page": "Welcome",
+      "text": "↑",
+      "action": "back-to-top",
+      "attrs": {
+        "data-action": "back-to-top"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "welcome",
+      "page": "Welcome",
+      "text": "Preview",
+      "action": "preview-current-work",
+      "attrs": {
+        "data-action": "preview-current-work"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "overview",
+      "page": "System Overview",
+      "text": "Open summary",
+      "action": "overview-open-summary",
+      "attrs": {
+        "data-action": "overview-open-summary"
+      },
+      "feedback": [
+        "scroll:0->1380"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "overview",
+      "page": "System Overview",
+      "text": "Export snapshot",
+      "action": "export-overview-snapshot",
+      "attrs": {
+        "data-action": "export-overview-snapshot"
+      },
+      "feedback": [
+        "scroll:190->0",
+        "download:overview-snapshot.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "overview",
+      "page": "System Overview",
+      "text": "UUniverse480 names98.8% coverage / benchmark Static baseline + market benchmark",
+      "action": "overview-drilldown-universe",
+      "attrs": {
+        "data-action": "overview-drilldown-universe"
+      },
+      "feedback": [
+        "page:System Overview->Universe & Company Selector",
+        "scroll:0->978"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "overview",
+      "page": "System Overview",
+      "text": "RRegimeStressThreshold 22 / latest VIX 22",
+      "action": "overview-drilldown-regime",
+      "attrs": {
+        "data-action": "overview-drilldown-regime"
+      },
+      "feedback": [
+        "page:System Overview->Regime & Threshold Control",
+        "scroll:35->978"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "overview",
+      "page": "System Overview",
+      "text": "OOptimizer25-3515.8% turnover / 11% vol",
+      "action": "overview-drilldown-optimizer",
+      "attrs": {
+        "data-action": "overview-drilldown-optimizer"
+      },
+      "feedback": [
+        "page:System Overview->Portfolio Optimizer Settings",
+        "scroll:48->961"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "overview",
+      "page": "System Overview",
+      "text": "FFactors4 sleevesAvg IC 0.046 / 12 sub-variables",
+      "action": "overview-drilldown-factors",
+      "attrs": {
+        "data-action": "overview-drilldown-factors"
+      },
+      "feedback": [
+        "page:System Overview->Signal & Factor Builder",
+        "scroll:42->889"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "overview",
+      "page": "System Overview",
+      "text": "TTrades4 names16.8% turnover / Quarterly batch with overlay exception handling",
+      "action": "overview-drilldown-trades",
+      "attrs": {
+        "data-action": "overview-drilldown-trades"
+      },
+      "feedback": [
+        "page:System Overview->Trade Blotter & Execution",
+        "scroll:31->1014"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "overview",
+      "page": "System Overview",
+      "text": "UUniverse & Company Selector480 names98.8% coverage in current preview",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "universe_selector"
+      },
+      "feedback": [
+        "page:System Overview->Universe & Company Selector",
+        "scroll:53->942"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "overview",
+      "page": "System Overview",
+      "text": "RRegime & Threshold ControlVIX 22Stress state / latest VIX 22",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "regime_control"
+      },
+      "feedback": [
+        "page:System Overview->Regime & Threshold Control",
+        "scroll:34->949"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "overview",
+      "page": "System Overview",
+      "text": "PPortfolio Optimizer Settings25-35 band15.8% est. turnover / 11% est. vol",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "optimizer_settings"
+      },
+      "feedback": [
+        "page:System Overview->Portfolio Optimizer Settings",
+        "scroll:32->949"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "overview",
+      "page": "System Overview",
+      "text": "SSignal & Factor Builder4 sleevesAvg IC 0.046 / top 25 preview",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "factor_lab"
+      },
+      "feedback": [
+        "page:System Overview->Signal & Factor Builder",
+        "scroll:37->1073"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "overview",
+      "page": "System Overview",
+      "text": "TTrade Blotter & Execution4 trades16.8% est. turnover / Quarterly batch with overlay exception handling",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "holdings_trades"
+      },
+      "feedback": [
+        "page:System Overview->Trade Blotter & Execution",
+        "scroll:70->1146"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "overview",
+      "page": "System Overview",
+      "text": "↑",
+      "action": "back-to-top",
+      "attrs": {
+        "data-action": "back-to-top"
+      },
+      "feedback": [
+        "scroll:72->0"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "overview",
+      "page": "System Overview",
+      "text": "Preview",
+      "action": "preview-current-work",
+      "attrs": {
+        "data-action": "preview-current-work"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "scenario_builder",
+      "page": "Scenario Builder",
+      "text": "undefined▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "universe",
+        "data-control-options": "US Large Cap||US Broad Market||Defensive Basket"
+      },
+      "feedback": [
+        "scroll:0->320",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "scenario_builder",
+      "page": "Scenario Builder",
+      "text": "Quarterly▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "rebalance",
+        "data-control-options": "Quarterly"
+      },
+      "feedback": [
+        "scroll:0->320",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "scenario_builder",
+      "page": "Scenario Builder",
+      "text": "undefined✎",
+      "action": "",
+      "attrs": {
+        "data-control-key": "top_n"
+      },
+      "feedback": [
+        "scroll:0->407",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "scenario_builder",
+      "page": "Scenario Builder",
+      "text": "undefined✎",
+      "action": "",
+      "attrs": {
+        "data-control-key": "vix_threshold"
+      },
+      "feedback": [
+        "scroll:0->407",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "scenario_builder",
+      "page": "Scenario Builder",
+      "text": "undefined▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "transaction_cost",
+        "data-control-options": "10bps||15bps||25bps||40bps"
+      },
+      "feedback": [
+        "scroll:0->538",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "scenario_builder",
+      "page": "Scenario Builder",
+      "text": "Disabled",
+      "action": "",
+      "attrs": {
+        "data-control-key": "neutralisation"
+      },
+      "feedback": [
+        "scroll:3->552"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "scenario_builder",
+      "page": "Scenario Builder",
+      "text": "Value",
+      "action": "",
+      "attrs": {
+        "data-control-key": "factor_sleeves",
+        "data-tag-value": "Value"
+      },
+      "feedback": [
+        "scroll:2->347"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "scenario_builder",
+      "page": "Scenario Builder",
+      "text": "Quality",
+      "action": "",
+      "attrs": {
+        "data-control-key": "factor_sleeves",
+        "data-tag-value": "Quality"
+      },
+      "feedback": [
+        "scroll:0->349"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "scenario_builder",
+      "page": "Scenario Builder",
+      "text": "Momentum",
+      "action": "",
+      "attrs": {
+        "data-control-key": "factor_sleeves",
+        "data-tag-value": "Momentum"
+      },
+      "feedback": [
+        "scroll:0->349"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "scenario_builder",
+      "page": "Scenario Builder",
+      "text": "Dividend",
+      "action": "",
+      "attrs": {
+        "data-control-key": "factor_sleeves",
+        "data-tag-value": "Dividend"
+      },
+      "feedback": [
+        "scroll:0->393"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "scenario_builder",
+      "page": "Scenario Builder",
+      "text": "undefined✎",
+      "action": "",
+      "attrs": {
+        "data-control-key": "hold_cap"
+      },
+      "feedback": [
+        "scroll:0->368",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "scenario_builder",
+      "page": "Scenario Builder",
+      "text": "undefined▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "benchmark",
+        "data-control-options": "Static baseline + market benchmark||Benchmark only||Custom control portfolio"
+      },
+      "feedback": [
+        "scroll:0->549",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "scenario_builder",
+      "page": "Scenario Builder",
+      "text": "Disabled",
+      "action": "",
+      "attrs": {
+        "data-control-key": "stress_overlay"
+      },
+      "feedback": [
+        "scroll:5->544"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "scenario_builder",
+      "page": "Scenario Builder",
+      "text": "undefined▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "lookback_window",
+        "data-control-options": "6 months||12 months||24 months"
+      },
+      "feedback": [
+        "scroll:10->627",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "scenario_builder",
+      "page": "Scenario Builder",
+      "text": "undefined▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "output_pack",
+        "data-control-options": "NAV + holdings + risk||NAV only||Full artifact bundle"
+      },
+      "feedback": [
+        "scroll:7->633",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "scenario_builder",
+      "page": "Scenario Builder",
+      "text": "Apply",
+      "action": "apply-preset",
+      "attrs": {
+        "data-action": "apply-preset",
+        "data-preset": "Base"
+      },
+      "feedback": [
+        "scroll:6->1011"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "scenario_builder",
+      "page": "Scenario Builder",
+      "text": "Apply",
+      "action": "apply-preset",
+      "attrs": {
+        "data-action": "apply-preset",
+        "data-preset": "Stress-aware"
+      },
+      "feedback": [
+        "scroll:55->1050"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "scenario_builder",
+      "page": "Scenario Builder",
+      "text": "Apply",
+      "action": "apply-preset",
+      "attrs": {
+        "data-action": "apply-preset",
+        "data-preset": "Low-turnover"
+      },
+      "feedback": [
+        "scroll:68->1106"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "scenario_builder",
+      "page": "Scenario Builder",
+      "text": "↑",
+      "action": "back-to-top",
+      "attrs": {
+        "data-action": "back-to-top"
+      },
+      "feedback": [
+        "scroll:70->0"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "scenario_builder",
+      "page": "Scenario Builder",
+      "text": "Preview",
+      "action": "preview-current-work",
+      "attrs": {
+        "data-action": "preview-current-work"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "universe_selector",
+      "page": "Universe & Company Selector",
+      "text": "Refresh preview",
+      "action": "preview-universe",
+      "attrs": {
+        "data-action": "preview-universe"
+      },
+      "feedback": [
+        "scroll:0->117"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "universe_selector",
+      "page": "Universe & Company Selector",
+      "text": "Open in Runner",
+      "action": "handoff-to-runner",
+      "attrs": {
+        "data-action": "handoff-to-runner"
+      },
+      "feedback": [
+        "page:Universe & Company Selector->Backtest Runner"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "universe_selector",
+      "page": "Universe & Company Selector",
+      "text": "US Large Cap▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "universe",
+        "data-control-options": "US Large Cap||US Broad Market||Defensive Basket"
+      },
+      "feedback": [
+        "scroll:0->614",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "universe_selector",
+      "page": "Universe & Company Selector",
+      "text": "Benchmark only▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "benchmark",
+        "data-control-options": "Static baseline + market benchmark||Benchmark only||Custom control portfolio"
+      },
+      "feedback": [
+        "scroll:5->612",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "universe_selector",
+      "page": "Universe & Company Selector",
+      "text": "Large and liquid only▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "company_focus",
+        "data-control-options": "Large and liquid only||Balanced quality/liquidity||Defensive resilient names"
+      },
+      "feedback": [
+        "scroll:6->698",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "universe_selector",
+      "page": "Universe & Company Selector",
+      "text": "Disabled",
+      "action": "",
+      "attrs": {
+        "data-control-key": "require_dividend"
+      },
+      "feedback": [
+        "scroll:15->694"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "universe_selector",
+      "page": "Universe & Company Selector",
+      "text": "Balanced▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "sector_tilt",
+        "data-control-options": "Balanced||Defensive||Cyclical check"
+      },
+      "feedback": [
+        "scroll:18->781",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "universe_selector",
+      "page": "Universe & Company Selector",
+      "text": "↑",
+      "action": "back-to-top",
+      "attrs": {
+        "data-action": "back-to-top"
+      },
+      "feedback": [
+        "scroll:21->0"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "universe_selector",
+      "page": "Universe & Company Selector",
+      "text": "Preview",
+      "action": "preview-universe",
+      "attrs": {
+        "data-action": "preview-universe"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "regime_control",
+      "page": "Regime & Threshold Control",
+      "text": "Refresh preview",
+      "action": "preview-regime",
+      "attrs": {
+        "data-action": "preview-regime"
+      },
+      "feedback": [
+        "scroll:0->117"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "regime_control",
+      "page": "Regime & Threshold Control",
+      "text": "Open in Runner",
+      "action": "handoff-to-runner",
+      "attrs": {
+        "data-action": "handoff-to-runner"
+      },
+      "feedback": [
+        "page:Regime & Threshold Control->Backtest Runner"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "regime_control",
+      "page": "Regime & Threshold Control",
+      "text": "Enabled",
+      "action": "",
+      "attrs": {
+        "data-control-key": "stress_overlay"
+      },
+      "feedback": [
+        "scroll:0->703"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "regime_control",
+      "page": "Regime & Threshold Control",
+      "text": "25✎",
+      "action": "",
+      "attrs": {
+        "data-control-key": "vix_threshold"
+      },
+      "feedback": [
+        "scroll:12->655",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "regime_control",
+      "page": "Regime & Threshold Control",
+      "text": "20✎",
+      "action": "",
+      "attrs": {
+        "data-control-key": "warning_band"
+      },
+      "feedback": [
+        "scroll:13->813",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "regime_control",
+      "page": "Regime & Threshold Control",
+      "text": "18✎",
+      "action": "",
+      "attrs": {
+        "data-control-key": "exit_band"
+      },
+      "feedback": [
+        "scroll:26->814",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "regime_control",
+      "page": "Regime & Threshold Control",
+      "text": "VIX-aware▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "regime_mode",
+        "data-control-options": "VIX-aware||Manual override||Threshold off"
+      },
+      "feedback": [
+        "scroll:27->924",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "regime_control",
+      "page": "Regime & Threshold Control",
+      "text": "Last 12 observations▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "replay_window",
+        "data-control-options": "Last 8 observations||Last 12 observations||Last 24 observations"
+      },
+      "feedback": [
+        "scroll:43->914",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "regime_control",
+      "page": "Regime & Threshold Control",
+      "text": "↑",
+      "action": "back-to-top",
+      "attrs": {
+        "data-action": "back-to-top"
+      },
+      "feedback": [
+        "scroll:47->0"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "regime_control",
+      "page": "Regime & Threshold Control",
+      "text": "Preview",
+      "action": "preview-regime",
+      "attrs": {
+        "data-action": "preview-regime"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "optimizer_settings",
+      "page": "Portfolio Optimizer Settings",
+      "text": "Refresh preview",
+      "action": "preview-optimizer",
+      "attrs": {
+        "data-action": "preview-optimizer"
+      },
+      "feedback": [
+        "scroll:0->117"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "optimizer_settings",
+      "page": "Portfolio Optimizer Settings",
+      "text": "Open in Runner",
+      "action": "handoff-to-runner",
+      "attrs": {
+        "data-action": "handoff-to-runner"
+      },
+      "feedback": [
+        "page:Portfolio Optimizer Settings->Backtest Runner"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "optimizer_settings",
+      "page": "Portfolio Optimizer Settings",
+      "text": "25✎",
+      "action": "",
+      "attrs": {
+        "data-control-key": "top_n"
+      },
+      "feedback": [
+        "scroll:0->645",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "optimizer_settings",
+      "page": "Portfolio Optimizer Settings",
+      "text": "4%✎",
+      "action": "",
+      "attrs": {
+        "data-control-key": "hold_cap"
+      },
+      "feedback": [
+        "scroll:7->640",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "optimizer_settings",
+      "page": "Portfolio Optimizer Settings",
+      "text": "15bps▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "transaction_cost",
+        "data-control-options": "10bps||15bps||25bps||40bps"
+      },
+      "feedback": [
+        "scroll:6->799",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "optimizer_settings",
+      "page": "Portfolio Optimizer Settings",
+      "text": "Enabled",
+      "action": "",
+      "attrs": {
+        "data-control-key": "neutralisation"
+      },
+      "feedback": [
+        "scroll:22->813"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "optimizer_settings",
+      "page": "Portfolio Optimizer Settings",
+      "text": "18%✎",
+      "action": "",
+      "attrs": {
+        "data-control-key": "turnover_target"
+      },
+      "feedback": [
+        "scroll:26->908",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "optimizer_settings",
+      "page": "Portfolio Optimizer Settings",
+      "text": "Balanced alpha / risk▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "optimizer_goal",
+        "data-control-options": "Balanced alpha / risk||Low turnover first||Higher conviction"
+      },
+      "feedback": [
+        "scroll:43->916",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "optimizer_settings",
+      "page": "Portfolio Optimizer Settings",
+      "text": "↑",
+      "action": "back-to-top",
+      "attrs": {
+        "data-action": "back-to-top"
+      },
+      "feedback": [
+        "scroll:39->0"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "optimizer_settings",
+      "page": "Portfolio Optimizer Settings",
+      "text": "Preview",
+      "action": "preview-optimizer",
+      "attrs": {
+        "data-action": "preview-optimizer"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "data_health",
+      "page": "Data Health",
+      "text": "↑",
+      "action": "back-to-top",
+      "attrs": {
+        "data-action": "back-to-top"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "data_health",
+      "page": "Data Health",
+      "text": "Preview",
+      "action": "preview-current-work",
+      "attrs": {
+        "data-action": "preview-current-work"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "backtest_runner",
+      "page": "Backtest Runner",
+      "text": "Watch live status",
+      "action": "watch-live-status",
+      "attrs": {
+        "data-action": "watch-live-status"
+      },
+      "feedback": [
+        "scroll:0->62",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "backtest_runner",
+      "page": "Backtest Runner",
+      "text": "Current working scenario▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "scenario",
+        "data-control-options": "Current working scenario||qnative_v2_mainline||Base||Stress-aware||Low-turnover"
+      },
+      "feedback": [
+        "scroll:0->441",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "backtest_runner",
+      "page": "Backtest Runner",
+      "text": "Single run▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "execution_mode",
+        "data-control-options": "Single run||Batch compare||Nightly refresh"
+      },
+      "feedback": [
+        "scroll:1->441",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "backtest_runner",
+      "page": "Backtest Runner",
+      "text": "Normal▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "priority",
+        "data-control-options": "Normal||High||Low"
+      },
+      "feedback": [
+        "scroll:1->527",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "backtest_runner",
+      "page": "Backtest Runner",
+      "text": "Team C✎",
+      "action": "",
+      "attrs": {
+        "data-control-key": "owner"
+      },
+      "feedback": [
+        "scroll:2->526",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "backtest_runner",
+      "page": "Backtest Runner",
+      "text": "Enabled",
+      "action": "",
+      "attrs": {
+        "data-control-key": "artifact_bundle"
+      },
+      "feedback": [
+        "scroll:2->614"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "backtest_runner",
+      "page": "Backtest Runner",
+      "text": "Enabled",
+      "action": "",
+      "attrs": {
+        "data-control-key": "notifications"
+      },
+      "feedback": [
+        "scroll:12->607"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "backtest_runner",
+      "page": "Backtest Runner",
+      "text": "Return to Portfolio Optimizer Settings",
+      "action": "return-to-setup-context",
+      "attrs": {
+        "data-action": "return-to-setup-context"
+      },
+      "feedback": [
+        "page:Backtest Runner->Portfolio Optimizer Settings",
+        "scroll:9->961"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "backtest_runner",
+      "page": "Backtest Runner",
+      "text": "↑",
+      "action": "back-to-top",
+      "attrs": {
+        "data-action": "back-to-top"
+      },
+      "feedback": [
+        "scroll:42->0"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "backtest_runner",
+      "page": "Backtest Runner",
+      "text": "Preview",
+      "action": "preview-current-work",
+      "attrs": {
+        "data-action": "preview-current-work"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "run_history",
+      "page": "Run History",
+      "text": "Open latest",
+      "action": "open-latest-run",
+      "attrs": {
+        "data-action": "open-latest-run"
+      },
+      "feedback": [
+        "scroll:0->10",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "run_history",
+      "page": "Run History",
+      "text": "Download logs",
+      "action": "download-logs",
+      "attrs": {
+        "data-action": "download-logs"
+      },
+      "feedback": [
+        "scroll:0->10",
+        "download:BT-2026-0406-01-logs.txt"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "run_history",
+      "page": "Run History",
+      "text": "Open latest artifacts",
+      "action": "open-artifacts",
+      "attrs": {
+        "data-action": "open-artifacts"
+      },
+      "feedback": [
+        "scroll:0->10"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "run_history",
+      "page": "Run History",
+      "text": "All scenarios▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "scenario_filter",
+        "data-control-options": "All scenarios||Stress-aware monitoring refresh||Daily refresh / export pack||Scenario compare batch||Monthly performance snapshot",
+        "data-multi-select": "true"
+      },
+      "feedback": [
+        "scroll:0->389",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "run_history",
+      "page": "Run History",
+      "text": "All status▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "status_filter",
+        "data-control-options": "All status||Success||Warning||Queued||Running||Scheduled",
+        "data-multi-select": "true"
+      },
+      "feedback": [
+        "scroll:0->389",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "run_history",
+      "page": "Run History",
+      "text": "All owners▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "owner_filter",
+        "data-control-options": "All owners||Team C||Automation||Research Ops",
+        "data-multi-select": "true"
+      },
+      "feedback": [
+        "scroll:1->475",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "run_history",
+      "page": "Run History",
+      "text": "Last 7 days▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "date_range",
+        "data-control-options": "Last 24 hours||Last 7 days||Last 30 days||All dates||Custom range"
+      },
+      "feedback": [
+        "scroll:11->476",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "run_history",
+      "page": "Run History",
+      "text": "Enabled",
+      "action": "",
+      "attrs": {
+        "data-control-key": "include_warnings"
+      },
+      "feedback": [
+        "scroll:1->563"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "run_history",
+      "page": "Run History",
+      "text": "Latest first▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "sort_order",
+        "data-control-options": "Latest first||Oldest first||Status priority"
+      },
+      "feedback": [
+        "scroll:16->563",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "run_history",
+      "page": "Run History",
+      "text": "Refresh table",
+      "action": "refresh-history",
+      "attrs": {
+        "data-action": "refresh-history"
+      },
+      "feedback": [
+        "scroll:11->583"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "run_history",
+      "page": "Run History",
+      "text": "Export history",
+      "action": "export-history",
+      "attrs": {
+        "data-action": "export-history"
+      },
+      "feedback": [
+        "scroll:16->641",
+        "download:run-history.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "run_history",
+      "page": "Run History",
+      "text": "Logs",
+      "action": "",
+      "attrs": {
+        "data-open-run-log": "BT-2026-0406-01"
+      },
+      "feedback": [
+        "scroll:8->647"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "run_history",
+      "page": "Run History",
+      "text": "Detail",
+      "action": "",
+      "attrs": {
+        "data-open-run-detail": "BT-2026-0406-01"
+      },
+      "feedback": [
+        "scroll:6->651",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "run_history",
+      "page": "Run History",
+      "text": "Artifacts",
+      "action": "",
+      "attrs": {
+        "data-open-run-artifacts": "BT-2026-0406-01"
+      },
+      "feedback": [
+        "scroll:581->655"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "run_history",
+      "page": "Run History",
+      "text": "Logs",
+      "action": "",
+      "attrs": {
+        "data-open-run-log": "BT-2026-0405-01"
+      },
+      "feedback": [
+        "scroll:14->645"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "run_history",
+      "page": "Run History",
+      "text": "Detail",
+      "action": "",
+      "attrs": {
+        "data-open-run-detail": "BT-2026-0405-01"
+      },
+      "feedback": [
+        "scroll:13->649",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "run_history",
+      "page": "Run History",
+      "text": "Artifacts",
+      "action": "",
+      "attrs": {
+        "data-open-run-artifacts": "BT-2026-0405-01"
+      },
+      "feedback": [
+        "scroll:20->640"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "run_history",
+      "page": "Run History",
+      "text": "Logs",
+      "action": "",
+      "attrs": {
+        "data-open-run-log": "BT-2026-0404-01"
+      },
+      "feedback": [
+        "scroll:11->646"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "run_history",
+      "page": "Run History",
+      "text": "Detail",
+      "action": "",
+      "attrs": {
+        "data-open-run-detail": "BT-2026-0404-01"
+      },
+      "feedback": [
+        "scroll:15->643",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "run_history",
+      "page": "Run History",
+      "text": "Artifacts",
+      "action": "",
+      "attrs": {
+        "data-open-run-artifacts": "BT-2026-0404-01"
+      },
+      "feedback": [
+        "scroll:9->652"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "run_history",
+      "page": "Run History",
+      "text": "Logs",
+      "action": "",
+      "attrs": {
+        "data-open-run-log": "BT-2026-0403-01"
+      },
+      "feedback": [
+        "scroll:26->633"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "run_history",
+      "page": "Run History",
+      "text": "Detail",
+      "action": "",
+      "attrs": {
+        "data-open-run-detail": "BT-2026-0403-01"
+      },
+      "feedback": [
+        "scroll:8->648",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "run_history",
+      "page": "Run History",
+      "text": "Artifacts",
+      "action": "",
+      "attrs": {
+        "data-open-run-artifacts": "BT-2026-0403-01"
+      },
+      "feedback": [
+        "scroll:7->651"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "run_history",
+      "page": "Run History",
+      "text": "Select records",
+      "action": "start-history-selection",
+      "attrs": {
+        "data-action": "start-history-selection"
+      },
+      "feedback": [
+        "scroll:15->646"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "run_history",
+      "page": "Run History",
+      "text": "↑",
+      "action": "back-to-top",
+      "attrs": {
+        "data-action": "back-to-top"
+      },
+      "feedback": [
+        "scroll:10->0"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "run_history",
+      "page": "Run History",
+      "text": "Preview",
+      "action": "preview-current-work",
+      "attrs": {
+        "data-action": "preview-current-work"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "factor_lab",
+      "page": "Signal & Factor Builder",
+      "text": "Refresh preview",
+      "action": "preview-factors",
+      "attrs": {
+        "data-action": "preview-factors"
+      },
+      "feedback": [
+        "scroll:0->45"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "factor_lab",
+      "page": "Signal & Factor Builder",
+      "text": "Open in Runner",
+      "action": "handoff-to-runner",
+      "attrs": {
+        "data-action": "handoff-to-runner"
+      },
+      "feedback": [
+        "page:Signal & Factor Builder->Backtest Runner"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "factor_lab",
+      "page": "Signal & Factor Builder",
+      "text": "Open Research Setup",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "scenario_builder"
+      },
+      "feedback": [
+        "page:Signal & Factor Builder->Scenario Builder",
+        "scroll:0->3"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "factor_lab",
+      "page": "Signal & Factor Builder",
+      "text": "Open Optimizer Settings",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "optimizer_settings"
+      },
+      "feedback": [
+        "page:Signal & Factor Builder->Portfolio Optimizer Settings",
+        "scroll:0->7"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "factor_lab",
+      "page": "Signal & Factor Builder",
+      "text": "↑",
+      "action": "back-to-top",
+      "attrs": {
+        "data-action": "back-to-top"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "factor_lab",
+      "page": "Signal & Factor Builder",
+      "text": "Preview",
+      "action": "preview-factors",
+      "attrs": {
+        "data-action": "preview-factors"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "floating",
+      "pageId": "factor_lab",
+      "page": "Signal & Factor Builder",
+      "text": "Close",
+      "action": "close-floating-controls",
+      "attrs": {
+        "data-action": "close-floating-controls"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "floating",
+      "pageId": "factor_lab",
+      "page": "Signal & Factor Builder",
+      "text": "Signal Summary",
+      "action": "",
+      "attrs": {
+        "data-jump-anchor": "factor-summary-anchor"
+      },
+      "feedback": [
+        "scroll:0->658"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "floating",
+      "pageId": "factor_lab",
+      "page": "Signal & Factor Builder",
+      "text": "Top Preview",
+      "action": "",
+      "attrs": {
+        "data-jump-anchor": "factor-top-preview-anchor"
+      },
+      "feedback": [
+        "scroll:13->1620"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "floating",
+      "pageId": "factor_lab",
+      "page": "Signal & Factor Builder",
+      "text": "Raw Attribution",
+      "action": "",
+      "attrs": {
+        "data-jump-anchor": "factor-attribution-anchor"
+      },
+      "feedback": [
+        "scroll:234->1664"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "floating",
+      "pageId": "factor_lab",
+      "page": "Signal & Factor Builder",
+      "text": "Research Setup",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "scenario_builder"
+      },
+      "feedback": [
+        "page:Signal & Factor Builder->Scenario Builder",
+        "scroll:259->0"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "performance_dashboard",
+      "page": "Performance Dashboard",
+      "text": "Open run viewer",
+      "action": "compare-performance-runs",
+      "attrs": {
+        "data-action": "compare-performance-runs"
+      },
+      "feedback": [
+        "scroll:0->117"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "performance_dashboard",
+      "page": "Performance Dashboard",
+      "text": "Open point drilldown",
+      "action": "open-performance-drilldown",
+      "attrs": {
+        "data-action": "open-performance-drilldown"
+      },
+      "feedback": [
+        "scroll:0->117",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "performance_dashboard",
+      "page": "Performance Dashboard",
+      "text": "Export charts",
+      "action": "export-performance-charts",
+      "attrs": {
+        "data-action": "export-performance-charts"
+      },
+      "feedback": [
+        "scroll:0->117",
+        "download:performance-dashboard-series.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "performance_dashboard",
+      "page": "Performance Dashboard",
+      "text": "Latest point▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "nav_focus_period",
+        "data-control-options": "Latest point||Peak drawdown"
+      },
+      "feedback": [
+        "scroll:0->1305",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "performance_dashboard",
+      "page": "Performance Dashboard",
+      "text": "Holdings + factors▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "drilldown_view",
+        "data-control-options": "Holdings + factors||Holdings only||Factors only"
+      },
+      "feedback": [
+        "scroll:136->1280",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "performance_dashboard",
+      "page": "Performance Dashboard",
+      "text": "Open Trade Blotter",
+      "action": "performance-open-trades",
+      "attrs": {
+        "data-action": "performance-open-trades"
+      },
+      "feedback": [
+        "page:Performance Dashboard->Trade Blotter & Execution",
+        "scroll:110->2244"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "performance_dashboard",
+      "page": "Performance Dashboard",
+      "text": "↑",
+      "action": "back-to-top",
+      "attrs": {
+        "data-action": "back-to-top"
+      },
+      "feedback": [
+        "scroll:1171->40"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "performance_dashboard",
+      "page": "Performance Dashboard",
+      "text": "Preview",
+      "action": "preview-current-work",
+      "attrs": {
+        "data-action": "preview-current-work"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "floating",
+      "pageId": "performance_dashboard",
+      "page": "Performance Dashboard",
+      "text": "Close",
+      "action": "close-floating-controls",
+      "attrs": {
+        "data-action": "close-floating-controls"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "floating",
+      "pageId": "performance_dashboard",
+      "page": "Performance Dashboard",
+      "text": "Baseline▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "compare_runs",
+        "data-control-options": "Baseline"
+      },
+      "feedback": [
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "floating",
+      "pageId": "performance_dashboard",
+      "page": "Performance Dashboard",
+      "text": "Latest point▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "nav_focus_period",
+        "data-control-options": "Latest point||Peak drawdown"
+      },
+      "feedback": [
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "floating",
+      "pageId": "performance_dashboard",
+      "page": "Performance Dashboard",
+      "text": "Holdings + factors▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "drilldown_view",
+        "data-control-options": "Holdings + factors||Holdings only||Factors only"
+      },
+      "feedback": [
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "floating",
+      "pageId": "performance_dashboard",
+      "page": "Performance Dashboard",
+      "text": "Selected Run Summary",
+      "action": "",
+      "attrs": {
+        "data-jump-anchor": "performance-multi-run-anchor"
+      },
+      "feedback": [
+        "scroll:0->1165"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "floating",
+      "pageId": "performance_dashboard",
+      "page": "Performance Dashboard",
+      "text": "Benchmark Lens",
+      "action": "",
+      "attrs": {
+        "data-jump-anchor": "performance-benchmark-anchor"
+      },
+      "feedback": [
+        "scroll:179->2286"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "risk_dashboard",
+      "page": "Risk Dashboard",
+      "text": "Compare risk profile",
+      "action": "compare-risk-profile",
+      "attrs": {
+        "data-action": "compare-risk-profile"
+      },
+      "feedback": [
+        "scroll:40->35",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "risk_dashboard",
+      "page": "Risk Dashboard",
+      "text": "Open holdings detail",
+      "action": "risk-open-holdings",
+      "attrs": {
+        "data-action": "risk-open-holdings"
+      },
+      "feedback": [
+        "page:Risk Dashboard->Trade Blotter & Execution",
+        "scroll:0->1005"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "risk_dashboard",
+      "page": "Risk Dashboard",
+      "text": "Refresh VIX",
+      "action": "refresh-vix",
+      "attrs": {
+        "data-action": "refresh-vix"
+      },
+      "feedback": [
+        "scroll:114->45"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "risk_dashboard",
+      "page": "Risk Dashboard",
+      "text": "▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "snapshot_date",
+        "data-control-options": "No stored snapshots"
+      },
+      "feedback": [
+        "scroll:0->541",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "risk_dashboard",
+      "page": "Risk Dashboard",
+      "text": "All sectors▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "sector_focus",
+        "data-control-options": "All sectors||Consumer Staples||Energy||Health Care||Information Technology"
+      },
+      "feedback": [
+        "scroll:2->540",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "risk_dashboard",
+      "page": "Risk Dashboard",
+      "text": "Static baseline▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "compare_mode",
+        "data-control-options": "Static baseline||Primary benchmark||Previous snapshot"
+      },
+      "feedback": [
+        "scroll:3->626",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "risk_dashboard",
+      "page": "Risk Dashboard",
+      "text": "Latest covariance metrics▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "covariance_focus",
+        "data-control-options": "Latest covariance metrics||Tracking error lens||Diversification lens"
+      },
+      "feedback": [
+        "scroll:6->625",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "risk_dashboard",
+      "page": "Risk Dashboard",
+      "text": "Open Trade Blotter",
+      "action": "risk-open-holdings",
+      "attrs": {
+        "data-action": "risk-open-holdings"
+      },
+      "feedback": [
+        "page:Risk Dashboard->Trade Blotter & Execution",
+        "scroll:9->1056"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "risk_dashboard",
+      "page": "Risk Dashboard",
+      "text": "↑",
+      "action": "back-to-top",
+      "attrs": {
+        "data-action": "back-to-top"
+      },
+      "feedback": [
+        "scroll:55->0"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "risk_dashboard",
+      "page": "Risk Dashboard",
+      "text": "Preview",
+      "action": "preview-current-work",
+      "attrs": {
+        "data-action": "preview-current-work"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "floating",
+      "pageId": "risk_dashboard",
+      "page": "Risk Dashboard",
+      "text": "Close",
+      "action": "close-floating-controls",
+      "attrs": {
+        "data-action": "close-floating-controls"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "floating",
+      "pageId": "risk_dashboard",
+      "page": "Risk Dashboard",
+      "text": "▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "snapshot_date",
+        "data-control-options": ""
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "floating",
+      "pageId": "risk_dashboard",
+      "page": "Risk Dashboard",
+      "text": "All sectors▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "sector_focus",
+        "data-control-options": "All sectors||Consumer Staples||Energy||Health Care||Information Technology"
+      },
+      "feedback": [
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "floating",
+      "pageId": "risk_dashboard",
+      "page": "Risk Dashboard",
+      "text": "Static baseline▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "compare_mode",
+        "data-control-options": "Static baseline||Primary benchmark||Previous snapshot"
+      },
+      "feedback": [
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "floating",
+      "pageId": "risk_dashboard",
+      "page": "Risk Dashboard",
+      "text": "Latest covariance metrics▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "covariance_focus",
+        "data-control-options": "Latest covariance metrics||Tracking error lens||Diversification lens"
+      },
+      "feedback": [
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "floating",
+      "pageId": "risk_dashboard",
+      "page": "Risk Dashboard",
+      "text": "Snapshot Summary",
+      "action": "",
+      "attrs": {
+        "data-jump-anchor": "risk-snapshot-summary-anchor"
+      },
+      "feedback": [
+        "scroll:0->635"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "floating",
+      "pageId": "risk_dashboard",
+      "page": "Risk Dashboard",
+      "text": "Sector Holdings",
+      "action": "",
+      "attrs": {
+        "data-jump-anchor": "risk-sector-holdings-anchor"
+      },
+      "feedback": [
+        "scroll:23->1794"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "floating",
+      "pageId": "risk_dashboard",
+      "page": "Risk Dashboard",
+      "text": "Risk Profile",
+      "action": "",
+      "attrs": {
+        "data-jump-anchor": "risk-profile-compare-anchor"
+      },
+      "feedback": [
+        "scroll:1161->2882"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "robustness_lab",
+      "page": "Robustness Lab",
+      "text": "Export table",
+      "action": "export-robustness-table",
+      "attrs": {
+        "data-action": "export-robustness-table"
+      },
+      "feedback": [
+        "scroll:22->41",
+        "download:robustness-table.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "robustness_lab",
+      "page": "Robustness Lab",
+      "text": "Current working scenario▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "base_scenario",
+        "data-control-options": "Current working scenario||Base||Stress-aware||Low-turnover"
+      },
+      "feedback": [
+        "scroll:0->647",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "robustness_lab",
+      "page": "Robustness Lab",
+      "text": "Transaction cost",
+      "action": "",
+      "attrs": {
+        "data-control-key": "sensitivity_dimensions",
+        "data-min-select": "2",
+        "data-tag-value": "Transaction cost"
+      },
+      "feedback": [
+        "scroll:12->570"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "robustness_lab",
+      "page": "Robustness Lab",
+      "text": "Regime threshold",
+      "action": "",
+      "attrs": {
+        "data-control-key": "sensitivity_dimensions",
+        "data-min-select": "2",
+        "data-tag-value": "Regime threshold"
+      },
+      "feedback": [
+        "scroll:16->608"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "robustness_lab",
+      "page": "Robustness Lab",
+      "text": "Breadth range",
+      "action": "",
+      "attrs": {
+        "data-control-key": "sensitivity_dimensions",
+        "data-min-select": "2",
+        "data-tag-value": "Breadth range"
+      },
+      "feedback": [
+        "scroll:8->615"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "robustness_lab",
+      "page": "Robustness Lab",
+      "text": "Trade constraints",
+      "action": "",
+      "attrs": {
+        "data-control-key": "sensitivity_dimensions",
+        "data-min-select": "2",
+        "data-tag-value": "Trade constraints"
+      },
+      "feedback": [
+        "scroll:8->619"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "robustness_lab",
+      "page": "Robustness Lab",
+      "text": "Incumbent band",
+      "action": "",
+      "attrs": {
+        "data-control-key": "sensitivity_dimensions",
+        "data-min-select": "2",
+        "data-tag-value": "Incumbent band"
+      },
+      "feedback": [
+        "scroll:7->618"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "robustness_lab",
+      "page": "Robustness Lab",
+      "text": "Drawdown brake",
+      "action": "",
+      "attrs": {
+        "data-control-key": "sensitivity_dimensions",
+        "data-min-select": "2",
+        "data-tag-value": "Drawdown brake"
+      },
+      "feedback": [
+        "scroll:8->661"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "robustness_lab",
+      "page": "Robustness Lab",
+      "text": "Mainline core▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "range_profile",
+        "data-control-options": "Mainline core||Wide sweep||Tighter production"
+      },
+      "feedback": [
+        "scroll:9->755",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "robustness_lab",
+      "page": "Robustness Lab",
+      "text": "1000✎",
+      "action": "",
+      "attrs": {
+        "data-control-key": "bootstrap_iterations"
+      },
+      "feedback": [
+        "scroll:18->752",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "robustness_lab",
+      "page": "Robustness Lab",
+      "text": "Bootstrap + Monte Carlo▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "stochastic_mode",
+        "data-control-options": "Bootstrap + Monte Carlo||Bootstrap only||Monte Carlo only"
+      },
+      "feedback": [
+        "scroll:24->835",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "robustness_lab",
+      "page": "Robustness Lab",
+      "text": "Normal vs stress▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "subperiod_definition",
+        "data-control-options": "Normal vs stress||Fixed window||Rolling split"
+      },
+      "feedback": [
+        "scroll:31->836",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "robustness_lab",
+      "page": "Robustness Lab",
+      "text": "Open in Performance Dashboard",
+      "action": "open-subperiod-performance",
+      "attrs": {
+        "data-action": "open-subperiod-performance"
+      },
+      "feedback": [
+        "page:Robustness Lab->Performance Dashboard",
+        "scroll:42->1696"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "robustness_lab",
+      "page": "Robustness Lab",
+      "text": "↑",
+      "action": "back-to-top",
+      "attrs": {
+        "data-action": "back-to-top"
+      },
+      "feedback": [
+        "scroll:233->0"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "robustness_lab",
+      "page": "Robustness Lab",
+      "text": "Preview",
+      "action": "preview-current-work",
+      "attrs": {
+        "data-action": "preview-current-work"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "holdings_trades",
+      "page": "Trade Blotter & Execution",
+      "text": "Refresh preview",
+      "action": "preview-trades",
+      "attrs": {
+        "data-action": "preview-trades"
+      },
+      "feedback": [
+        "scroll:0->133"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "holdings_trades",
+      "page": "Trade Blotter & Execution",
+      "text": "Open in Runner",
+      "action": "handoff-to-runner",
+      "attrs": {
+        "data-action": "handoff-to-runner"
+      },
+      "feedback": [
+        "page:Trade Blotter & Execution->Backtest Runner"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "holdings_trades",
+      "page": "Trade Blotter & Execution",
+      "text": "Export holdings",
+      "action": "export-holdings",
+      "attrs": {
+        "data-action": "export-holdings"
+      },
+      "feedback": [
+        "scroll:0->185",
+        "download:portfolio-holdings.csv"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "holdings_trades",
+      "page": "Trade Blotter & Execution",
+      "text": "Open Research Setup",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "optimizer_settings"
+      },
+      "feedback": [
+        "page:Trade Blotter & Execution->Portfolio Optimizer Settings",
+        "scroll:0->6"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "holdings_trades",
+      "page": "Trade Blotter & Execution",
+      "text": "Open Scenario Builder",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "scenario_builder"
+      },
+      "feedback": [
+        "page:Trade Blotter & Execution->Scenario Builder",
+        "scroll:0->11"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "holdings_trades",
+      "page": "Trade Blotter & Execution",
+      "text": "All trades▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "trade_filter",
+        "data-control-options": "All trades||Buys only||Sells only||Largest changes"
+      },
+      "feedback": [
+        "scroll:0->650",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "holdings_trades",
+      "page": "Trade Blotter & Execution",
+      "text": "All sectors▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "sector_focus",
+        "data-control-options": "All sectors||Consumer Staples||Energy||Health Care||Information Technology"
+      },
+      "feedback": [
+        "scroll:13->647",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "holdings_trades",
+      "page": "Trade Blotter & Execution",
+      "text": "Driver share▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "attribution_view",
+        "data-control-options": "Driver share||Overlay vs ranking||Constraints only"
+      },
+      "feedback": [
+        "scroll:9->731",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "holdings_trades",
+      "page": "Trade Blotter & Execution",
+      "text": "↑",
+      "action": "back-to-top",
+      "attrs": {
+        "data-action": "back-to-top"
+      },
+      "feedback": [
+        "scroll:19->0"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "holdings_trades",
+      "page": "Trade Blotter & Execution",
+      "text": "Preview",
+      "action": "preview-trades",
+      "attrs": {
+        "data-action": "preview-trades"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "floating",
+      "pageId": "holdings_trades",
+      "page": "Trade Blotter & Execution",
+      "text": "Close",
+      "action": "close-floating-controls",
+      "attrs": {
+        "data-action": "close-floating-controls"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "floating",
+      "pageId": "holdings_trades",
+      "page": "Trade Blotter & Execution",
+      "text": "All trades▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "trade_filter",
+        "data-control-options": "All trades||Buys only||Sells only||Largest changes"
+      },
+      "feedback": [
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "floating",
+      "pageId": "holdings_trades",
+      "page": "Trade Blotter & Execution",
+      "text": "All sectors▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "sector_focus",
+        "data-control-options": "All sectors||Consumer Staples||Energy||Health Care||Information Technology"
+      },
+      "feedback": [
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "floating",
+      "pageId": "holdings_trades",
+      "page": "Trade Blotter & Execution",
+      "text": "Driver share▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "attribution_view",
+        "data-control-options": "Driver share||Overlay vs ranking||Constraints only"
+      },
+      "feedback": [
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "floating",
+      "pageId": "holdings_trades",
+      "page": "Trade Blotter & Execution",
+      "text": "Source Attribution",
+      "action": "",
+      "attrs": {
+        "data-jump-anchor": "trade-source-attribution-anchor"
+      },
+      "feedback": [
+        "scroll:0->1780"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "floating",
+      "pageId": "holdings_trades",
+      "page": "Trade Blotter & Execution",
+      "text": "Trade Blotter",
+      "action": "",
+      "attrs": {
+        "data-jump-anchor": "trade-blotter-preview-anchor"
+      },
+      "feedback": [
+        "scroll:364->1830"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "floating",
+      "pageId": "holdings_trades",
+      "page": "Trade Blotter & Execution",
+      "text": "Holdings Slice",
+      "action": "",
+      "attrs": {
+        "data-jump-anchor": "trade-holdings-slice-anchor"
+      },
+      "feedback": [
+        "scroll:409->2115"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "artifacts",
+      "page": "Artifacts",
+      "text": "Export ZIP",
+      "action": "export-delivery-zip",
+      "attrs": {
+        "data-action": "export-delivery-zip"
+      },
+      "feedback": [
+        "scroll:0->30"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "artifacts",
+      "page": "Artifacts",
+      "text": "↑",
+      "action": "back-to-top",
+      "attrs": {
+        "data-action": "back-to-top"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "artifacts",
+      "page": "Artifacts",
+      "text": "Preview",
+      "action": "preview-current-work",
+      "attrs": {
+        "data-action": "preview-current-work"
+      },
+      "feedback": [
+        "download:cw2-delivery-bundle-20260501-011215.zip"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "report_studio",
+      "page": "Report Studio",
+      "text": "Export PDF",
+      "action": "export-ai-analysis",
+      "attrs": {
+        "data-action": "export-ai-analysis"
+      },
+      "feedback": [
+        "scroll:0->45"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "report_studio",
+      "page": "Report Studio",
+      "text": "https://api.openai.com/v1✎",
+      "action": "",
+      "attrs": {
+        "data-control-key": "api_url"
+      },
+      "feedback": [
+        "scroll:0->915",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "report_studio",
+      "page": "Report Studio",
+      "text": "gpt-4.1-mini✎",
+      "action": "",
+      "attrs": {
+        "data-control-key": "model"
+      },
+      "feedback": [
+        "scroll:44->1064",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "report_studio",
+      "page": "Report Studio",
+      "text": "openai▾",
+      "action": "",
+      "attrs": {
+        "data-control-key": "request_format",
+        "data-control-options": "openai||claude||gemini||compatible api||custom json"
+      },
+      "feedback": [
+        "scroll:75->1047",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "report_studio",
+      "page": "Report Studio",
+      "text": "0.2✎",
+      "action": "",
+      "attrs": {
+        "data-control-key": "temperature"
+      },
+      "feedback": [
+        "scroll:57->1202",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "report_studio",
+      "page": "Report Studio",
+      "text": "session only✎",
+      "action": "",
+      "attrs": {
+        "data-control-key": "api_key"
+      },
+      "feedback": [
+        "scroll:105->1193",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "report_studio",
+      "page": "Report Studio",
+      "text": "Write an investor-facing portfolio analysis report. Focus on strategy logic, backtest evidence, risk profile, and concise robustness conclusions. Keep numeric claims tied to the su",
+      "action": "",
+      "attrs": {
+        "data-control-key": "user_instruction"
+      },
+      "feedback": [
+        "scroll:85->1301",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "report_studio",
+      "page": "Report Studio",
+      "text": "optional✎",
+      "action": "",
+      "attrs": {
+        "data-control-key": "system_prompt"
+      },
+      "feedback": [
+        "scroll:117->1399",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "report_studio",
+      "page": "Report Studio",
+      "text": "Manual model",
+      "action": "edit-model-manual",
+      "attrs": {
+        "data-action": "edit-model-manual"
+      },
+      "feedback": [
+        "scroll:134->1480",
+        "overlay:Scenario Selector Choose Active Scenario Close Create New Scenario Update Current Scenario Delete Current Scenario qnative_v2_mainline Mainline"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "report_studio",
+      "page": "Report Studio",
+      "text": "↑",
+      "action": "back-to-top",
+      "attrs": {
+        "data-action": "back-to-top"
+      },
+      "feedback": [
+        "scroll:169->0"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "report_studio",
+      "page": "Report Studio",
+      "text": "Preview",
+      "action": "preview-current-work",
+      "attrs": {
+        "data-action": "preview-current-work"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "help",
+      "page": "Help",
+      "text": "Definitions",
+      "action": "help-benchmark-anchor",
+      "attrs": {
+        "data-action": "help-benchmark-anchor"
+      },
+      "feedback": [
+        "scroll:0->2087"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "help",
+      "page": "Help",
+      "text": "Run modes",
+      "action": "help-run-modes-anchor",
+      "attrs": {
+        "data-action": "help-run-modes-anchor"
+      },
+      "feedback": [
+        "scroll:548->2736"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "help",
+      "page": "Help",
+      "text": "Platform guide",
+      "action": "help-platform-anchor",
+      "attrs": {
+        "data-action": "help-platform-anchor"
+      },
+      "feedback": [
+        "scroll:885->2862"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "help",
+      "page": "Help",
+      "text": "↑",
+      "action": "back-to-top",
+      "attrs": {
+        "data-action": "back-to-top"
+      },
+      "feedback": [
+        "scroll:963->27"
+      ],
+      "errorDelta": 0
+    },
+    {
+      "scope": "page",
+      "pageId": "help",
+      "page": "Help",
+      "text": "Preview",
+      "action": "preview-current-work",
+      "attrs": {
+        "data-action": "preview-current-work"
+      },
+      "feedback": [
+        "clicked/no-obvious-feedback"
+      ],
+      "errorDelta": 0
+    }
+  ],
+  "skipped": [
+    {
+      "scope": "global",
+      "pageId": "welcome",
+      "page": "Welcome",
+      "text": "Set Mainline",
+      "action": "",
+      "attrs": {},
+      "reason": "unsafe/text"
+    },
+    {
+      "scope": "page",
+      "pageId": "welcome",
+      "page": "Welcome",
+      "text": "RRobustness LabReview quarterly-rebalanced sensitivity sweeps, period splits, and stochastic robustness outcomes.",
+      "action": "",
+      "attrs": {
+        "data-jump-page": "robustness_lab"
+      },
+      "reason": "unsafe/text"
+    },
+    {
+      "scope": "page",
+      "pageId": "welcome",
+      "page": "Welcome",
+      "text": "Save",
+      "action": "save-scenario",
+      "attrs": {
+        "data-action": "save-scenario"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "pageId": "welcome",
+      "page": "Welcome",
+      "text": "Run",
+      "action": "run-baseline",
+      "attrs": {
+        "data-action": "run-baseline"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "pageId": "welcome",
+      "page": "Welcome",
+      "text": "Compare",
+      "action": "queue-batch",
+      "attrs": {
+        "data-action": "queue-batch"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "pageId": "welcome",
+      "page": "Welcome",
+      "text": "Generate",
+      "action": "generate-ai-report-analysis",
+      "attrs": {
+        "data-action": "generate-ai-report-analysis"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "pageId": "overview",
+      "page": "System Overview",
+      "text": "Save",
+      "action": "save-scenario",
+      "attrs": {
+        "data-action": "save-scenario"
+      },
+      "reason": "unsafe/action:save-scenario"
+    },
+    {
+      "scope": "page",
+      "pageId": "overview",
+      "page": "System Overview",
+      "text": "Run",
+      "action": "run-baseline",
+      "attrs": {
+        "data-action": "run-baseline"
+      },
+      "reason": "unsafe/action:run-baseline"
+    },
+    {
+      "scope": "page",
+      "pageId": "overview",
+      "page": "System Overview",
+      "text": "Compare",
+      "action": "queue-batch",
+      "attrs": {
+        "data-action": "queue-batch"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "pageId": "overview",
+      "page": "System Overview",
+      "text": "Generate",
+      "action": "generate-ai-report-analysis",
+      "attrs": {
+        "data-action": "generate-ai-report-analysis"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "pageId": "scenario_builder",
+      "page": "Scenario Builder",
+      "text": "Clear draft",
+      "action": "clear-draft",
+      "attrs": {
+        "data-action": "clear-draft"
+      },
+      "reason": "unsafe/action:clear-draft"
+    },
+    {
+      "scope": "page",
+      "pageId": "scenario_builder",
+      "page": "Scenario Builder",
+      "text": "Save preset",
+      "action": "save-preset",
+      "attrs": {
+        "data-action": "save-preset"
+      },
+      "reason": "unsafe/action:save-preset"
+    },
+    {
+      "scope": "page",
+      "pageId": "scenario_builder",
+      "page": "Scenario Builder",
+      "text": "Duplicate preset",
+      "action": "duplicate-preset",
+      "attrs": {
+        "data-action": "duplicate-preset"
+      },
+      "reason": "unsafe/action:duplicate-preset"
+    },
+    {
+      "scope": "page",
+      "pageId": "scenario_builder",
+      "page": "Scenario Builder",
+      "text": "Rename",
+      "action": "rename-preset",
+      "attrs": {
+        "data-action": "rename-preset",
+        "data-preset": "Base"
+      },
+      "reason": "unsafe/action:rename-preset"
+    },
+    {
+      "scope": "page",
+      "pageId": "scenario_builder",
+      "page": "Scenario Builder",
+      "text": "Delete",
+      "action": "delete-preset",
+      "attrs": {
+        "data-action": "delete-preset",
+        "data-preset": "Base"
+      },
+      "reason": "unsafe/action:delete-preset"
+    },
+    {
+      "scope": "page",
+      "pageId": "scenario_builder",
+      "page": "Scenario Builder",
+      "text": "Rename",
+      "action": "rename-preset",
+      "attrs": {
+        "data-action": "rename-preset",
+        "data-preset": "Stress-aware"
+      },
+      "reason": "unsafe/action:rename-preset"
+    },
+    {
+      "scope": "page",
+      "pageId": "scenario_builder",
+      "page": "Scenario Builder",
+      "text": "Delete",
+      "action": "delete-preset",
+      "attrs": {
+        "data-action": "delete-preset",
+        "data-preset": "Stress-aware"
+      },
+      "reason": "unsafe/action:delete-preset"
+    },
+    {
+      "scope": "page",
+      "pageId": "scenario_builder",
+      "page": "Scenario Builder",
+      "text": "Rename",
+      "action": "rename-preset",
+      "attrs": {
+        "data-action": "rename-preset",
+        "data-preset": "Low-turnover"
+      },
+      "reason": "unsafe/action:rename-preset"
+    },
+    {
+      "scope": "page",
+      "pageId": "scenario_builder",
+      "page": "Scenario Builder",
+      "text": "Delete",
+      "action": "delete-preset",
+      "attrs": {
+        "data-action": "delete-preset",
+        "data-preset": "Low-turnover"
+      },
+      "reason": "unsafe/action:delete-preset"
+    },
+    {
+      "scope": "page",
+      "pageId": "scenario_builder",
+      "page": "Scenario Builder",
+      "text": "Save",
+      "action": "save-scenario",
+      "attrs": {
+        "data-action": "save-scenario"
+      },
+      "reason": "unsafe/action:save-scenario"
+    },
+    {
+      "scope": "page",
+      "pageId": "scenario_builder",
+      "page": "Scenario Builder",
+      "text": "Run",
+      "action": "run-baseline",
+      "attrs": {
+        "data-action": "run-baseline"
+      },
+      "reason": "unsafe/action:run-baseline"
+    },
+    {
+      "scope": "page",
+      "pageId": "scenario_builder",
+      "page": "Scenario Builder",
+      "text": "Compare",
+      "action": "queue-batch",
+      "attrs": {
+        "data-action": "queue-batch"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "pageId": "scenario_builder",
+      "page": "Scenario Builder",
+      "text": "Generate",
+      "action": "generate-ai-report-analysis",
+      "attrs": {
+        "data-action": "generate-ai-report-analysis"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "pageId": "universe_selector",
+      "page": "Universe & Company Selector",
+      "text": "Save Required",
+      "action": "save-scenario",
+      "attrs": {
+        "data-action": "save-scenario"
+      },
+      "reason": "unsafe/action:save-scenario"
+    },
+    {
+      "scope": "page",
+      "pageId": "universe_selector",
+      "page": "Universe & Company Selector",
+      "text": "Run",
+      "action": "run-baseline",
+      "attrs": {
+        "data-action": "run-baseline"
+      },
+      "reason": "unsafe/action:run-baseline"
+    },
+    {
+      "scope": "page",
+      "pageId": "universe_selector",
+      "page": "Universe & Company Selector",
+      "text": "Compare",
+      "action": "queue-batch",
+      "attrs": {
+        "data-action": "queue-batch"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "pageId": "universe_selector",
+      "page": "Universe & Company Selector",
+      "text": "Generate",
+      "action": "generate-ai-report-analysis",
+      "attrs": {
+        "data-action": "generate-ai-report-analysis"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "pageId": "regime_control",
+      "page": "Regime & Threshold Control",
+      "text": "Save Required",
+      "action": "save-scenario",
+      "attrs": {
+        "data-action": "save-scenario"
+      },
+      "reason": "unsafe/action:save-scenario"
+    },
+    {
+      "scope": "page",
+      "pageId": "regime_control",
+      "page": "Regime & Threshold Control",
+      "text": "Run",
+      "action": "run-baseline",
+      "attrs": {
+        "data-action": "run-baseline"
+      },
+      "reason": "unsafe/action:run-baseline"
+    },
+    {
+      "scope": "page",
+      "pageId": "regime_control",
+      "page": "Regime & Threshold Control",
+      "text": "Compare",
+      "action": "queue-batch",
+      "attrs": {
+        "data-action": "queue-batch"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "pageId": "regime_control",
+      "page": "Regime & Threshold Control",
+      "text": "Generate",
+      "action": "generate-ai-report-analysis",
+      "attrs": {
+        "data-action": "generate-ai-report-analysis"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "pageId": "optimizer_settings",
+      "page": "Portfolio Optimizer Settings",
+      "text": "Save Required",
+      "action": "save-scenario",
+      "attrs": {
+        "data-action": "save-scenario"
+      },
+      "reason": "unsafe/action:save-scenario"
+    },
+    {
+      "scope": "page",
+      "pageId": "optimizer_settings",
+      "page": "Portfolio Optimizer Settings",
+      "text": "Run",
+      "action": "run-baseline",
+      "attrs": {
+        "data-action": "run-baseline"
+      },
+      "reason": "unsafe/action:run-baseline"
+    },
+    {
+      "scope": "page",
+      "pageId": "optimizer_settings",
+      "page": "Portfolio Optimizer Settings",
+      "text": "Compare",
+      "action": "queue-batch",
+      "attrs": {
+        "data-action": "queue-batch"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "pageId": "optimizer_settings",
+      "page": "Portfolio Optimizer Settings",
+      "text": "Generate",
+      "action": "generate-ai-report-analysis",
+      "attrs": {
+        "data-action": "generate-ai-report-analysis"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "pageId": "data_health",
+      "page": "Data Health",
+      "text": "Save Required",
+      "action": "save-scenario",
+      "attrs": {
+        "data-action": "save-scenario"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "pageId": "data_health",
+      "page": "Data Health",
+      "text": "Run",
+      "action": "run-baseline",
+      "attrs": {
+        "data-action": "run-baseline"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "pageId": "data_health",
+      "page": "Data Health",
+      "text": "Compare",
+      "action": "queue-batch",
+      "attrs": {
+        "data-action": "queue-batch"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "pageId": "data_health",
+      "page": "Data Health",
+      "text": "Generate",
+      "action": "generate-ai-report-analysis",
+      "attrs": {
+        "data-action": "generate-ai-report-analysis"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "pageId": "backtest_runner",
+      "page": "Backtest Runner",
+      "text": "Queue batch",
+      "action": "queue-batch",
+      "attrs": {
+        "data-action": "queue-batch"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "pageId": "backtest_runner",
+      "page": "Backtest Runner",
+      "text": "Schedule nightly refresh",
+      "action": "schedule-nightly",
+      "attrs": {
+        "data-action": "schedule-nightly"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "pageId": "backtest_runner",
+      "page": "Backtest Runner",
+      "text": "Save Required",
+      "action": "save-scenario",
+      "attrs": {
+        "data-action": "save-scenario"
+      },
+      "reason": "unsafe/action:save-scenario"
+    },
+    {
+      "scope": "page",
+      "pageId": "backtest_runner",
+      "page": "Backtest Runner",
+      "text": "Run",
+      "action": "run-baseline",
+      "attrs": {
+        "data-action": "run-baseline"
+      },
+      "reason": "unsafe/action:run-baseline"
+    },
+    {
+      "scope": "page",
+      "pageId": "backtest_runner",
+      "page": "Backtest Runner",
+      "text": "Compare",
+      "action": "queue-batch",
+      "attrs": {
+        "data-action": "queue-batch"
+      },
+      "reason": "unsafe/action:queue-batch"
+    },
+    {
+      "scope": "page",
+      "pageId": "backtest_runner",
+      "page": "Backtest Runner",
+      "text": "Generate",
+      "action": "generate-ai-report-analysis",
+      "attrs": {
+        "data-action": "generate-ai-report-analysis"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "pageId": "run_history",
+      "page": "Run History",
+      "text": "Rerun",
+      "action": "",
+      "attrs": {
+        "data-rerun-id": "BT-2026-0406-01"
+      },
+      "reason": "unsafe/data-rerun-id"
+    },
+    {
+      "scope": "page",
+      "pageId": "run_history",
+      "page": "Run History",
+      "text": "Clone",
+      "action": "",
+      "attrs": {
+        "data-clone-run-id": "BT-2026-0406-01"
+      },
+      "reason": "unsafe/data-clone-run-id"
+    },
+    {
+      "scope": "page",
+      "pageId": "run_history",
+      "page": "Run History",
+      "text": "Delete",
+      "action": "",
+      "attrs": {
+        "data-delete-run-id": "BT-2026-0406-01"
+      },
+      "reason": "unsafe/data-delete-run-id"
+    },
+    {
+      "scope": "page",
+      "pageId": "run_history",
+      "page": "Run History",
+      "text": "Rerun",
+      "action": "",
+      "attrs": {
+        "data-rerun-id": "BT-2026-0405-01"
+      },
+      "reason": "unsafe/data-rerun-id"
+    },
+    {
+      "scope": "page",
+      "pageId": "run_history",
+      "page": "Run History",
+      "text": "Clone",
+      "action": "",
+      "attrs": {
+        "data-clone-run-id": "BT-2026-0405-01"
+      },
+      "reason": "unsafe/data-clone-run-id"
+    },
+    {
+      "scope": "page",
+      "pageId": "run_history",
+      "page": "Run History",
+      "text": "Delete",
+      "action": "",
+      "attrs": {
+        "data-delete-run-id": "BT-2026-0405-01"
+      },
+      "reason": "unsafe/data-delete-run-id"
+    },
+    {
+      "scope": "page",
+      "pageId": "run_history",
+      "page": "Run History",
+      "text": "Rerun",
+      "action": "",
+      "attrs": {
+        "data-rerun-id": "BT-2026-0404-01"
+      },
+      "reason": "unsafe/data-rerun-id"
+    },
+    {
+      "scope": "page",
+      "pageId": "run_history",
+      "page": "Run History",
+      "text": "Clone",
+      "action": "",
+      "attrs": {
+        "data-clone-run-id": "BT-2026-0404-01"
+      },
+      "reason": "unsafe/data-clone-run-id"
+    },
+    {
+      "scope": "page",
+      "pageId": "run_history",
+      "page": "Run History",
+      "text": "Rerun",
+      "action": "",
+      "attrs": {
+        "data-rerun-id": "BT-2026-0403-01"
+      },
+      "reason": "unsafe/data-rerun-id"
+    },
+    {
+      "scope": "page",
+      "pageId": "run_history",
+      "page": "Run History",
+      "text": "Clone",
+      "action": "",
+      "attrs": {
+        "data-clone-run-id": "BT-2026-0403-01"
+      },
+      "reason": "unsafe/data-clone-run-id"
+    },
+    {
+      "scope": "page",
+      "pageId": "run_history",
+      "page": "Run History",
+      "text": "Delete",
+      "action": "",
+      "attrs": {
+        "data-delete-run-id": "BT-2026-0403-01"
+      },
+      "reason": "unsafe/data-delete-run-id"
+    },
+    {
+      "scope": "page",
+      "pageId": "run_history",
+      "page": "Run History",
+      "text": "Clear all",
+      "action": "clear-all-history",
+      "attrs": {
+        "data-action": "clear-all-history"
+      },
+      "reason": "unsafe/action:clear-all-history"
+    },
+    {
+      "scope": "page",
+      "pageId": "run_history",
+      "page": "Run History",
+      "text": "Save Required",
+      "action": "save-scenario",
+      "attrs": {
+        "data-action": "save-scenario"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "pageId": "run_history",
+      "page": "Run History",
+      "text": "Run",
+      "action": "run-baseline",
+      "attrs": {
+        "data-action": "run-baseline"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "pageId": "run_history",
+      "page": "Run History",
+      "text": "Compare",
+      "action": "queue-batch",
+      "attrs": {
+        "data-action": "queue-batch"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "pageId": "run_history",
+      "page": "Run History",
+      "text": "Generate",
+      "action": "generate-ai-report-analysis",
+      "attrs": {
+        "data-action": "generate-ai-report-analysis"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "pageId": "factor_lab",
+      "page": "Signal & Factor Builder",
+      "text": "Save Required",
+      "action": "save-scenario",
+      "attrs": {
+        "data-action": "save-scenario"
+      },
+      "reason": "unsafe/action:save-scenario"
+    },
+    {
+      "scope": "page",
+      "pageId": "factor_lab",
+      "page": "Signal & Factor Builder",
+      "text": "Run",
+      "action": "run-baseline",
+      "attrs": {
+        "data-action": "run-baseline"
+      },
+      "reason": "unsafe/action:run-baseline"
+    },
+    {
+      "scope": "page",
+      "pageId": "factor_lab",
+      "page": "Signal & Factor Builder",
+      "text": "Compare",
+      "action": "queue-batch",
+      "attrs": {
+        "data-action": "queue-batch"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "pageId": "factor_lab",
+      "page": "Signal & Factor Builder",
+      "text": "Generate",
+      "action": "generate-ai-report-analysis",
+      "attrs": {
+        "data-action": "generate-ai-report-analysis"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "pageId": "performance_dashboard",
+      "page": "Performance Dashboard",
+      "text": "Save Required",
+      "action": "save-scenario",
+      "attrs": {
+        "data-action": "save-scenario"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "pageId": "performance_dashboard",
+      "page": "Performance Dashboard",
+      "text": "Run",
+      "action": "run-baseline",
+      "attrs": {
+        "data-action": "run-baseline"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "pageId": "performance_dashboard",
+      "page": "Performance Dashboard",
+      "text": "Compare",
+      "action": "queue-batch",
+      "attrs": {
+        "data-action": "queue-batch"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "pageId": "performance_dashboard",
+      "page": "Performance Dashboard",
+      "text": "Generate",
+      "action": "generate-ai-report-analysis",
+      "attrs": {
+        "data-action": "generate-ai-report-analysis"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "pageId": "risk_dashboard",
+      "page": "Risk Dashboard",
+      "text": "Save Required",
+      "action": "save-scenario",
+      "attrs": {
+        "data-action": "save-scenario"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "pageId": "risk_dashboard",
+      "page": "Risk Dashboard",
+      "text": "Run",
+      "action": "run-baseline",
+      "attrs": {
+        "data-action": "run-baseline"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "pageId": "risk_dashboard",
+      "page": "Risk Dashboard",
+      "text": "Compare",
+      "action": "queue-batch",
+      "attrs": {
+        "data-action": "queue-batch"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "pageId": "risk_dashboard",
+      "page": "Risk Dashboard",
+      "text": "Generate",
+      "action": "generate-ai-report-analysis",
+      "attrs": {
+        "data-action": "generate-ai-report-analysis"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "pageId": "robustness_lab",
+      "page": "Robustness Lab",
+      "text": "Run sensitivity",
+      "action": "run-sensitivity",
+      "attrs": {
+        "data-action": "run-sensitivity"
+      },
+      "reason": "unsafe/action:run-sensitivity"
+    },
+    {
+      "scope": "page",
+      "pageId": "robustness_lab",
+      "page": "Robustness Lab",
+      "text": "Promote best",
+      "action": "promote-best-robustness",
+      "attrs": {
+        "data-action": "promote-best-robustness"
+      },
+      "reason": "unsafe/action:promote-best-robustness"
+    },
+    {
+      "scope": "page",
+      "pageId": "robustness_lab",
+      "page": "Robustness Lab",
+      "text": "Save Required",
+      "action": "save-scenario",
+      "attrs": {
+        "data-action": "save-scenario"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "pageId": "robustness_lab",
+      "page": "Robustness Lab",
+      "text": "Run",
+      "action": "run-baseline",
+      "attrs": {
+        "data-action": "run-baseline"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "pageId": "robustness_lab",
+      "page": "Robustness Lab",
+      "text": "Compare",
+      "action": "queue-batch",
+      "attrs": {
+        "data-action": "queue-batch"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "pageId": "robustness_lab",
+      "page": "Robustness Lab",
+      "text": "Generate",
+      "action": "generate-ai-report-analysis",
+      "attrs": {
+        "data-action": "generate-ai-report-analysis"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "pageId": "holdings_trades",
+      "page": "Trade Blotter & Execution",
+      "text": "Save Required",
+      "action": "save-scenario",
+      "attrs": {
+        "data-action": "save-scenario"
+      },
+      "reason": "unsafe/action:save-scenario"
+    },
+    {
+      "scope": "page",
+      "pageId": "holdings_trades",
+      "page": "Trade Blotter & Execution",
+      "text": "Run",
+      "action": "run-baseline",
+      "attrs": {
+        "data-action": "run-baseline"
+      },
+      "reason": "unsafe/action:run-baseline"
+    },
+    {
+      "scope": "page",
+      "pageId": "holdings_trades",
+      "page": "Trade Blotter & Execution",
+      "text": "Compare",
+      "action": "queue-batch",
+      "attrs": {
+        "data-action": "queue-batch"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "pageId": "holdings_trades",
+      "page": "Trade Blotter & Execution",
+      "text": "Generate",
+      "action": "generate-ai-report-analysis",
+      "attrs": {
+        "data-action": "generate-ai-report-analysis"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "pageId": "artifacts",
+      "page": "Artifacts",
+      "text": "Save Required",
+      "action": "save-scenario",
+      "attrs": {
+        "data-action": "save-scenario"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "pageId": "artifacts",
+      "page": "Artifacts",
+      "text": "Run",
+      "action": "run-baseline",
+      "attrs": {
+        "data-action": "run-baseline"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "pageId": "artifacts",
+      "page": "Artifacts",
+      "text": "Compare",
+      "action": "queue-batch",
+      "attrs": {
+        "data-action": "queue-batch"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "pageId": "artifacts",
+      "page": "Artifacts",
+      "text": "Generate",
+      "action": "generate-ai-report-analysis",
+      "attrs": {
+        "data-action": "generate-ai-report-analysis"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "pageId": "report_studio",
+      "page": "Report Studio",
+      "text": "Load models",
+      "action": "refresh-llm-models",
+      "attrs": {
+        "data-action": "refresh-llm-models"
+      },
+      "reason": "unsafe/action:refresh-llm-models"
+    },
+    {
+      "scope": "page",
+      "pageId": "report_studio",
+      "page": "Report Studio",
+      "text": "Save Required",
+      "action": "save-scenario",
+      "attrs": {
+        "data-action": "save-scenario"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "pageId": "report_studio",
+      "page": "Report Studio",
+      "text": "Run",
+      "action": "run-baseline",
+      "attrs": {
+        "data-action": "run-baseline"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "pageId": "report_studio",
+      "page": "Report Studio",
+      "text": "Compare",
+      "action": "queue-batch",
+      "attrs": {
+        "data-action": "queue-batch"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "pageId": "report_studio",
+      "page": "Report Studio",
+      "text": "Generate",
+      "action": "generate-ai-report-analysis",
+      "attrs": {
+        "data-action": "generate-ai-report-analysis"
+      },
+      "reason": "unsafe/action:generate-ai-report-analysis"
+    },
+    {
+      "scope": "page",
+      "pageId": "help",
+      "page": "Help",
+      "text": "Save Required",
+      "action": "save-scenario",
+      "attrs": {
+        "data-action": "save-scenario"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "pageId": "help",
+      "page": "Help",
+      "text": "Run",
+      "action": "run-baseline",
+      "attrs": {
+        "data-action": "run-baseline"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "pageId": "help",
+      "page": "Help",
+      "text": "Compare",
+      "action": "queue-batch",
+      "attrs": {
+        "data-action": "queue-batch"
+      },
+      "reason": "disabled"
+    },
+    {
+      "scope": "page",
+      "pageId": "help",
+      "page": "Help",
+      "text": "Generate",
+      "action": "generate-ai-report-analysis",
+      "attrs": {
+        "data-action": "generate-ai-report-analysis"
+      },
+      "reason": "disabled"
+    }
+  ],
+  "failures": [],
+  "logs": {
+    "consoleErrors": [],
+    "pageErrors": [],
+    "requestFailures": [],
+    "httpErrors": [],
+    "dialogs": [],
+    "downloads": [
+      {
+        "filename": "overview-snapshot.csv"
+      },
+      {
+        "filename": "BT-2026-0406-01-logs.txt"
+      },
+      {
+        "filename": "run-history.csv"
+      },
+      {
+        "filename": "performance-dashboard-series.csv"
+      },
+      {
+        "filename": "robustness-table.csv"
+      },
+      {
+        "filename": "portfolio-holdings.csv"
+      },
+      {
+        "filename": "cw2-delivery-bundle-20260501-011215.zip"
+      }
+    ]
+  }
+}

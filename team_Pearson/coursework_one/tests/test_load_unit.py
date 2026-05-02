@@ -547,6 +547,444 @@ def test_load_financial_observations_skips_out_of_range_values(monkeypatch, capl
     assert "shares_outstanding x1" in caplog.text
 
 
+def test_load_financial_observations_updates_publish_date_when_column_exists(monkeypatch):
+    captured = {}
+
+    class _FakeConn:
+        def execute(self, stmt):
+            captured["stmt"] = stmt
+
+    class _Ctx:
+        def __enter__(self):
+            return _FakeConn()
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+    class _Engine:
+        def begin(self):
+            return _Ctx()
+
+    class _Excluded:
+        metric_value = "mv"
+        currency = "ccy"
+        period_type = "period"
+        source = "src"
+        as_of = "as_of"
+        publish_date = "publish_date"
+        metric_definition = "defn"
+
+    class _Stmt:
+        excluded = _Excluded()
+
+        def values(self, records):
+            captured["records"] = records
+            return self
+
+        def on_conflict_do_update(self, constraint, set_, where=None):
+            captured["constraint"] = constraint
+            captured["set_keys"] = sorted(set_.keys())
+            captured["where"] = where
+            return "UPSERT_STMT"
+
+    class _Col:
+        def __init__(self, name):
+            self.name = name
+
+    class _FakeTable:
+        columns = [
+            _Col("symbol"),
+            _Col("report_date"),
+            _Col("metric_name"),
+            _Col("metric_value"),
+            _Col("currency"),
+            _Col("period_type"),
+            _Col("source"),
+            _Col("as_of"),
+            _Col("publish_date"),
+            _Col("metric_definition"),
+        ]
+
+    monkeypatch.setattr(load_mod, "datetime", type("DT", (), {"now": staticmethod(lambda: "now")}))
+    monkeypatch.setitem(__import__("sys").modules, "pandas", __import__("pandas"))
+    import sqlalchemy
+    import sqlalchemy.dialects.postgresql as pg
+
+    monkeypatch.setattr(load_mod, "get_db_engine", lambda: _Engine())
+    monkeypatch.setattr(sqlalchemy, "MetaData", lambda: object())
+    monkeypatch.setattr(sqlalchemy, "Table", lambda *args, **kwargs: _FakeTable())
+    monkeypatch.setattr(pg, "insert", lambda table: _Stmt())
+
+    rows = [
+        {
+            "symbol": "AAPL",
+            "report_date": "2025-12-31",
+            "metric_name": "book_value",
+            "metric_value": 10.0,
+            "currency": "USD",
+            "period_type": "quarterly",
+            "source": "alpha_vantage",
+            "as_of": "2026-02-14",
+            "publish_date": "2026-02-10",
+            "metric_definition": "provider_reported",
+        }
+    ]
+
+    assert load_mod.load_financial_observations(rows, dry_run=False) == 1
+    assert captured["records"][0]["publish_date"].isoformat() == "2026-02-10"
+    assert "publish_date" in captured["set_keys"]
+
+
+def test_load_financial_observations_deduplicates_conflicting_rows(monkeypatch):
+    captured = {}
+
+    class _FakeConn:
+        def execute(self, stmt):
+            captured["stmt"] = stmt
+
+    class _Ctx:
+        def __enter__(self):
+            return _FakeConn()
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+    class _Engine:
+        def begin(self):
+            return _Ctx()
+
+    class _Excluded:
+        metric_value = "mv"
+        currency = "ccy"
+        period_type = "period"
+        source = "src"
+        as_of = "as_of"
+        publish_date = "publish_date"
+        metric_definition = "defn"
+
+    class _Stmt:
+        excluded = _Excluded()
+
+        def values(self, records):
+            captured["records"] = records
+            return self
+
+        def on_conflict_do_update(self, constraint, set_, where=None):
+            _ = (constraint, set_, where)
+            return "UPSERT_STMT"
+
+    class _Col:
+        def __init__(self, name):
+            self.name = name
+
+    class _FakeTable:
+        columns = [
+            _Col("symbol"),
+            _Col("report_date"),
+            _Col("metric_name"),
+            _Col("metric_value"),
+            _Col("currency"),
+            _Col("period_type"),
+            _Col("source"),
+            _Col("as_of"),
+            _Col("publish_date"),
+            _Col("metric_definition"),
+        ]
+
+    monkeypatch.setattr(load_mod, "datetime", type("DT", (), {"now": staticmethod(lambda: "now")}))
+    monkeypatch.setitem(__import__("sys").modules, "pandas", __import__("pandas"))
+    import sqlalchemy
+    import sqlalchemy.dialects.postgresql as pg
+
+    monkeypatch.setattr(load_mod, "get_db_engine", lambda: _Engine())
+    monkeypatch.setattr(sqlalchemy, "MetaData", lambda: object())
+    monkeypatch.setattr(sqlalchemy, "Table", lambda *args, **kwargs: _FakeTable())
+    monkeypatch.setattr(pg, "insert", lambda table: _Stmt())
+
+    rows = [
+        {
+            "symbol": "AAPL",
+            "report_date": "2025-12-31",
+            "metric_name": "roe",
+            "metric_value": 0.10,
+            "currency": "USD",
+            "period_type": "quarterly",
+            "source": "edgar_xbrl",
+            "as_of": "2026-02-10",
+            "publish_date": "2026-02-10",
+            "metric_definition": "normalized",
+        },
+        {
+            "symbol": "AAPL",
+            "report_date": "2025-12-31",
+            "metric_name": "roe",
+            "metric_value": 0.12,
+            "currency": "USD",
+            "period_type": "quarterly",
+            "source": "edgar_xbrl",
+            "as_of": "2026-02-12",
+            "publish_date": "2026-02-12",
+            "metric_definition": "normalized",
+        },
+    ]
+
+    assert load_mod.load_financial_observations(rows, dry_run=False) == 1
+    assert len(captured["records"]) == 1
+    assert float(captured["records"][0]["metric_value"]) == pytest.approx(0.12)
+    assert captured["records"][0]["publish_date"].isoformat() == "2026-02-12"
+
+
+def test_load_financial_observations_preserves_existing_edgar_pit_metadata(monkeypatch):
+    captured = {}
+
+    class _Expr:
+        def __init__(self, label):
+            self.label = label
+
+        def is_not(self, value):
+            return _Expr(f"{self.label} IS NOT {value}")
+
+        def is_(self, value):
+            return _Expr(f"{self.label} IS {value}")
+
+        def in_(self, values):
+            return _Expr(f"{self.label} IN {tuple(values)}")
+
+        def __or__(self, other):
+            return _Expr(f"({self.label}) OR ({other.label})")
+
+        def __and__(self, other):
+            return _Expr(f"({self.label}) AND ({other.label})")
+
+        def __invert__(self):
+            return _Expr(f"NOT ({self.label})")
+
+    class _FakeConn:
+        def execute(self, stmt):
+            captured["stmt"] = stmt
+
+    class _Ctx:
+        def __enter__(self):
+            return _FakeConn()
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+    class _Engine:
+        def begin(self):
+            return _Ctx()
+
+    class _Excluded:
+        metric_value = _Expr("excluded.metric_value")
+        currency = "ccy"
+        period_type = "period"
+        source = _Expr("excluded.source")
+        as_of = "as_of"
+        publish_date = "publish_date"
+        metric_definition = "defn"
+
+    class _Stmt:
+        excluded = _Excluded()
+
+        def values(self, records):
+            captured["records"] = records
+            return self
+
+        def on_conflict_do_update(self, constraint, set_, where=None):
+            captured["constraint"] = constraint
+            captured["where"] = where.label if hasattr(where, "label") else where
+            return "UPSERT_STMT"
+
+    class _Col:
+        def __init__(self, name):
+            self.name = name
+
+        def is_(self, value):
+            return _Expr(f"{self.name} IS {value}")
+
+        def in_(self, values):
+            return _Expr(f"{self.name} IN {tuple(values)}")
+
+    class _FakeTable:
+        columns = [
+            _Col("symbol"),
+            _Col("report_date"),
+            _Col("metric_name"),
+            _Col("metric_value"),
+            _Col("currency"),
+            _Col("period_type"),
+            _Col("source"),
+            _Col("as_of"),
+            _Col("publish_date"),
+            _Col("metric_definition"),
+        ]
+
+    monkeypatch.setattr(
+        load_mod,
+        "datetime",
+        type("DT", (), {"now": staticmethod(lambda: "now")}),
+    )
+    monkeypatch.setitem(__import__("sys").modules, "pandas", __import__("pandas"))
+    import sqlalchemy
+    import sqlalchemy.dialects.postgresql as pg
+
+    monkeypatch.setattr(load_mod, "get_db_engine", lambda: _Engine())
+    monkeypatch.setattr(sqlalchemy, "MetaData", lambda: object())
+    monkeypatch.setattr(sqlalchemy, "Table", lambda *args, **kwargs: _FakeTable())
+    monkeypatch.setattr(pg, "insert", lambda table: _Stmt())
+
+    rows = [
+        {
+            "symbol": "AAPL",
+            "report_date": "2025-12-31",
+            "metric_name": "book_value",
+            "metric_value": 10.0,
+            "currency": "USD",
+            "period_type": "quarterly",
+            "source": "alpha_vantage",
+            "as_of": "2026-02-14",
+            "publish_date": "2026-02-14",
+            "metric_definition": "provider_reported",
+        }
+    ]
+
+    assert load_mod.load_financial_observations(rows, dry_run=False) == 1
+    assert captured["constraint"] == "uniq_financial_observation"
+    assert "NOT (source IN ('edgar_xbrl', 'edgar_xbrl_derived'))" in captured["where"]
+    assert "excluded.source IN ('edgar_xbrl', 'edgar_xbrl_derived')" in captured["where"]
+
+
+def test_load_financial_observations_treats_edgar_as_authoritative_value_source(monkeypatch):
+    captured = {}
+
+    class _Expr:
+        def __init__(self, label):
+            self.label = label
+
+        def is_not(self, value):
+            return _Expr(f"{self.label} IS NOT {value}")
+
+        def is_(self, value):
+            return _Expr(f"{self.label} IS {value}")
+
+        def in_(self, values):
+            return _Expr(f"{self.label} IN {tuple(values)}")
+
+        def __or__(self, other):
+            return _Expr(f"({self.label}) OR ({other.label})")
+
+        def __and__(self, other):
+            return _Expr(f"({self.label}) AND ({other.label})")
+
+        def __invert__(self):
+            return _Expr(f"NOT ({self.label})")
+
+    class _FakeConn:
+        def execute(self, stmt):
+            captured["stmt"] = stmt
+
+    class _Ctx:
+        def __enter__(self):
+            return _FakeConn()
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+    class _Engine:
+        def begin(self):
+            return _Ctx()
+
+    class _Excluded:
+        metric_value = _Expr("excluded.metric_value")
+        currency = "excluded.currency"
+        period_type = "excluded.period_type"
+        source = _Expr("excluded.source")
+        value_source = "excluded.value_source"
+        as_of = "excluded.as_of"
+        publish_date = "excluded.publish_date"
+        publish_date_source = "excluded.publish_date_source"
+        metric_definition = "excluded.metric_definition"
+
+    class _Stmt:
+        excluded = _Excluded()
+
+        def values(self, records):
+            captured["records"] = records
+            return self
+
+        def on_conflict_do_update(self, constraint, set_, where=None):
+            captured["constraint"] = constraint
+            captured["set_"] = set_
+            captured["where"] = where.label if hasattr(where, "label") else where
+            return "UPSERT_STMT"
+
+    class _Col:
+        def __init__(self, name):
+            self.name = name
+
+        def is_(self, value):
+            return _Expr(f"{self.name} IS {value}")
+
+        def is_not(self, value):
+            return _Expr(f"{self.name} IS NOT {value}")
+
+        def in_(self, values):
+            return _Expr(f"{self.name} IN {tuple(values)}")
+
+    class _FakeTable:
+        columns = [
+            _Col("symbol"),
+            _Col("report_date"),
+            _Col("metric_name"),
+            _Col("metric_value"),
+            _Col("currency"),
+            _Col("period_type"),
+            _Col("source"),
+            _Col("value_source"),
+            _Col("as_of"),
+            _Col("publish_date"),
+            _Col("publish_date_source"),
+            _Col("metric_definition"),
+        ]
+
+    monkeypatch.setattr(load_mod, "datetime", type("DT", (), {"now": staticmethod(lambda: "now")}))
+    monkeypatch.setitem(__import__("sys").modules, "pandas", __import__("pandas"))
+    import sqlalchemy
+    import sqlalchemy.dialects.postgresql as pg
+
+    monkeypatch.setattr(load_mod, "get_db_engine", lambda: _Engine())
+    monkeypatch.setattr(sqlalchemy, "MetaData", lambda: object())
+    monkeypatch.setattr(sqlalchemy, "Table", lambda *args, **kwargs: _FakeTable())
+    monkeypatch.setattr(pg, "insert", lambda table: _Stmt())
+
+    rows = [
+        {
+            "symbol": "AAPL",
+            "report_date": "2025-12-31",
+            "metric_name": "total_debt",
+            "metric_value": 9.0,
+            "currency": "USD",
+            "period_type": "quarterly",
+            "source": "edgar_xbrl",
+            "value_source": "edgar_xbrl",
+            "as_of": "2026-02-14",
+            "publish_date": "2026-02-12",
+            "publish_date_source": "edgar_xbrl",
+            "metric_definition": "normalized",
+        }
+    ]
+
+    assert load_mod.load_financial_observations(rows, dry_run=False) == 1
+    assert captured["constraint"] == "uniq_financial_observation"
+    assert captured["set_"]["metric_value"][0] == "preserve_when"
+    assert "excluded.metric_value IS None" in captured["set_"]["metric_value"][1]
+    assert "excluded.source IN ('edgar_xbrl', 'edgar_xbrl_derived')" in captured["where"]
+    assert captured["set_"]["source"][3].label == "excluded.source"
+    assert captured["set_"]["value_source"][3] == "excluded.value_source"
+    assert captured["set_"]["publish_date"] == "excluded.publish_date"
+    assert captured["set_"]["publish_date_source"] == "excluded.publish_date_source"
+
+
 def test_load_curated_reports_idempotency_stats_on_repeat_runs(monkeypatch):
     class _FakeConn:
         def execute(self, stmt):
