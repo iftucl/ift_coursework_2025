@@ -1,0 +1,2 @@
+benchmark,available,source,ticker_used,local_path,message
+sp500,True,local_file,local_file,/Users/chengxima/luzin-cw2-private/team_luzin/coursework_two/inputs/benchmarks/sp500.csv,Used existing local S&P 500 benchmark file.

@@ -1,0 +1,60 @@
+{
+  "project": {
+    "name": "coursework_two",
+    "rebalance_frequency": "monthly"
+  },
+  "paths": {
+    "cw1_analytics_dir": "../coursework_one/analytics",
+    "output_dir": "outputs",
+    "sp500_csv": "inputs/benchmarks/sp500.csv"
+  },
+  "universe": {
+    "allowed_sectors": [],
+    "min_rows_per_symbol": 24,
+    "require_columns": [
+      "symbol",
+      "sector",
+      "composite_score"
+    ]
+  },
+  "selection": {
+    "min_composite_score": 0.0,
+    "top_n": 30,
+    "sector_cap_names": 9
+  },
+  "portfolio": {
+    "baseline_weighting": "equal_weight",
+    "max_names": 30,
+    "sector_cap_weight": 0.3
+  },
+  "benchmark": {
+    "methods": [
+      "equal_weight_universe",
+      "sp500"
+    ],
+    "download_tickers": [
+      "^GSPC",
+      "SPY"
+    ]
+  },
+  "robustness": {
+    "enabled": true,
+    "weighting_methods": [
+      "equal_weight",
+      "rank_weighted",
+      "inverse_volatility"
+    ],
+    "rebalance_frequencies": [
+      "monthly",
+      "quarterly"
+    ],
+    "transaction_cost_bps_values": [
+      10,
+      20,
+      50
+    ]
+  },
+  "costs": {
+    "transaction_cost_bps": 10
+  }
+}
