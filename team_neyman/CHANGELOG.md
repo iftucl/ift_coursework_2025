@@ -2,6 +2,105 @@
 
 All notable changes to the **Team Neyman Coursework** will be documented in this file.
 
+## 2026-04-30
+### Added
+- Created `README.md` explaining the execution of project.
+
+### Changed
+- Regenerated the docs and pytest result.
+
+## 2026-04-29
+### Added
+- Constructed test functions.
+
+### Adjusted
+- Adjusted portfolio strategy.
+- Reran the backtest for correct results.
+
+### Changed
+- Applied flake8 and isort to maintain code quality.
+- Revised documentation content.
+
+### Security
+- Executed Bandit and Safety to ensure security.
+
+## 2026-04-28
+### Added
+- Added code documentation.
+- Created scheduler Python code to fulfill scheduling needs.
+
+## 2026-04-27
+### Added
+- Constructed sectors return analysis.
+- Added stock holdings analysis.
+
+### Changed
+- Adjusted return analysis parameters.
+- Created analysis file for storing analysis function an execution. 
+
+## 2026-04-25
+### Changed
+- Adjusted functions to run sensetivity test properly.
+
+## 2026-04-24
+### Added
+- Built graph generation for different portfolio and benchmark.
+
+### Changed
+- Adjusted the base capital getting logic.
+
+### Fixed
+- Rebuild currency data to ensure postgres_seed work well.
+- Fixed trading bug.
+
+## 2026-04-23
+### Added
+- Established analysis functions.
+
+### Fixed
+- Fixed trading logic realated to currency an fx.
+- Rebuild database to handle missing values.
+
+## 2026-04-22
+### Added
+- Added foreign exchange and currency data.
+- Integrated foreign exchange function into trading.
+
+### Changed
+- Adjusted traing logic to avoid negative cash holding.
+- Applied rounding for better interpretability of data.
+
+## 2026-04-21
+### Changed
+- Adjust the trading and rebalance logic, making it more reasonable.
+
+### Fixed
+- Solved the bug happening when executing trading.
+
+## 2026-04-19
+### Added
+- Constructed backtest logic.
+- Created rebuild.py for cleaning data.
+
+### Changed
+- Adjusted portfolio trading logic.
+
+### Fixed
+- MongoDB connection issue.
+
+## 2026-04-11
+### Added
+- Established basic trading logic.
+- Create data storing and fetching logic within different databases. 
+
+## 2026-04-10
+### Added
+- Constructed connection to MongoDB.
+
+## 2026-04-08
+### Added
+- Initialized coursework two. Establish files should be built.
+
 ## 2026-03-16
 ### Fixed
 - Updated factors calculating logic to ensure alignment across multi-ticker datasets.

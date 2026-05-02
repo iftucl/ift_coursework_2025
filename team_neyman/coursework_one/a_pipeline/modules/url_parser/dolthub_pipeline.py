@@ -111,6 +111,28 @@ def update_eps_estimate_data(repo_path):
     postgres.update_eps_estimate(new_data)
 
 
+def rebuild_dolt_database():
+    """
+    Rebulid the EPS database.
+
+    Args:
+        None
+
+    Returns:
+        None: Update Dolt data to Postgres.
+
+    Note:
+        Used for rebuilding databese when Dolt data exists.
+    """
+    current_dir = Path(__file__).resolve().parent
+    project_root = current_dir.parents[2]
+    data_dir = project_root / "data" / "earnings"
+    postgres.create_eps_history_table()
+    update_eps_history_data(data_dir)
+    postgres.create_eps_estimate_table()
+    update_eps_estimate_data(data_dir)
+
+
 def setup_dolt_database():
     """
     Initializes the local Dolt environment and triggers the EPS ETL pipeline.

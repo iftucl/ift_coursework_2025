@@ -91,13 +91,29 @@ def main():
     )
 
     parser.add_argument(
-        "--frequency",
-        choices=["daily", "weekly", "monthly"],
-        default="daily",
-        help="How much data to process (daily, weekly, or monthly)",
+        "--init",
+        action="store_true",
+        help="Initialize databases and fetch ticker currencies",
     )
 
     args = parser.parse_args()
+
+    if args.init:
+        print("Initializing Database...")
+        postgres.create_ohlcv_table()
+        postgres.create_fx_table()
+        postgres.create_liquidity_table()
+        postgres.create_trend_table()
+        postgres.create_momentum_table()
+        postgres.create_risk_table()
+        postgres.create_mean_reversion_table()
+
+        print("Fetching Ticker Currencies...")
+        yf_pipeline.get_ticker_currencies()
+
+        print("Initialization Complete.")
+
+        sys.exit(0)
 
     run_date = (
         args.date if args.date else (datetime.now() - timedelta(1)).strftime("%Y-%m-%d")
@@ -112,6 +128,7 @@ def main():
             update_database()
         else:
             print(f"Historical date {run_date} provided. Skipping database update.")
+        """
         raw_df = fetch_factors(run_date=run_date)
         if not raw_df.empty:
             filtered_df = apply_filter(target_df=raw_df)
@@ -123,6 +140,7 @@ def main():
                 print("No companies passed the filters today.")
         else:
             print("No data found for the selected date/sectors.")
+        """
     except Exception as e:
         print(f"CRITICAL ERROR: {e}")
         sys.exit(1)

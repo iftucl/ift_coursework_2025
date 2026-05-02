@@ -11,6 +11,7 @@ def calculate_return(data: pd.DataFrame, days: int = 1):
     return (
         data.groupby("symbol")["close_price"]
         .transform(lambda x: np.log(x / x.shift(days)))
+        .replace([np.inf, -np.inf], np.nan)
         .round(6)
     )
 
@@ -216,7 +217,8 @@ def calculate_lagged_momentum(
     """Calculate return with lagged months"""
     price_start = data.groupby("symbol")["close_price"].shift(total_months * 21)
     price_end = data.groupby("symbol")["close_price"].shift(lag_months * 21)
-    return np.log(price_end / price_start).round(6)
+    res = np.log(price_end / price_start)
+    return res.replace([np.inf, -np.inf], np.nan).round(6)
 
 
 def calculate_risk_adj_momentum(
@@ -227,7 +229,8 @@ def calculate_risk_adj_momentum(
         data["momentum"] = calculate_lagged_momentum(data, momentum_months)
     if "volatility" not in data.columns:
         data["volatility"] = calculate_annualized_volatility(data, vol_days)
-    return (data["momentum"] / data["volatility"]).replace(0, np.nan).round(6)
+    res = data["momentum"] / data["volatility"]
+    return res.replace([np.inf, -np.inf], np.nan).round(6)
 
 
 def calculate_risk_adj_return(data: pd.DataFrame, return_months: int, vol_days: int):
@@ -238,7 +241,8 @@ def calculate_risk_adj_return(data: pd.DataFrame, return_months: int, vol_days: 
         )
     if "volatility" not in data.columns:
         data["volatility"] = calculate_annualized_volatility(data, vol_days)
-    return (data["return"] / data["volatility"]).replace(0, np.nan).round(6)
+    res = data["return"] / data["volatility"]
+    return res.replace([np.inf, -np.inf], np.nan).round(6)
 
 
 def calculate_positive_return_percent(data: pd.DataFrame, days: int):

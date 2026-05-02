@@ -10,7 +10,6 @@ import yfinance as yf
 from a_pipeline.modules.db_loader import postgres
 from a_pipeline.modules.factors import calculate_factors
 
-
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 CONFIG_PATH = BASE_DIR / "config" / "conf.yaml"
 
@@ -23,9 +22,15 @@ def load_config():
 
 config = load_config().get("yf_pipeline", {})
 BATCH_SIZE = config.get("batch_size", 50)
+FETCH_YEARS = config.get("fetch_years", 10)
+FX_LIST = config.get("fx_list")
+INVER_FX_LIST = config.get("invert_fx_list")
+EXTRA_TIKCERS = config.get("extra_tickers")
 
 
-def fetch_ohlcv_data(ticker_list: list, start_date=None, end_date=None):
+def fetch_ohlcv_data(
+    ticker_list: list, ticker_mapping: pd.DataFrame, start_date=None, end_date=None
+):
     """
     Downloads, cleans, and uploads OHLCV market data from Yahoo Finance in batches.
 
@@ -46,8 +51,8 @@ def fetch_ohlcv_data(ticker_list: list, start_date=None, end_date=None):
     if end_date is None:
         end_date = datetime.now().strftime("%Y-%m-%d")
     if start_date is None:
-        five_years_ago = datetime.now() - timedelta(days=5 * 365)
-        start_date = five_years_ago.strftime("%Y-%m-%d")
+        target_years_ago = datetime.now() - timedelta(days=FETCH_YEARS * 365)
+        start_date = target_years_ago.strftime("%Y-%m-%d")
     print(f"Starting pipeline: Fetching from {start_date} to {end_date}")
 
     # Fetching data with batches
@@ -99,14 +104,130 @@ def fetch_ohlcv_data(ticker_list: list, start_date=None, end_date=None):
                 subset=["symbol", "price_date", "close_price"]
             )
 
+            df_stacked = pd.merge(df_stacked, ticker_mapping, on="symbol", how="left")
+
             postgres.update_ohlcv_data(df_stacked)
-            print(f"Batch {i//batch_size + 1} uploaded successfully.")
+            print(f"Tickers batch {i//batch_size + 1} uploaded successfully.")
             del df_stacked
 
             time.sleep(2)
 
         except Exception as e:
-            print(f"Error downloading batch starting with {batch[0]}: {e}")
+            print(f"Error downloading tickers batch starting with {batch[0]}: {e}")
+
+
+def get_ticker_currencies():
+    df_companies = postgres.get_table(name="company_static")
+    ticker_list = [s.strip() for s in df_companies["symbol"].tolist()]
+
+    currency_map = []
+
+    for symbol in ticker_list:
+        try:
+            t = yf.Ticker(symbol)
+            curr = t.info.get("currency", "Unknown")
+            currency_map.append({"symbol": symbol.strip(), "currency": curr.strip()})
+            print(f"Fetched {symbol}: {curr}")
+            time.sleep(0.1)
+        except Exception as e:
+            print(f"Could not fetch {symbol}: {e}")
+
+    currency_df = pd.DataFrame(currency_map)
+    is_unknown = currency_df["currency"] == "Unknown"
+    conditions = [
+        is_unknown & currency_df["symbol"].str.endswith(".L"),
+        is_unknown & currency_df["symbol"].str.endswith(".S"),
+        is_unknown,
+    ]
+    choices = ["GBp", "CHF", "USD"]
+    currency_df["currency"] = np.select(
+        conditions, choices, default=currency_df["currency"]
+    )
+    print(f"Cleaned {is_unknown.sum()} Unknown currencies.")
+
+    postgres.update_company_currency(currency_df)
+
+
+def fetch_fx_data(fx_list: list = FX_LIST, start_date=None, end_date=None):
+    """
+    Downloads, cleans, and uploads foreign exchange market data from Yahoo Finance in batches.
+
+    Args:
+        fx_list (list): A list of foriegn exchange symbols to download.
+        start_date (str, optional): Start date in 'YYYY-MM-DD' format. Defaults to 5 years ago.
+        end_date (str, optional): End date in 'YYYY-MM-DD' format. Defaults to today.
+
+    Returns:
+        None: Processes data in batches of 50 and updates the 'daily_fx' PostgreSQL table.
+
+    Note:
+        Implements data transformation by stacking MultiIndex columns from yfinance
+        and performing numeric cleansing (rounding prices, filling null volumes).
+        Includes a 2-second sleep between batches to respect rate limits.
+    """
+    # Fetch past years data
+    if end_date is None:
+        end_date = datetime.now().strftime("%Y-%m-%d")
+    if start_date is None:
+        target_years_ago = datetime.now() - timedelta(days=FETCH_YEARS * 365)
+        start_date = target_years_ago.strftime("%Y-%m-%d")
+    print(f"Starting pipeline: Fetching from {start_date} to {end_date}")
+
+    # Fetching data with batches
+    try:
+        raw_data = yf.download(fx_list, start=start_date, end=end_date, interval="1d")
+        if raw_data.empty:
+            print(f"Returned no data at all.")
+
+        clean_data = raw_data.drop(columns="Volume")
+        clean_data = clean_data.dropna(axis=1, how="all")
+
+        df_stacked = clean_data.stack(level=1, future_stack=True).reset_index()
+        # Rename to align with database
+        df_stacked = df_stacked.rename(
+            columns={
+                "Date": "price_date",
+                "Ticker": "symbol",
+                "Open": "open_price",
+                "High": "high_price",
+                "Low": "low_price",
+                "Close": "close_price",
+            }
+        )
+        # Cleanse data
+        df_stacked["symbol"] = df_stacked["symbol"].str.strip()
+        df_stacked["price_date"] = pd.to_datetime(df_stacked["price_date"]).dt.date
+        price_cols = ["open_price", "high_price", "low_price", "close_price"]
+        for col in price_cols:
+            df_stacked[col] = pd.to_numeric(df_stacked[col], errors="coerce").round(4)
+        df_stacked = df_stacked.dropna(subset=["symbol", "price_date", "close_price"])
+
+        mask = df_stacked["symbol"].isin(INVER_FX_LIST)
+        if mask.any():
+            price_cols = ["open_price", "high_price", "low_price", "close_price"]
+            df_stacked.loc[mask, price_cols] = 1 / df_stacked.loc[mask, price_cols]
+            actual_high = df_stacked.loc[mask, "high_price"].copy()
+            df_stacked.loc[mask, "high_price"] = df_stacked.loc[mask, "low_price"]
+            df_stacked.loc[mask, "low_price"] = actual_high
+            df_stacked.loc[mask, "symbol"] = (
+                "USD" + df_stacked.loc[mask, "symbol"].str[:3] + "=X"
+            )
+
+        df_stacked["usd_to"] = df_stacked["symbol"].str[3:6]
+
+        df_stacked = df_stacked.drop_duplicates(
+            subset=["symbol", "price_date"], keep="first"
+        )
+        df_stacked = df_stacked.dropna(subset=["symbol", "price_date"])
+
+        postgres.update_fx_data(df_stacked)
+        print(f"FX data uploaded successfully.")
+        del df_stacked
+
+        time.sleep(2)
+
+    except Exception as e:
+        print(f"Error downloading FX data: {e}")
 
 
 def format_duration(seconds):
@@ -145,20 +266,33 @@ def update_ohlcv_batch():
     """
     start_time = time.time()
 
-    # Create OHLCV table if there's no one
-    postgres.create_ohlcv_table()
-
     df_companies = postgres.get_table(name="company_static")
-    ticker_list = [symbol.strip() for symbol in df_companies["symbol"].tolist()]
+    df_companies["symbol"] = df_companies["symbol"].str.strip()
+    db_currency_map = df_companies[["symbol", "currency"]].copy()
+
+    extra_tickers = EXTRA_TIKCERS
+    extra_currency_df = pd.DataFrame(
+        {"symbol": [s.strip() for s in extra_tickers], "currency": "USD"}
+    )
+    ticker_mapping_df = pd.concat(
+        [db_currency_map, extra_currency_df], ignore_index=True
+    )
+    ticker_mapping_df = ticker_mapping_df.drop_duplicates(
+        subset=["symbol"], keep="first"
+    )
+    ticker_list = ticker_mapping_df["symbol"].tolist()
 
     # Fetch data from the latest data date minus 20 days
     last_update = postgres.get_latest_date(table_name="daily_ohlcv")
 
     if last_update:
         start = (last_update - timedelta(days=20)).strftime("%Y-%m-%d")
-        fetch_ohlcv_data(ticker_list, start_date=start)
+        fetch_ohlcv_data(
+            ticker_list=ticker_list, ticker_mapping=ticker_mapping_df, start_date=start
+        )
     else:
-        fetch_ohlcv_data(ticker_list)
+        fetch_ohlcv_data(ticker_list=ticker_list, ticker_mapping=ticker_mapping_df)
+    fetch_fx_data()
 
     end_time = time.time()
     duration = end_time - start_time
@@ -448,12 +582,6 @@ def update_factors():
         memory exhaustion when processing large-scale OHLCV datasets and complex
         rolling window calculations.
     """
-    # Creates tables if the tables don't exist
-    postgres.create_liquidity_table()
-    postgres.create_trend_table()
-    postgres.create_momentum_table()
-    postgres.create_risk_table()
-    postgres.create_mean_reversion_table()
 
     df_companies = postgres.get_table(name="company_static")
     if df_companies is None or df_companies.empty:
