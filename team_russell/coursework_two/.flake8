@@ -1,0 +1,6 @@
+[flake8]
+max-line-length = 100
+extend-ignore = E203, E501, E402
+exclude = .git, __pycache__, .venv, build, dist, *.egg-info, results, docs, scripts/test_sw_full_analysis.py, scripts/test_score_weighting.py
+per-file-ignores =
+    tests/*: F401, E302
