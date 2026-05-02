@@ -6,7 +6,7 @@ import pandas as pd
 import requests
 import yfinance as yf
 
-from .constants import COUNTRY_TO_OECD
+from .constants import COUNTRY_CODE_TO_NAME, COUNTRY_TO_OECD
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +44,8 @@ class RatesMixin:
 
         if result is not None and not result.empty:
             result = self._dedupe_dataframe("risk_free_rates", result, name="all")
-            self._cache_dataframe("risk_free_rates", "all", result, "oecd")
+            src = result["source"].iloc[0] if "source" in result.columns else "unknown"
+            self._cache_dataframe("risk_free_rates", "all", result, src)
             logger.info("Fetched risk-free rates: %d rows", len(result))
             return result
 
@@ -69,7 +70,7 @@ class RatesMixin:
                 url = (
                     f"https://stats.oecd.org/SDMX-JSON/data/"
                     f"MEI_FIN/IRSTCI01.{oecd_code}.M/all"
-                    f"?startTime=2020&endTime=2026"
+                    f"?startTime=2017&endTime=2026"
                 )
                 response = requests.get(url, timeout=15)
                 response.raise_for_status()
@@ -94,7 +95,7 @@ class RatesMixin:
                         period = time_periods[idx]
                         all_rates.append(
                             {
-                                "country": country,
+                                "country": COUNTRY_CODE_TO_NAME.get(country, country),
                                 "rate_date": pd.Timestamp(period["id"]).date(),
                                 "rate": values[0] / 100,
                             }
@@ -104,7 +105,9 @@ class RatesMixin:
                 return None
 
         if all_rates:
-            return pd.DataFrame(all_rates)
+            df = pd.DataFrame(all_rates)
+            df["source"] = "oecd"
+            return df
         return None
 
     def _fetch_rates_yfinance(self, countries):
@@ -122,7 +125,7 @@ class RatesMixin:
         logger.info("Fetching Treasury yields from yfinance...")
 
         try:
-            irx = yf.download("^IRX", period="5y", progress=False, auto_adjust=False)
+            irx = yf.download("^IRX", period="10y", progress=False, auto_adjust=False)
         except Exception as e:
             logger.error("Failed to download ^IRX: %s", e)
             return pd.DataFrame()
@@ -148,9 +151,10 @@ class RatesMixin:
         all_rates = []
         for country in countries:
             country_df = irx.copy()
-            country_df["country"] = country
+            country_df["country"] = COUNTRY_CODE_TO_NAME.get(country, country)
             all_rates.append(country_df)
 
         result = pd.concat(all_rates, ignore_index=True)
         result = result[["country", "rate_date", "rate"]]
+        result["source"] = "yfinance"
         return result

@@ -118,7 +118,23 @@ class EdgarMixin:
         if not payload:
             return empty
 
-        filings = (payload or {}).get("filings", {}).get("recent", {})
+        filings_root = (payload or {}).get("filings", {})
+        filings = filings_root.get("recent", {})
+
+        # Paginate through older filing batches (filings.files) so that
+        # companies whose Q1 has scrolled out of the ~40-entry recent
+        # window are still correctly labelled.
+        for file_info in filings_root.get("files", []):
+            name = file_info.get("name", "")
+            if not name:
+                continue
+            older = self._edgar_get_json(f"https://data.sec.gov/submissions/{name}")
+            if not older:
+                continue
+            for key in ("form", "reportDate", "filingDate"):
+                if key in older:
+                    filings[key] = filings.get(key, []) + older[key]
+
         df = pd.DataFrame(
             {
                 "form": filings.get("form", []),

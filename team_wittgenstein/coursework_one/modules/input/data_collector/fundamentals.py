@@ -233,7 +233,7 @@ class FundamentalsMixin:
         sources = []
 
         # 1. SEC EDGAR (free, no API key, US-listed only)
-        edgar_df = self._fetch_edgar_fundamentals(symbol)
+        edgar_df = self._fetch_edgar_fundamentals(symbol, period=period)
         if edgar_df is not None and not edgar_df.empty:
             sources.append(("edgar", edgar_df))
             logger.info(

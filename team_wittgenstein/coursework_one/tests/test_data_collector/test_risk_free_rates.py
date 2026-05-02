@@ -106,6 +106,8 @@ class TestFetchRatesOecd:
         result = fetcher._fetch_rates_oecd(["US"])
         assert len(result) == 2
         assert result.iloc[0]["rate"] == 0.045
+        assert "source" in result.columns
+        assert (result["source"] == "oecd").all()
 
     @patch("modules.input.data_collector.rates.requests.get")
     def test_network_error(self, mock_get, fetcher):
@@ -137,8 +139,10 @@ class TestFetchRatesYfinance:
         result = fetcher._fetch_rates_yfinance(["US"])
         assert not result.empty
         assert "country" in result.columns
-        assert (result["country"] == "US").all()
+        assert (result["country"] == "United States").all()
         assert result.iloc[0]["rate"] == pytest.approx(0.045)
+        assert "source" in result.columns
+        assert (result["source"] == "yfinance").all()
 
     @patch("modules.input.data_collector.rates.yf")
     def test_empty_download(self, mock_yf, fetcher):
@@ -159,7 +163,7 @@ class TestFetchRatesYfinance:
         irx.index.name = "Date"
         mock_yf.download.return_value = irx
         result = fetcher._fetch_rates_yfinance(["US", "GB"])
-        assert set(result["country"].unique()) == {"US", "GB"}
+        assert set(result["country"].unique()) == {"United States", "United Kingdom"}
 
 
 # ===================================================================
